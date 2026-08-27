@@ -56,6 +56,14 @@ async function chamar<T>(sessao: Sessao, caminho: string, opcoes: RequestInit = 
       signal: AbortSignal.timeout(TEMPO_LIMITE_MS),
     });
 
+    // 401 é sessão inválida (token vencido, Directus reiniciado com outra
+    // chave, usuário removido) — não é falta de permissão. Quem trata é a
+    // página, mandando a pessoa de volta à tela de entrada; devolver a
+    // mensagem crua do CMS deixaria "Invalid user credentials." em inglês na
+    // cara de quem está na secretaria.
+    if (r.status === 401) {
+      return { ok: false, status: 401, motivo: 'Sua sessão expirou. Entre novamente.' };
+    }
     if (r.status === 403) {
       return { ok: false, status: 403, motivo: 'Sua função no portal não permite esta operação.' };
     }
@@ -156,6 +164,56 @@ export async function mudarSituacao(
     method: 'PATCH',
     body: JSON.stringify({ status: destino }),
   });
+}
+
+/** Um item inteiro, para preencher o formulário de edição. */
+export async function obterItem(
+  sessao: Sessao,
+  colecao: ColecaoEditavel,
+  id: string,
+  campos: string[],
+): Promise<Saida<Record<string, any>>> {
+  const parametros = new URLSearchParams({
+    fields: ['id', 'status', 'user_created', 'date_updated', ...campos].join(','),
+  });
+  return chamar(sessao, `/items/${colecao}/${encodeURIComponent(id)}?${parametros}`);
+}
+
+export async function criarItem(
+  sessao: Sessao,
+  colecao: ColecaoEditavel,
+  valores: Record<string, unknown>,
+): Promise<Saida<{ id: string }>> {
+  return chamar(sessao, `/items/${colecao}`, { method: 'POST', body: JSON.stringify(valores) });
+}
+
+export async function atualizarItem(
+  sessao: Sessao,
+  colecao: ColecaoEditavel,
+  id: string,
+  valores: Record<string, unknown>,
+): Promise<Saida<{ id: string }>> {
+  return chamar(sessao, `/items/${colecao}/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(valores),
+  });
+}
+
+export interface OpcaoSecretaria {
+  id: string;
+  nome: string;
+}
+
+/**
+ * Secretarias para o seletor do formulário.
+ *
+ * Devolve só o que a política do papel deixa ler: o redator enxerga uma
+ * (a dele), o revisor enxerga todas. Não há filtro nosso aqui de propósito —
+ * quem restringe é o Directus, e duplicar a regra criaria divergência.
+ */
+export async function listarSecretarias(sessao: Sessao): Promise<Saida<OpcaoSecretaria[]>> {
+  const parametros = new URLSearchParams({ fields: 'id,nome', sort: 'nome', limit: '-1' });
+  return chamar<OpcaoSecretaria[]>(sessao, `/items/secretarias?${parametros}`);
 }
 
 export interface ArquivoEnviado {

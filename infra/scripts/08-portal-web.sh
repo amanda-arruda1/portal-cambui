@@ -47,6 +47,13 @@ chmod -R u=rwX,g=rX,o= "$APP/dist"
 # O node precisa atravessar os diretórios até o entry.mjs.
 chmod o+x "$REPO" "$REPO/apps" "$APP" 2>/dev/null || true
 
+echo "==> diretório de sessões"
+# O painel de contribuição guarda a sessão em disco, e nela vai o token do
+# Directus — daí o 700. O caminho está ASSADO no build (astro.config.mjs); se
+# mudar lá, muda aqui. Criado explicitamente para que o primeiro login não
+# dependa de o processo conseguir criar o diretório sozinho.
+install -d -o "$USUARIO" -g "$USUARIO" -m 700 /var/lib/portal-cambui/sessoes
+
 echo "==> variáveis de ambiente"
 if [[ ! -f "$REPO/.env.web" ]]; then
   cp "$REPO/.env.web.example" "$REPO/.env.web"

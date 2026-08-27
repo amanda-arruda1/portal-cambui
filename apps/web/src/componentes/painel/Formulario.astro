@@ -1,0 +1,124 @@
+---
+/**
+ * Formulário de conteúdo, compartilhado por "novo" e "editar".
+ *
+ * Um arquivo só porque a diferença entre criar e editar é o endereço de envio
+ * e o texto do botão. Duplicar significaria, mais cedo ou mais tarde, um campo
+ * novo aparecer só numa das duas telas.
+ *
+ * Funciona SEM JavaScript: os arquivos vão no próprio envio (multipart) e o
+ * endereço de página é gerado no servidor. O script abaixo só melhora — sugere
+ * o endereço enquanto se digita, dá barra de formatação ao texto e envia o
+ * arquivo na hora, para a pessoa não descobrir que o PDF foi recusado depois de
+ * dez minutos preenchendo.
+ */
+import CampoFormulario from './Campo.astro';
+import type { Campo } from '../../lib/painel/campos.ts';
+import type { OpcaoSecretaria } from '../../lib/painel/cms.ts';
+import { TAGS_PERMITIDAS } from '../../lib/sanitizar.ts';
+
+interface Props {
+  campos: Campo[];
+  valores: Record<string, string>;
+  erros: Record<string, string>;
+  avisos: string[];
+  secretarias: OpcaoSecretaria[];
+  secretariaFixa: string | null;
+  rotuloBotao: string;
+  cancelarPara: string;
+  somenteLeitura?: boolean;
+}
+
+const {
+  campos,
+  valores,
+  erros,
+  avisos,
+  secretarias,
+  secretariaFixa,
+  rotuloBotao,
+  cancelarPara,
+  somenteLeitura = false,
+} = Astro.props;
+
+const temErro = Object.keys(erros).length > 0;
+---
+
+{
+  temErro && (
+    <div role="alert" class="mb-6 rounded-md border-l-4 border-vermelho bg-papel p-4">
+      <p class="font-semibold text-vermelho">Confira os campos marcados antes de salvar.</p>
+      <ul class="mt-2 list-inside list-disc text-vermelho">
+        {Object.entries(erros).map(([nome, mensagem]) => (
+          <li>
+            <a href={`#${nome}`} class="underline">
+              {campos.find((c) => c.nome === nome)?.rotulo ?? nome}
+            </a>
+            : {mensagem}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+{
+  avisos.map((aviso) => (
+    <div role="status" class="mb-4 rounded-md border-l-4 border-trigo bg-papel p-4 text-grafite">
+      {aviso}
+    </div>
+  ))
+}
+
+{
+  somenteLeitura && (
+    <div role="status" class="mb-6 rounded-md border-l-4 border-azul bg-papel p-4 text-azul-escuro">
+      Este item está numa situação que sua função não edita. Você pode ver o conteúdo, mas não
+      alterá-lo.
+    </div>
+  )
+}
+
+<form method="post" enctype="multipart/form-data" novalidate data-formulario-conteudo>
+  <fieldset disabled={somenteLeitura} class="grid gap-5 sm:grid-cols-2">
+    {
+      campos.map((campo) => (
+        <CampoFormulario
+          campo={campo}
+          valor={valores[campo.nome] ?? ''}
+          erro={erros[campo.nome] ?? null}
+          secretarias={secretarias}
+          secretariaFixa={campo.tipo === 'secretaria' ? secretariaFixa : null}
+        />
+      ))
+    }
+  </fieldset>
+
+  <p class="mt-6 text-sm text-grafite">
+    Formatação aceita no texto: {TAGS_PERMITIDAS.filter((t) => t !== 'br').join(', ')}. Qualquer
+    outra é retirada na gravação, e o texto é mantido.
+  </p>
+
+  {
+    !somenteLeitura && (
+      <div class="mt-6 flex flex-wrap gap-3">
+        <button
+          type="submit"
+          class="rounded-md bg-azul px-5 py-2 font-semibold text-papel hover:bg-azul-escuro"
+        >
+          {rotuloBotao}
+        </button>
+        <a
+          href={cancelarPara}
+          class="rounded-md border border-prata px-5 py-2 font-semibold text-grafite hover:border-azul hover:text-azul"
+        >
+          Cancelar
+        </a>
+      </div>
+    )
+  }
+</form>
+
+<script>
+  import '../../scripts/painel-formulario.ts';
+</script>

@@ -3,6 +3,9 @@ import Base from '../../layouts/Base.astro';
 import { arquivo } from '../../lib/directus';
 import { noticiaPorSlug } from '../../lib/conteudo';
 import { data, iso, recorte } from '../../lib/formato';
+// Segunda barreira: conteúdo também entra pelo painel do Directus, que não
+// passa pelo formulário do painel de contribuição. Aqui nada escapa.
+import { limpar } from '../../lib/sanitizar';
 
 const { slug } = Astro.params;
 const { dado: noticia } = await noticiaPorSlug(slug ?? '');
@@ -69,7 +72,7 @@ const descricao = noticia.resumo ?? recorte(noticia.conteudo, 160);
       /* O corpo vem do editor do Directus, onde só entra gente autenticada da
          prefeitura com fluxo de aprovação. É HTML confiável por processo, não
          por sanitização no navegador. */
-      noticia.conteudo && <div class="conteudo-rico mt-6" set:html={noticia.conteudo} />
+      noticia.conteudo && <div class="conteudo-rico mt-6" set:html={limpar(noticia.conteudo)} />
     }
 
     <p class="nao-imprimir mt-10">

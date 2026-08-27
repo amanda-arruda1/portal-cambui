@@ -3,6 +3,9 @@ import Base from '../layouts/Base.astro';
 import EstadoVazio from '../componentes/EstadoVazio.astro';
 import TituloPagina from '../componentes/TituloPagina.astro';
 import { servicos } from '../lib/conteudo';
+// Segunda barreira: conteúdo também entra pelo painel do Directus, que não
+// passa pelo formulário do painel de contribuição. Aqui nada escapa.
+import { limpar } from '../lib/sanitizar';
 
 const { dados, indisponivel } = await servicos();
 
@@ -40,7 +43,7 @@ for (const servico of dados) {
                   )}
                   {servico.descricao && <p class="mt-2 text-grafite">{servico.descricao}</p>}
                   {servico.como_solicitar && (
-                    <div class="conteudo-rico mt-3 text-sm" set:html={servico.como_solicitar} />
+                    <div class="conteudo-rico mt-3 text-sm" set:html={limpar(servico.como_solicitar)} />
                   )}
 
                   {servico.url_externa && (

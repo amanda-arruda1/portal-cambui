@@ -25,6 +25,11 @@ if (!colecao) return Astro.rewrite('/404');
 
 let aviso: { tipo: 'ok' | 'erro'; texto: string } | null = null;
 
+// A tela de edição reescreve para cá quando o item não está ao alcance de quem
+// pediu — melhor devolver a pessoa à lista com o motivo do que a um beco.
+const inacessivel = Astro.url.searchParams.get('inacessivel');
+if (inacessivel) aviso = { tipo: 'erro', texto: inacessivel };
+
 if (Astro.request.method === 'POST') {
   const formulario = await Astro.request.formData();
   const id = String(formulario.get('id') ?? '');
@@ -68,7 +73,19 @@ const grupos = ORDEM_DA_FILA.map((situacao) => ({
     <a href="/painel" class="text-azul underline">Fila</a> <span aria-hidden="true">›</span> {ROTULO[colecao]}
   </nav>
 
-  <h1 class="mt-2 text-2xl font-bold text-azul-escuro">{ROTULO[colecao]}</h1>
+  <div class="mt-2 flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-bold text-azul-escuro">{ROTULO[colecao]}</h1>
+    {
+      podeNoPapel(sessao.usuario.papel, 'criar') && (
+        <a
+          href={`/painel/${colecao}/novo`}
+          class="rounded-md bg-azul px-4 py-2 font-semibold text-papel hover:bg-azul-escuro"
+        >
+          Novo item
+        </a>
+      )
+    }
+  </div>
 
   {
     aviso && (
@@ -113,7 +130,12 @@ const grupos = ORDEM_DA_FILA.map((situacao) => ({
             return (
               <li class="rounded-lg border border-prata bg-papel p-4">
                 <div class="flex flex-wrap items-baseline justify-between gap-2">
-                  <span class="font-semibold text-tinta">{item.rotulo}</span>
+                  <a
+                    href={`/painel/${colecao}/${item.id}`}
+                    class="font-semibold text-azul underline decoration-prata underline-offset-4 hover:decoration-azul"
+                  >
+                    {item.rotulo}
+                  </a>
                   <span class={`rounded-full border px-2 py-0.5 text-sm ${APARENCIA[item.status].classe}`}>
                     {APARENCIA[item.status].rotulo}
                   </span>

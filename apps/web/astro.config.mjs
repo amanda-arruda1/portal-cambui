@@ -52,9 +52,19 @@ export default defineConfig({
   // com ProtectSystem=strict, então o único lugar gravável é o StateDirectory
   // entregue pelo systemd — sem apontar para lá, a primeira sessão morreria em
   // EROFS.
+  //
+  // ATENÇÃO: este caminho é ASSADO NO BUILD, não lido em tempo de execução.
+  // A versão anterior tinha './.sessoes' como padrão e confiava no
+  // SESSION_DIR da unit do systemd — que o processo até recebe, mas tarde
+  // demais: quando 'npm run build' roda, a variável não existe, e o valor que
+  // entra no manifesto é o padrão. O resultado seria a sessão tentando gravar
+  // em /opt/portal-cambui/apps/web/.sessoes, somente-leitura, e a pessoa da
+  // secretaria voltando à tela de entrada logo depois de acertar a senha.
+  // O padrão agora é o caminho de produção; SESSION_DIR só serve para 'astro
+  // dev' em máquina de desenvolvimento, e precisa estar definido no BUILD.
   session: {
     driver: 'fs',
-    options: { base: process.env.SESSION_DIR || './.sessoes' },
+    options: { base: process.env.SESSION_DIR || '/var/lib/portal-cambui/sessoes' },
   },
 
   // Acessibilidade e SEO dependem de HTML previsível; o compressor do Astro

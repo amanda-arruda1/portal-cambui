@@ -1,13 +1,12 @@
-# Fase 3 — Contribuição das secretarias (parte 1)
+# Fase 3 — Contribuição das secretarias
 
-Executada em 27/08/2026. Entrega a **metade que não depende de conteúdo real
-nem do e-mail institucional**: a inspeção de arquivos enviados, o controle de
-acesso do CMS escrito como código, e a fundação do painel das secretarias
-(sessão, 2FA, fluxo editorial e envio de arquivo).
+Executada em 27/08/2026. Entrega tudo o que **não depende de conteúdo real nem
+do e-mail institucional**: a inspeção de arquivos enviados, o controle de acesso
+do CMS escrito como código, o painel das secretarias (sessão, 2FA, fluxo
+editorial, envio de arquivo) e as telas de redigir e editar conteúdo.
 
-O que **não** está aqui: as telas de redigir e editar cada tipo de conteúdo.
-Elas dependem do esquema aplicado no Directus, que depende do administrador,
-que depende do e-mail institucional.
+Falta só ligar: o esquema precisa estar aplicado no Directus e as pessoas
+cadastradas — os dois dependem do e-mail institucional.
 
 ## O que está no ar
 
@@ -17,6 +16,8 @@ que depende do e-mail institucional.
 | Painel de contribuição | `/painel` no domínio público | no ar, aguardando usuários |
 | Bloco `/painel` no Nginx | `snippets/site-publico.conf` | aplicado e recarregado |
 | `portal-web` no grupo `virusgroup` | unit do systemd | aplicado |
+| Telas de redigir e editar | `/painel/<coleção>/novo` e `/painel/<coleção>/<id>` | no ar |
+| Sanitização do texto rico | gravação **e** exibição | no ar |
 | Papéis e permissões | `infra/directus/papeis.json` | escrito, **não aplicado** |
 
 Testes que rodam hoje, sem depender de ninguém:
@@ -27,6 +28,16 @@ cd /opt/portal-cambui/apps/web && node scripts/testar-upload.mjs
 
 25 casos de inspeção, 7 de sanitização de nome, e o EICAR contra o clamd de
 verdade. Sai com código 0 quando tudo passa.
+
+```bash
+cd /opt/portal-cambui/apps/web && node scripts/verificar-campos.mjs
+```
+
+Compara os formulários do painel (`src/lib/painel/campos.ts`) com o esquema do
+CMS (`infra/directus/esquema.json`) e falha se um campo aparecer só de um lado,
+se a obrigatoriedade divergir ou se a lista de opções não bater. São arquivos
+separados de propósito — rótulo em português e ordem de preenchimento não
+pertencem ao esquema — e este script é o preço dessa separação.
 
 ## Inspeção de upload
 
@@ -56,6 +67,46 @@ de segurança para o que entrar por outro caminho.
 armazenado servido do domínio oficial), `.zip`/`.rar`/`.7z` (recipiente de
 conteúdo que ninguém revisou), `.doc`/`.xls` (OLE, formato de macro),
 `.docm`/`.xlsm`, e qualquer executável ou script.
+
+## Telas de redigir e editar
+
+Um formulário só, compartilhado por criar e editar — a diferença é o endereço
+de envio e o texto do botão. Campo novo aparece nas duas telas ao mesmo tempo.
+
+**Funciona sem JavaScript.** O endereço de página é gerado no servidor, o
+arquivo sobe junto com o envio e a validação inteira é refeita do lado de cá:
+`required` e `type="email"` no HTML são conveniência de quem preenche e somem
+para quem manda a requisição direto. Com JavaScript ligado, a pessoa ganha
+sugestão de endereço enquanto digita, barra de formatação e — o que mais
+importa — o veredito do arquivo **na hora**, em vez de descobrir que o PDF foi
+recusado depois de dez minutos preenchendo.
+
+**Salvar e mudar de situação são botões diferentes.** Um clique não pode
+publicar sem querer, e a tela avisa que são envios separados.
+
+**Erro de validação nunca perde texto.** O que a pessoa digitou volta para a
+tela; só depois de gravar é que os valores voltam a vir do CMS.
+
+**Texto rico é sanitizado nos dois sentidos** (`src/lib/sanitizar.ts`): na
+gravação, com aviso do que foi retirado; e na exibição pública, porque conteúdo
+também entra pelo painel do Directus, que não passa por este formulário. É o
+segundo que garante — o portal renderiza o corpo das notícias com `set:html`,
+ou seja, marcação de verdade no navegador do cidadão.
+
+Fora da marcação aceita, com motivo: `<img>` (a imagem tem campo próprio, com
+texto alternativo; solta no corpo vem sem `alt` e sem passar pela inspeção),
+`<h1>` (o H1 é o título da página; um segundo quebra a navegação por cabeçalhos
+de quem usa leitor de tela), `style`/`font` (apresentação vem da folha de estilo,
+senão cada secretaria inventa a sua) e `<iframe>`/`<video>` (conteúdo de
+terceiro embutido no domínio oficial). Link para fora recebe
+`rel="noopener noreferrer"`, e `target`/`rel` colados junto com o texto são
+descartados.
+
+A barra de formatação usa `document.execCommand`, que é obsoleto. É uma escolha:
+o substituto seria trazer um editor inteiro como dependência, e para negrito,
+lista e cabeçalho ele funciona em todos os navegadores atuais. O resultado passa
+pelo sanitizador do servidor de qualquer jeito, então o risco de ele produzir
+algo estranho é de formatação, não de segurança.
 
 ## Controle de acesso do CMS
 
@@ -107,6 +158,15 @@ de origem embutida do Astro compara `Origin` com `Astro.url.origin`, então
 entrar, aprovar e publicar levariam **403 em produção**, de forma silenciosa e
 impossível de diagnosticar pela mensagem. Corrigido em `astro.config.mjs`.
 
+**O caminho da sessão estava assado no build, apontando para um lugar
+somente-leitura.** `astro.config.mjs` lia `process.env.SESSION_DIR` — variável
+que a unit do systemd entrega ao processo, mas tarde demais: a configuração é
+avaliada quando `npm run build` roda, e ali ela não existe. O valor que entrou
+no manifesto foi o padrão `./.sessoes`, dentro de `/opt`, que o
+`ProtectSystem=strict` deixa somente-leitura. Ninguém teria conseguido entrar no
+painel: a senha seria aceita e a pessoa voltaria à tela de entrada. O padrão
+agora é o caminho de produção.
+
 **A verificação embutida do Astro não cobre JSON.** Ela só barra requisição de
 outra origem quando o `Content-Type` é de formulário (ou não existe); um POST
 com `application/json` passa direto. O middleware do projeto confere a origem em
@@ -117,6 +177,11 @@ esse caso.
 pasta editaria edital de outra: a permissão de linha não teria por onde
 filtrar. Campo somado ao esquema (que ainda não foi aplicado, então não custou
 migração) e ao `tipos.ts`.
+
+**Sessão inválida devolvia um 403 seco com a mensagem do Directus em inglês.**
+Token vencido, Directus reiniciado com outra chave ou usuário removido não são
+falta de permissão: agora o 401 leva de volta à tela de entrada, e a pessoa
+retorna ao item de onde saiu.
 
 **Limite de taxa devolvia 503, e o site tem `error_page 503 /_manutencao.html`.**
 Um cidadão que esbarrasse no limite receberia a página de "portal em
@@ -142,6 +207,10 @@ um só, o mais restrito.
 - **Ordem na sanitização de nome importa.** Quebrar o caminho antes de separar a
   extensão fazia `arquivo"; rm -rf /.pdf` virar o nome `pdf` — o arquivo perdia
   a identidade inteira. A extensão sai do nome completo primeiro.
+- **A sessão do Astro guarda `{ data }` por chave, não o objeto direto.** Vale
+  para quem for inspecionar ou forjar uma sessão para teste.
+- **`-F` do curl trata `campo=<algo` como "ler do arquivo".** Testar um campo
+  que começa com `<` exige `--form-string`.
 - **O campo do arquivo tem de ser o último no `FormData`** enviado ao Directus:
   ele lê os metadados na ordem em que chegam e ignora o que vier depois do
   binário.
@@ -153,8 +222,16 @@ Depende do **e-mail institucional**, em cadeia:
 1. administrador do Directus (`directus users create`);
 2. `node aplicar-esquema.mjs` — as 6 coleções;
 3. `node aplicar-papeis.mjs` — políticas, papéis e permissões;
-4. telas de redigir e editar cada tipo de conteúdo;
-5. cadastro das pessoas das secretarias, com o campo `secretaria` preenchido.
+4. cadastro das pessoas das secretarias, com o campo `secretaria` preenchido.
+
+**O que foi verificado e o que não foi.** A renderização de todas as telas do
+painel foi conferida forjando uma sessão direto no armazenamento do Astro (sem
+tocar no Directus): formulários, rótulos, marcação de campo obrigatório,
+validação do servidor, sanitização com aviso e o retorno do texto digitado após
+erro. O que **não** deu para exercitar de ponta a ponta é o que depende de um
+usuário real no CMS: entrar com senha e segundo fator, gravar um item, e as
+transições do fluxo contra as permissões de linha. Reservar esse teste para o
+dia do primeiro cadastro.
 
 Independente disso:
 
@@ -171,6 +248,9 @@ Independente disso:
 ```bash
 # Bateria de testes da inspeção de upload (roda contra o clamd de verdade)
 cd /opt/portal-cambui/apps/web && node scripts/testar-upload.mjs
+
+# Formulários do painel x esquema do CMS
+cd /opt/portal-cambui/apps/web && node scripts/verificar-campos.mjs
 
 # Revisar as permissões antes de aplicar (não precisa de Directus no ar)
 cd /opt/portal-cambui/infra/directus && node aplicar-papeis.mjs --simular

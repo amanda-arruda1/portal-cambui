@@ -72,6 +72,24 @@ export function transicoesDe(
   });
 }
 
+/**
+ * Em que situações cada papel consegue EDITAR o conteúdo de um item.
+ *
+ * Espelha 'situacoes_editaveis' de infra/directus/papeis.json. O publicador
+ * acumula a política do revisor, por isso alcança todas. Serve para mostrar a
+ * tela em modo leitura em vez de deixar a pessoa digitar por dez minutos e
+ * levar 403 ao salvar — a decisão continua sendo do Directus.
+ */
+const EDITAVEIS: Record<string, Situacao[]> = {
+  'Redator de secretaria': ['rascunho', 'em_revisao'],
+  Revisor: ['rascunho', 'em_revisao', 'aprovado'],
+  Publicador: ['rascunho', 'em_revisao', 'aprovado', 'publicado', 'arquivado'],
+};
+
+export function podeEditar(papel: string | null, situacao: Situacao): boolean {
+  return (EDITAVEIS[papel ?? ''] ?? []).includes(situacao);
+}
+
 /** Rótulo e cor de cada situação, para as etiquetas das listas. */
 export const APARENCIA: Record<Situacao, { rotulo: string; classe: string }> = {
   rascunho: { rotulo: 'Rascunho', classe: 'bg-papel-suave text-grafite border-prata' },

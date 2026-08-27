@@ -1,0 +1,200 @@
+---
+/**
+ * Um campo do formulário de conteúdo.
+ *
+ * Concentra a acessibilidade que é fácil errar repetindo markup: rótulo ligado
+ * ao controle, ajuda e erro anunciados pelo leitor de tela via
+ * aria-describedby, e `aria-invalid` no campo com problema. Uma tela de
+ * prefeitura precisa disso funcionando de verdade.
+ */
+import type { Campo } from '../../lib/painel/campos.ts';
+import type { OpcaoSecretaria } from '../../lib/painel/cms.ts';
+
+interface Props {
+  campo: Campo;
+  valor: string;
+  erro?: string | null;
+  secretarias?: OpcaoSecretaria[];
+  /** Redator não escolhe secretaria: o Directus carimba a dele na criação. */
+  secretariaFixa?: string | null;
+}
+
+const { campo, valor, erro = null, secretarias = [], secretariaFixa = null } = Astro.props;
+
+const idAjuda = campo.ajuda ? `${campo.nome}-ajuda` : null;
+const idErro = erro ? `${campo.nome}-erro` : null;
+const descritoPor = [idAjuda, idErro].filter(Boolean).join(' ') || undefined;
+
+const classeBase =
+  'mt-1 w-full rounded-md border px-3 py-2 ' +
+  (erro ? 'border-vermelho bg-papel' : 'border-prata bg-papel');
+---
+
+<div class={campo.largura === 'metade' ? 'sm:col-span-1' : 'sm:col-span-2'}>
+  {
+    campo.tipo === 'booleano' ? (
+      <div class="flex items-start gap-2">
+        <input
+          id={campo.nome}
+          name={campo.nome}
+          type="checkbox"
+          value="sim"
+          checked={valor === 'sim'}
+          aria-describedby={descritoPor}
+          class="mt-1 h-4 w-4"
+        />
+        <label for={campo.nome} class="font-semibold text-azul-escuro">
+          {campo.rotulo}
+        </label>
+      </div>
+    ) : (
+      <label for={campo.nome} class="block font-semibold text-azul-escuro">
+        {campo.rotulo}
+        {campo.obrigatorio && <span class="text-vermelho" aria-hidden="true"> *</span>}
+        {campo.obrigatorio && <span class="sr-only"> (obrigatório)</span>}
+      </label>
+    )
+  }
+
+  {
+    campo.tipo === 'rico' && (
+      <textarea
+        id={campo.nome}
+        name={campo.nome}
+        rows="12"
+        data-editor-rico
+        aria-describedby={descritoPor}
+        aria-invalid={erro ? 'true' : undefined}
+        class={`${classeBase} font-mono text-sm`}
+        set:text={valor}
+      />
+    )
+  }
+
+  {
+    campo.tipo === 'texto_longo' && (
+      <textarea
+        id={campo.nome}
+        name={campo.nome}
+        rows="4"
+        maxlength={campo.maximo}
+        aria-describedby={descritoPor}
+        aria-invalid={erro ? 'true' : undefined}
+        class={classeBase}
+        set:text={valor}
+      />
+    )
+  }
+
+  {
+    campo.tipo === 'selecao' && (
+      <select
+        id={campo.nome}
+        name={campo.nome}
+        aria-describedby={descritoPor}
+        aria-invalid={erro ? 'true' : undefined}
+        class={classeBase}
+      >
+        <option value="">— escolha —</option>
+        {campo.opcoes?.map((o) => (
+          <option value={o.valor} selected={valor === o.valor}>
+            {o.rotulo}
+          </option>
+        ))}
+      </select>
+    )
+  }
+
+  {
+    campo.tipo === 'secretaria' &&
+      (secretariaFixa ? (
+        <>
+          <input type="hidden" name={campo.nome} value={secretariaFixa} />
+          <p class="mt-1 rounded-md border border-prata bg-papel-suave px-3 py-2 text-grafite">
+            {secretarias.find((s) => s.id === secretariaFixa)?.nome ?? 'Sua secretaria'}
+            <span class="block text-sm">Definida pela sua função — não é possível alterar.</span>
+          </p>
+        </>
+      ) : (
+        <select
+          id={campo.nome}
+          name={campo.nome}
+          aria-describedby={descritoPor}
+          aria-invalid={erro ? 'true' : undefined}
+          class={classeBase}
+        >
+          <option value="">— nenhuma —</option>
+          {secretarias.map((s) => (
+            <option value={s.id} selected={valor === s.id}>
+              {s.nome}
+            </option>
+          ))}
+        </select>
+      ))
+  }
+
+  {
+    (campo.tipo === 'imagem' || campo.tipo === 'arquivo') && (
+      <div data-campo-arquivo={campo.nome}>
+        {/* Guarda o identificador do arquivo já gravado no CMS. */}
+        <input type="hidden" name={campo.nome} value={valor} data-arquivo-id />
+
+        {valor && (
+          <p class="mt-1 text-sm text-grafite">
+            Arquivo atual:{' '}
+            <a href={`/assets/${valor}`} target="_blank" rel="noopener noreferrer" class="text-azul underline">
+              abrir
+            </a>{' '}
+            <button type="button" data-arquivo-remover class="ml-2 text-vermelho underline">
+              remover
+            </button>
+          </p>
+        )}
+
+        <input
+          id={campo.nome}
+          name={`${campo.nome}__arquivo`}
+          type="file"
+          accept={campo.tipo === 'imagem' ? 'image/png,image/jpeg,image/webp' : undefined}
+          aria-describedby={descritoPor}
+          aria-invalid={erro ? 'true' : undefined}
+          class="mt-1 w-full rounded-md border border-prata bg-papel px-3 py-2"
+        />
+        <p data-arquivo-estado class="mt-1 text-sm text-grafite" role="status" />
+      </div>
+    )
+  }
+
+  {
+    !['rico', 'texto_longo', 'selecao', 'secretaria', 'imagem', 'arquivo', 'booleano'].includes(campo.tipo) && (
+      <input
+        id={campo.nome}
+        name={campo.nome}
+        type={
+          campo.tipo === 'data'
+            ? 'date'
+            : campo.tipo === 'datahora'
+              ? 'datetime-local'
+              : campo.tipo === 'numero'
+                ? 'number'
+                : campo.tipo === 'email'
+                  ? 'email'
+                  : campo.tipo === 'url'
+                    ? 'url'
+                    : campo.tipo === 'telefone'
+                      ? 'tel'
+                      : 'text'
+        }
+        value={valor}
+        maxlength={campo.maximo}
+        data-slug-de={campo.tipo === 'slug' ? campo.derivadoDe : undefined}
+        aria-describedby={descritoPor}
+        aria-invalid={erro ? 'true' : undefined}
+        class={classeBase}
+      />
+    )
+  }
+
+  {campo.ajuda && <p id={idAjuda!} class="mt-1 text-sm text-grafite">{campo.ajuda}</p>}
+  {erro && <p id={idErro!} class="mt-1 text-sm font-semibold text-vermelho">{erro}</p>}
+</div>

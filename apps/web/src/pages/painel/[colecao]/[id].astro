@@ -1,0 +1,202 @@
+---
+/**
+ * Editar um item de conteúdo, com as ações do fluxo na mesma tela.
+ *
+ * Duas coisas convivem aqui de propósito: o formulário (conteúdo) e as
+ * transições (situação). Separá-las obrigaria a secretaria a salvar numa tela e
+ * ir a outra para enviar à revisão — a origem clássica de "corrigi e esqueci
+ * de mandar".
+ *
+ * Salvar e mudar de situação são envios DIFERENTES, nunca o mesmo botão: um
+ * clique não pode publicar sem querer.
+ */
+import Painel from '../../../layouts/Painel.astro';
+import Formulario from '../../../componentes/painel/Formulario.astro';
+import { CAMPOS, campoRotulo } from '../../../lib/painel/campos.ts';
+import { lerFormulario, paraCampo } from '../../../lib/painel/formulario.ts';
+import { ROTULO, atualizarItem, colecaoOuNulo, listarSecretarias, mudarSituacao, obterItem } from '../../../lib/painel/cms.ts';
+import { APARENCIA, TRANSICOES, podeEditar, transicoesDe } from '../../../lib/painel/fluxo.ts';
+import { conflitoDeInteresse, podeNoPapel } from '../../../lib/painel/sessao.ts';
+import { dataHora } from '../../../lib/formato.ts';
+import type { Situacao } from '../../../lib/tipos.ts';
+
+const sessao = Astro.locals.sessao!;
+const colecao = colecaoOuNulo(Astro.params.colecao ?? '');
+if (!colecao) return Astro.rewrite('/404');
+
+const id = Astro.params.id ?? '';
+const campos = CAMPOS[colecao];
+const nomesDosCampos = campos.map((c) => c.nome);
+
+let aviso: { tipo: 'ok' | 'erro'; texto: string } | null = null;
+let erros: Record<string, string> = {};
+let avisos: string[] = [];
+let digitado: Record<string, string> | null = null;
+
+if (Astro.url.searchParams.get('criado') === '1') {
+  aviso = { tipo: 'ok', texto: 'Rascunho criado. Continue preenchendo ou envie para revisão.' };
+}
+
+if (Astro.request.method === 'POST') {
+  const formulario = await Astro.request.formData();
+  const acaoDeFluxo = String(formulario.get('acao') ?? '');
+
+  if (acaoDeFluxo) {
+    /* --- mudança de situação --- */
+    const destino = String(formulario.get('destino') ?? '') as Situacao;
+    const autor = String(formulario.get('autor') ?? '') || null;
+    const transicao = TRANSICOES.find((t) => t.acao === acaoDeFluxo && t.para === destino);
+
+    if (!transicao) {
+      aviso = { tipo: 'erro', texto: 'Ação inválida.' };
+    } else if (!podeNoPapel(sessao.usuario.papel, transicao.acao)) {
+      aviso = { tipo: 'erro', texto: 'Sua função no portal não permite esta ação.' };
+    } else if (conflitoDeInteresse(sessao, autor, transicao.acao)) {
+      aviso = { tipo: 'erro', texto: 'Você redigiu este item — a conferência precisa ser de outra pessoa.' };
+    } else {
+      const r = await mudarSituacao(sessao, colecao, id, destino);
+      aviso = r.ok
+        ? { tipo: 'ok', texto: `${transicao.rotulo}: concluído.` }
+        : { tipo: 'erro', texto: r.motivo };
+      console.info(
+        `[fluxo] ${sessao.usuario.email} ${r.ok ? 'moveu' : 'FALHOU ao mover'} ${colecao}/${id} para "${destino}"`,
+      );
+    }
+  } else {
+    /* --- gravação do conteúdo --- */
+    const leitura = await lerFormulario(sessao, campos, formulario);
+    erros = leitura.erros;
+    avisos = leitura.avisos;
+    digitado = leitura.digitado;
+
+    if (Object.keys(erros).length === 0) {
+      const r = await atualizarItem(sessao, colecao, id, leitura.valores);
+      if (r.ok) {
+        aviso = { tipo: 'ok', texto: 'Alterações salvas.' };
+        digitado = null; // recarrega do CMS, para mostrar o que ficou gravado
+        console.info(`[fluxo] ${sessao.usuario.email} salvou ${colecao}/${id}`);
+      } else {
+        aviso = { tipo: 'erro', texto: r.motivo };
+      }
+    }
+  }
+}
+
+const resultado = await obterItem(sessao, colecao, id, nomesDosCampos);
+
+// Sessão inválida não é erro de conteúdo: a pessoa precisa entrar de novo, e
+// volta direto para este item depois disso.
+if (!resultado.ok && resultado.status === 401) {
+  return Astro.redirect(`/painel/entrar?destino=${encodeURIComponent(Astro.url.pathname)}`, 303);
+}
+if (!resultado.ok) {
+  return Astro.rewrite(`/painel/${colecao}?inacessivel=${encodeURIComponent(resultado.motivo)}`);
+}
+
+const item = resultado.dados;
+const situacao = (item.status ?? 'rascunho') as Situacao;
+const editavel = podeEditar(sessao.usuario.papel, situacao);
+const acoes = transicoesDe(sessao, situacao, item.user_created ?? null);
+
+// Depois de um erro de validação vale o que a pessoa digitou; caso contrário,
+// o que está gravado. Perder texto por causa de um campo errado é inaceitável.
+const valores: Record<string, string> =
+  digitado ?? Object.fromEntries(campos.map((c) => [c.nome, paraCampo(c, item[c.nome])]));
+
+const secretariaFixa = sessao.usuario.papel === 'Redator de secretaria' ? sessao.usuario.secretaria : null;
+const listaSecretarias = await listarSecretarias(sessao);
+const secretarias = listaSecretarias.ok ? listaSecretarias.dados : [];
+
+const titulo = String(item[campoRotulo(colecao)] ?? '(sem título)');
+---
+
+<Painel titulo={titulo} sessao={sessao}>
+  <nav class="text-sm text-grafite">
+    <a href="/painel" class="text-azul underline">Fila</a> <span aria-hidden="true">›</span>
+    <a href={`/painel/${colecao}`} class="text-azul underline">{ROTULO[colecao]}</a>
+    <span aria-hidden="true">›</span> Editar
+  </nav>
+
+  <div class="mt-2 flex flex-wrap items-baseline justify-between gap-3">
+    <h1 class="text-2xl font-bold text-azul-escuro">{titulo}</h1>
+    <span class={`rounded-full border px-3 py-1 text-sm ${APARENCIA[situacao].classe}`}>
+      {APARENCIA[situacao].rotulo}
+    </span>
+  </div>
+
+  {
+    item.date_updated && (
+      <p class="mt-1 text-sm text-grafite">Última alteração em {dataHora(item.date_updated)}</p>
+    )
+  }
+
+  {
+    aviso && (
+      <div
+        role={aviso.tipo === 'erro' ? 'alert' : 'status'}
+        class={`mt-4 rounded-md border-l-4 bg-papel p-4 ${
+          aviso.tipo === 'erro' ? 'border-vermelho text-vermelho' : 'border-verde text-verde-texto'
+        }`}
+      >
+        {aviso.texto}
+      </div>
+    )
+  }
+
+  {
+    acoes.length > 0 && (
+      <section class="mt-6 rounded-lg border border-prata bg-papel p-5">
+        <h2 class="font-bold text-azul-escuro">Situação</h2>
+        <p class="mt-1 text-sm text-grafite">
+          Salve suas alterações antes de mudar a situação — as duas coisas são envios separados.
+        </p>
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+          {acoes.map((t) =>
+            t.impedimento ? (
+              <p class="text-sm text-grafite">{t.impedimento}</p>
+            ) : (
+              <form method="post" data-confirmar={t.confirmar ?? undefined}>
+                <input type="hidden" name="acao" value={t.acao} />
+                <input type="hidden" name="destino" value={t.para} />
+                <input type="hidden" name="autor" value={item.user_created ?? ''} />
+                <button
+                  type="submit"
+                  class={
+                    t.peso === 'principal'
+                      ? 'rounded-md bg-azul px-4 py-2 text-sm font-semibold text-papel hover:bg-azul-escuro'
+                      : 'rounded-md border border-prata px-4 py-2 text-sm font-semibold text-grafite hover:border-azul hover:text-azul'
+                  }
+                >
+                  {t.rotulo}
+                </button>
+              </form>
+            ),
+          )}
+        </div>
+      </section>
+    )
+  }
+
+  <div class="mt-6 rounded-lg border border-prata bg-papel p-6">
+    <Formulario
+      campos={campos}
+      valores={valores}
+      erros={erros}
+      avisos={avisos}
+      secretarias={secretarias}
+      secretariaFixa={secretariaFixa}
+      rotuloBotao="Salvar alterações"
+      cancelarPara={`/painel/${colecao}`}
+      somenteLeitura={!editavel}
+    />
+  </div>
+</Painel>
+
+<script>
+  document.querySelectorAll<HTMLFormElement>('form[data-confirmar]').forEach((formulario) => {
+    formulario.addEventListener('submit', (evento) => {
+      const pergunta = formulario.dataset.confirmar;
+      if (pergunta && !window.confirm(pergunta)) evento.preventDefault();
+    });
+  });
+</script>

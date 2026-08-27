@@ -1,6 +1,9 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { secretariaPorSlug } from '../../lib/conteudo';
+// Segunda barreira: conteúdo também entra pelo painel do Directus, que não
+// passa pelo formulário do painel de contribuição. Aqui nada escapa.
+import { limpar } from '../../lib/sanitizar';
 
 const { slug } = Astro.params;
 const { dado: secretaria } = await secretariaPorSlug(slug ?? '');
@@ -31,7 +34,7 @@ if (secretaria.horario_atendimento) contatos.push({ rotulo: 'Atendimento', valor
     <h1 class="mt-4 text-3xl font-bold text-azul-escuro sm:text-4xl">{secretaria.nome}</h1>
     {secretaria.sigla && <p class="mt-1 text-grafite">{secretaria.sigla}</p>}
 
-    {secretaria.descricao && <div class="conteudo-rico mt-6" set:html={secretaria.descricao} />}
+    {secretaria.descricao && <div class="conteudo-rico mt-6" set:html={limpar(secretaria.descricao)} />}
 
     {
       contatos.length > 0 && (

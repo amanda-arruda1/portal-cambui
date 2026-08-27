@@ -1,0 +1,88 @@
+---
+/**
+ * Criar um item de conteúdo.
+ *
+ * Nasce sempre como rascunho: quem carimba a situação é a permissão de criação
+ * no Directus (`presets` em infra/directus/papeis.json), não esta tela. Por
+ * isso o campo 'status' não aparece no formulário — não há como escolher.
+ */
+import Painel from '../../../layouts/Painel.astro';
+import Formulario from '../../../componentes/painel/Formulario.astro';
+import { CAMPOS } from '../../../lib/painel/campos.ts';
+import { lerFormulario } from '../../../lib/painel/formulario.ts';
+import { ROTULO, colecaoOuNulo, criarItem, listarSecretarias } from '../../../lib/painel/cms.ts';
+import { podeNoPapel } from '../../../lib/painel/sessao.ts';
+
+const sessao = Astro.locals.sessao!;
+const colecao = colecaoOuNulo(Astro.params.colecao ?? '');
+if (!colecao) return Astro.rewrite('/404');
+
+const campos = CAMPOS[colecao];
+
+if (!podeNoPapel(sessao.usuario.papel, 'criar')) {
+  return Astro.rewrite('/404');
+}
+
+let valores: Record<string, string> = {};
+let erros: Record<string, string> = {};
+let avisos: string[] = [];
+
+// O redator não escolhe secretaria: o Directus carimba a dele na criação, e
+// oferecer um seletor que será ignorado só confundiria.
+const secretariaFixa = sessao.usuario.papel === 'Redator de secretaria' ? sessao.usuario.secretaria : null;
+
+const listaSecretarias = await listarSecretarias(sessao);
+const secretarias = listaSecretarias.ok ? listaSecretarias.dados : [];
+
+if (Astro.request.method === 'POST') {
+  const formulario = await Astro.request.formData();
+  const leitura = await lerFormulario(sessao, campos, formulario);
+  valores = leitura.digitado;
+  erros = leitura.erros;
+  avisos = leitura.avisos;
+
+  if (Object.keys(erros).length === 0) {
+    const r = await criarItem(sessao, colecao, leitura.valores);
+    if (r.ok) {
+      console.info(`[fluxo] ${sessao.usuario.email} criou ${colecao}/${r.dados.id}`);
+      return Astro.redirect(`/painel/${colecao}/${r.dados.id}?criado=1`, 303);
+    }
+    avisos = [];
+    erros = { __geral: r.motivo };
+  }
+}
+---
+
+<Painel titulo={`Novo — ${ROTULO[colecao]}`} sessao={sessao}>
+  <nav class="text-sm text-grafite">
+    <a href="/painel" class="text-azul underline">Fila</a> <span aria-hidden="true">›</span>
+    <a href={`/painel/${colecao}`} class="text-azul underline">{ROTULO[colecao]}</a>
+    <span aria-hidden="true">›</span> Novo
+  </nav>
+
+  <h1 class="mt-2 text-2xl font-bold text-azul-escuro">Novo item — {ROTULO[colecao]}</h1>
+  <p class="mt-1 text-grafite">
+    O item é salvo como <strong>rascunho</strong>. Ele só vai para revisão quando você mandar.
+  </p>
+
+  {
+    erros.__geral && (
+      <div role="alert" class="mt-4 rounded-md border-l-4 border-vermelho bg-papel p-4 text-vermelho">
+        {erros.__geral}
+      </div>
+    )
+  }
+
+  <div class="mt-6 rounded-lg border border-prata bg-papel p-6">
+    <Formulario
+      campos={campos}
+      valores={valores}
+      erros={erros}
+      avisos={avisos}
+      secretarias={secretarias}
+      secretariaFixa={secretariaFixa}
+      rotuloBotao="Salvar rascunho"
+      cancelarPara={`/painel/${colecao}`}
+    />
+  </div>
+</Painel>
