@@ -19,7 +19,6 @@
     "",
     "Aplicado por aplicar-papeis.mjs. Rodar com --simular antes."
   ],
-
   "campo_secretaria_no_usuario": {
     "_comentario": [
       "Sem isto, 'redator' só poderia ser dono dos próprios itens. A prefeitura",
@@ -31,14 +30,12 @@
     "colecao_destino": "secretarias",
     "nota": "Secretaria a que a pessoa pertence. Define o que ela enxerga e edita no painel."
   },
-
   "_escopos": {
     "tudo": "Sem filtro de linha.",
     "secretaria": "Só itens cujo campo 'secretaria' é a secretaria da pessoa.",
     "propria_secretaria": "Na coleção 'secretarias': só a linha da própria secretaria.",
     "nenhum": "A coleção não aparece para esta política."
   },
-
   "politicas": [
     {
       "nome": "Portal — Redator de secretaria",
@@ -58,19 +55,124 @@
         "arquiva. Apagar de verdade é operação de administrador, com intenção."
       ],
       "colecoes": {
-        "noticias":    { "acoes": ["create", "read", "update"], "escopo": "secretaria", "situacao_ao_criar": "rascunho", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao"], "situacoes_destino": ["rascunho", "em_revisao"] },
-        "servicos":    { "acoes": ["create", "read", "update"], "escopo": "secretaria", "situacao_ao_criar": "rascunho", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao"], "situacoes_destino": ["rascunho", "em_revisao"] },
-        "documentos":  { "acoes": ["create", "read", "update"], "escopo": "secretaria", "situacao_ao_criar": "rascunho", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao"], "situacoes_destino": ["rascunho", "em_revisao"] },
-        "secretarias": { "acoes": ["read", "update"], "escopo": "propria_secretaria", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao"], "situacoes_destino": ["rascunho", "em_revisao"] },
-        "paginas":     { "acoes": ["read"], "escopo": "tudo", "situacoes_visiveis": ["publicado"] },
-        "links_uteis": { "acoes": ["read"], "escopo": "tudo", "situacoes_visiveis": ["publicado"] }
+        "noticias": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "secretaria",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao"
+          ]
+        },
+        "servicos": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "secretaria",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao"
+          ]
+        },
+        "documentos": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "secretaria",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao"
+          ]
+        },
+        "secretarias": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "propria_secretaria",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao"
+          ]
+        },
+        "paginas": {
+          "acoes": [
+            "read"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "publicado"
+          ]
+        },
+        "links_uteis": {
+          "acoes": [
+            "read"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "publicado"
+          ]
+        }
       },
       "_comentario_paginas": [
         "'paginas' e 'links_uteis' são conteúdo institucional do município, não",
         "de uma pasta: quem escreve são revisor e publicador. Redator só lê."
       ]
     },
-
     {
       "nome": "Portal — Revisor",
       "icone": "fact_check",
@@ -85,15 +187,164 @@
         "contorna chamando a API."
       ],
       "colecoes": {
-        "noticias":    { "acoes": ["create", "read", "update"], "escopo": "tudo", "situacao_ao_criar": "rascunho", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao", "aprovado"], "situacoes_destino": ["rascunho", "em_revisao", "aprovado"] },
-        "servicos":    { "acoes": ["create", "read", "update"], "escopo": "tudo", "situacao_ao_criar": "rascunho", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao", "aprovado"], "situacoes_destino": ["rascunho", "em_revisao", "aprovado"] },
-        "documentos":  { "acoes": ["create", "read", "update"], "escopo": "tudo", "situacao_ao_criar": "rascunho", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao", "aprovado"], "situacoes_destino": ["rascunho", "em_revisao", "aprovado"] },
-        "secretarias": { "acoes": ["create", "read", "update"], "escopo": "tudo", "situacao_ao_criar": "rascunho", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao", "aprovado"], "situacoes_destino": ["rascunho", "em_revisao", "aprovado"] },
-        "paginas":     { "acoes": ["create", "read", "update"], "escopo": "tudo", "situacao_ao_criar": "rascunho", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao", "aprovado"], "situacoes_destino": ["rascunho", "em_revisao", "aprovado"] },
-        "links_uteis": { "acoes": ["create", "read", "update"], "escopo": "tudo", "situacao_ao_criar": "rascunho", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao", "aprovado"], "situacoes_destino": ["rascunho", "em_revisao", "aprovado"] }
+        "noticias": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ]
+        },
+        "servicos": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ]
+        },
+        "documentos": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ]
+        },
+        "secretarias": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ]
+        },
+        "paginas": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ]
+        },
+        "links_uteis": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ]
+        }
       }
     },
-
     {
       "nome": "Portal — Publicador",
       "icone": "publish",
@@ -111,20 +362,179 @@
         "passo está em docs/fase-3."
       ],
       "colecoes": {
-        "noticias":    { "acoes": ["read", "update"], "escopo": "tudo", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["aprovado", "publicado", "arquivado"], "situacoes_destino": ["aprovado", "publicado", "arquivado"] },
-        "servicos":    { "acoes": ["read", "update"], "escopo": "tudo", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["aprovado", "publicado", "arquivado"], "situacoes_destino": ["aprovado", "publicado", "arquivado"] },
-        "documentos":  { "acoes": ["read", "update"], "escopo": "tudo", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["aprovado", "publicado", "arquivado"], "situacoes_destino": ["aprovado", "publicado", "arquivado"] },
-        "secretarias": { "acoes": ["read", "update"], "escopo": "tudo", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["aprovado", "publicado", "arquivado"], "situacoes_destino": ["aprovado", "publicado", "arquivado"] },
-        "paginas":     { "acoes": ["read", "update"], "escopo": "tudo", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["aprovado", "publicado", "arquivado"], "situacoes_destino": ["aprovado", "publicado", "arquivado"] },
-        "links_uteis": { "acoes": ["read", "update"], "escopo": "tudo", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["aprovado", "publicado", "arquivado"], "situacoes_destino": ["aprovado", "publicado", "arquivado"] }
+        "noticias": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_destino": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ]
+        },
+        "servicos": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_destino": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ]
+        },
+        "documentos": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_destino": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ]
+        },
+        "secretarias": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_destino": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ]
+        },
+        "paginas": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_destino": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ]
+        },
+        "links_uteis": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_destino": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ]
+        }
       }
     }
   ],
-
   "papeis": [
-    { "nome": "Redator de secretaria", "icone": "edit_note", "descricao": "Ponta das secretarias: escreve e envia para revisão.", "politicas": ["Portal — Redator de secretaria"] },
-    { "nome": "Revisor", "icone": "fact_check", "descricao": "Confere e aprova o que as secretarias enviaram.", "politicas": ["Portal — Revisor"] },
-    { "nome": "Publicador", "icone": "publish", "descricao": "Publica o aprovado. Exige segundo fator.", "politicas": ["Portal — Revisor", "Portal — Publicador"] }
+    {
+      "nome": "Redator de secretaria",
+      "icone": "edit_note",
+      "descricao": "Ponta das secretarias: escreve e envia para revisão.",
+      "politicas": [
+        "Portal — Redator de secretaria"
+      ]
+    },
+    {
+      "nome": "Revisor",
+      "icone": "fact_check",
+      "descricao": "Confere e aprova o que as secretarias enviaram.",
+      "politicas": [
+        "Portal — Revisor"
+      ]
+    },
+    {
+      "nome": "Publicador",
+      "icone": "publish",
+      "descricao": "Publica o aprovado. Exige segundo fator.",
+      "politicas": [
+        "Portal — Revisor",
+        "Portal — Publicador"
+      ]
+    }
   ],
   "_comentario_papeis": [
     "O publicador acumula a política de revisor porque, na prática, quem publica",
@@ -133,7 +543,6 @@
     "fluxo do painel (docs/fase-3), porque depende de quem escreveu o item, e o",
     "Directus não expressa 'diferente do autor' em permissão de linha."
   ],
-
   "publico": {
     "_comentario": [
       "A política pública é a única que a internet inteira usa. Duas travas:",
@@ -146,17 +555,81 @@
       "caminho relacional. Ler 'secretaria.nome' numa notícia depende de haver",
       "permissão de leitura na coleção secretarias — e há, logo acima.",
       "Campo novo no esquema que o portal precise ler tem de ser somado aqui,",
-      "senão a página simplesmente não recebe o dado."
+      "senão a página simplesmente não recebe o dado.",
+      "ATENÇÃO: 'status' PRECISA estar na lista. O portal o inclui em toda consulta (lib/conteudo.ts) e o Directus devolve 403 para pedido que cite campo fora da permissão — a página inteira degradava para vazio, sem erro visível. Só aparece quando existe conteúdo para mostrar. Vazar 'status' aqui não custa nada: as únicas linhas legíveis já são as publicadas."
     ],
     "somente_leitura": true,
     "filtro_situacao": "publicado",
     "colecoes": {
-      "secretarias": ["id", "nome", "slug", "sigla", "descricao", "responsavel", "cargo_responsavel", "endereco", "telefone", "email", "horario_atendimento", "ordem"],
-      "noticias": ["id", "titulo", "slug", "resumo", "conteudo", "imagem", "imagem_descricao", "data_publicacao", "destaque", "secretaria"],
-      "servicos": ["id", "nome", "slug", "descricao", "categoria", "publico_alvo", "como_solicitar", "url_externa", "secretaria"],
-      "documentos": ["id", "titulo", "tipo", "numero", "data_documento", "descricao", "arquivo", "url_externa", "secretaria"],
-      "paginas": ["id", "titulo", "slug", "conteudo", "atualizado_em"],
-      "links_uteis": ["id", "nome", "url", "descricao", "grupo", "ordem"]
+      "secretarias": [
+        "id",
+        "status",
+        "nome",
+        "slug",
+        "sigla",
+        "descricao",
+        "responsavel",
+        "cargo_responsavel",
+        "endereco",
+        "telefone",
+        "email",
+        "horario_atendimento",
+        "ordem"
+      ],
+      "noticias": [
+        "id",
+        "status",
+        "titulo",
+        "slug",
+        "resumo",
+        "conteudo",
+        "imagem",
+        "imagem_descricao",
+        "data_publicacao",
+        "destaque",
+        "secretaria"
+      ],
+      "servicos": [
+        "id",
+        "status",
+        "nome",
+        "slug",
+        "descricao",
+        "categoria",
+        "publico_alvo",
+        "como_solicitar",
+        "url_externa",
+        "secretaria"
+      ],
+      "documentos": [
+        "id",
+        "status",
+        "titulo",
+        "tipo",
+        "numero",
+        "data_documento",
+        "descricao",
+        "arquivo",
+        "url_externa",
+        "secretaria"
+      ],
+      "paginas": [
+        "id",
+        "status",
+        "titulo",
+        "slug",
+        "conteudo",
+        "atualizado_em"
+      ],
+      "links_uteis": [
+        "id",
+        "status",
+        "nome",
+        "url",
+        "descricao",
+        "grupo",
+        "ordem"
+      ]
     },
     "arquivos": {
       "_comentario": [
@@ -166,7 +639,15 @@
         "foi publicado fica fora do alcance de quem adivinhar o UUID."
       ],
       "pasta_publica": "publicos",
-      "campos": ["id", "title", "type", "filesize", "width", "height", "description"]
+      "campos": [
+        "id",
+        "title",
+        "type",
+        "filesize",
+        "width",
+        "height",
+        "description"
+      ]
     }
   }
 }

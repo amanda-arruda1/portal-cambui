@@ -81,6 +81,9 @@ export function transicoesDe(
  * levar 403 ao salvar — a decisão continua sendo do Directus.
  */
 const EDITAVEIS: Record<string, Situacao[]> = {
+  // Ver a nota em podeNoPapel: o Administrator do Directus ignora permissão de
+  // linha, então a tela não tem por que limitá-lo.
+  Administrator: ['rascunho', 'em_revisao', 'aprovado', 'publicado', 'arquivado'],
   'Redator de secretaria': ['rascunho', 'em_revisao'],
   Revisor: ['rascunho', 'em_revisao', 'aprovado'],
   Publicador: ['rascunho', 'em_revisao', 'aprovado', 'publicado', 'arquivado'],
@@ -104,6 +107,8 @@ export const ORDEM_DA_FILA: Situacao[] = ['em_revisao', 'aprovado', 'rascunho', 
 /** O que cada papel vê primeiro ao abrir o painel — a fila que é dele. */
 export function filaDoPapel(papel: string | null): { situacoes: Situacao[]; titulo: string } {
   switch (papel) {
+    case 'Administrator':
+      return { situacoes: ['em_revisao', 'aprovado', 'rascunho'], titulo: 'Todo o conteúdo' };
     case 'Publicador':
       return { situacoes: ['aprovado', 'em_revisao'], titulo: 'Aguardando publicação' };
     case 'Revisor':

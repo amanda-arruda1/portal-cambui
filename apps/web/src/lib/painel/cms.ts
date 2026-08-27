@@ -11,7 +11,8 @@
  * de conteúdo está fora" em português, não despejar exceção.
  */
 
-import type { Sessao } from './sessao.ts';
+import type { Acao, Sessao } from './sessao.ts';
+import { conflitoDeInteresse } from './sessao.ts';
 import type { Situacao } from '../tipos.ts';
 
 const BASE = (process.env.DIRECTUS_INTERNAL_URL || 'http://127.0.0.1:8055').replace(/\/+$/, '');
@@ -152,14 +153,43 @@ export async function contarPorSituacao(
   return { ok: true, dados: contagem };
 }
 
-/** Muda a situação de um item. Quem valida se a transição é permitida é o
- *  Directus, pela 'validation' da permissão de update. */
+/**
+ * Muda a situação de um item.
+ *
+ * Se a transição é permitida para o papel, quem decide é o Directus, pela
+ * 'validation' da permissão de update. O que ESTA função garante é a outra
+ * regra, a que o Directus não expressa: ninguém aprova nem publica o próprio
+ * texto.
+ *
+ * O autor é lido do CMS aqui dentro, de propósito. A versão anterior confiava
+ * no campo oculto 'autor' que vinha do formulário — e campo de formulário é
+ * dado do cliente: bastava forjar outro identificador para aprovar o próprio
+ * texto. Foi reproduzido em teste antes da correção. O valor que a tela envia
+ * agora serve só para decidir se o botão aparece.
+ */
 export async function mudarSituacao(
   sessao: Sessao,
   colecao: ColecaoEditavel,
   id: string,
   destino: Situacao,
+  acao?: Acao,
 ): Promise<Saida<{ id: string; status: Situacao }>> {
+  if (acao === 'aprovar' || acao === 'publicar') {
+    const atual = await chamar<{ user_created: string | null }>(
+      sessao,
+      `/items/${colecao}/${encodeURIComponent(id)}?fields=user_created`,
+    );
+    if (!atual.ok) return atual;
+
+    if (conflitoDeInteresse(sessao, atual.dados.user_created ?? null, acao)) {
+      return {
+        ok: false,
+        status: 409,
+        motivo: 'Você redigiu este item — a conferência precisa ser de outra pessoa.',
+      };
+    }
+  }
+
   return chamar(sessao, `/items/${colecao}/${encodeURIComponent(id)}`, {
     method: 'PATCH',
     body: JSON.stringify({ status: destino }),

@@ -224,6 +224,12 @@ export type Acao = 'criar' | 'enviar_para_revisao' | 'aprovar' | 'devolver' | 'p
  */
 export function podeNoPapel(papel: string | null, acao: Acao): boolean {
   switch (papel) {
+    // Papel que o próprio Directus cria na instalação. Tem admin_access, ou
+    // seja, ignora permissão de linha por definição — esconder botão dele não
+    // protege nada e só impediria a TI de semear o conteúdo inicial pelo
+    // painel, que é a única tela disponível enquanto admin. não resolve no DNS.
+    case 'Administrator':
+      return true;
     case 'Redator de secretaria':
       return acao === 'criar' || acao === 'enviar_para_revisao';
     case 'Revisor':

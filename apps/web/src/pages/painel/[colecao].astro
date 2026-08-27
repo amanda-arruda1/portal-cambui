@@ -46,7 +46,7 @@ if (Astro.request.method === 'POST') {
   } else if (conflitoDeInteresse(sessao, autor, transicao.acao)) {
     aviso = { tipo: 'erro', texto: 'Você redigiu este item — a conferência precisa ser de outra pessoa.' };
   } else {
-    const r = await mudarSituacao(sessao, colecao, id, destino);
+    const r = await mudarSituacao(sessao, colecao, id, destino, transicao.acao);
     if (r.ok) {
       aviso = { tipo: 'ok', texto: `${transicao.rotulo}: concluído.` };
       console.info(`[fluxo] ${sessao.usuario.email} moveu ${colecao}/${id} para "${destino}"`);

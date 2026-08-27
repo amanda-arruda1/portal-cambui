@@ -3,13 +3,13 @@
 Portal institucional do município de Cambuí/MG.
 Operação e engenharia: **TRUSTIT — Confiança e Tecnologia Ltda.**
 
-> **Estado em 27/08/2026:** Fases 0 a 3 concluídas. O portal público e o painel
-> de contribuição das secretarias estão no ar e podem ser vistos em
+> **Estado em 27/08/2026:** Fases 0 a 3 concluídas e **o CMS está ligado** —
+> administrador criado, 6 coleções aplicadas, 3 papéis e 50 permissões no
+> lugar. O portal e o painel podem ser usados em
 > **https://portal.cambui.mg.gov.br** (endereço de homologação, fora dos
-> buscadores). O domínio oficial ainda é servido pelo **portal antigo**
-> (ASP.NET, outra máquina) — a virada não foi feita. O CMS está vazio de
-> propósito: o esquema não foi aplicado porque depende de um administrador, que
-> depende do **e-mail institucional**. Ver [O que falta](#o-que-falta).
+> buscadores); o painel fica em `/painel`. O domínio oficial ainda é servido
+> pelo **portal antigo** (ASP.NET, outra máquina) — a virada não foi feita, e
+> não há conteúdo cadastrado. Ver [O que falta](#o-que-falta).
 
 ## Stack
 
@@ -200,6 +200,7 @@ Todos em `infra/scripts/`, executados como root.
 | 08 | `08-portal-web.sh` | Compila o Astro e instala o serviço `portal-web` | executado |
 | 09 | `09-clamav.sh` | Instala ClamAV, freshclam e o timer de varredura | executado |
 | 05 | `05-certificado.sh` | Emite o certificado de origem (DNS-01) | **pendente** |
+| 10 | `10-primeiro-acesso.sh` | Cria o administrador, aplica esquema e papéis | executado |
 
 O 06 vem depois do 02 e antes (ou logo após) o 03, porque reinicia o Docker.
 O `04 --abrir-443` só faz sentido quando o proxy passar a encaminhar a 443.
@@ -214,12 +215,20 @@ cd /opt/portal-cambui/apps/web && npm run build \
 
 ## O que falta
 
-**Caminho crítico — e-mail institucional.** Destrava em cadeia:
+**Já feito em 27/08/2026** pelo `10-primeiro-acesso.sh`: administrador criado
+(conta técnica da TrustIT, substituível pelo institucional depois), esquema
+aplicado, papéis e permissões aplicados. O ciclo editorial foi exercitado de
+ponta a ponta e o item de teste, removido.
 
-1. administrador do Directus (`directus users create`);
-2. `infra/directus/aplicar-esquema.mjs` — as 6 coleções;
-3. `infra/directus/aplicar-papeis.mjs` — políticas, papéis e permissões;
-4. cadastro das pessoas das secretarias, com o campo `secretaria` preenchido.
+**Próximo passo — conteúdo real**, pelo próprio painel:
+
+1. cadastrar as **secretarias** — é o que dá escopo aos redatores;
+2. criar as pessoas das secretarias no Directus, com papel e o campo
+   `secretaria` preenchido;
+3. quem for **Publicador** precisa configurar o segundo fator **antes** de
+   receber o papel: a política exige 2FA e a conta fica inacessível sem ele;
+4. preencher `apps/web/src/dados/instituicional.ts` quando a prefeitura enviar
+   CNPJ, endereço, telefones e horários.
 
 **Bloqueio de segurança — TLS até a origem.** O TLS termina no proxy
 (Cloudflare no domínio oficial, Caddy no de homologação) e o último trecho até
