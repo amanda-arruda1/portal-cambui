@@ -246,6 +246,36 @@ export async function listarSecretarias(sessao: Sessao): Promise<Saida<OpcaoSecr
   return chamar<OpcaoSecretaria[]>(sessao, `/items/secretarias?${parametros}`);
 }
 
+/**
+ * Identificador da pasta de arquivos públicos, resolvido pelo nome.
+ *
+ * O campo 'folder' do Directus é uma chave UUID, não um rótulo. Mandar o nome
+ * ("publicos") faz o Postgres recusar com
+ * `invalid input syntax for type uuid`, e o envio inteiro morre com HTTP 500 —
+ * foi o que aconteceu com os primeiros arquivos enviados de verdade.
+ *
+ * Resolvido em tempo de execução e guardado em memória: assim a pasta pode ser
+ * recriada pelo painel do Directus sem que nada aqui precise mudar. Uma falha
+ * na busca devolve null, e o arquivo vai para a raiz — melhor guardar fora da
+ * pasta do que recusar o envio de um edital.
+ */
+let pastaPublicaId: string | null | undefined;
+
+async function idDaPastaPublica(sessao: Sessao, nome: string): Promise<string | null> {
+  if (pastaPublicaId !== undefined) return pastaPublicaId;
+
+  const parametros = new URLSearchParams({ 'filter[name][_eq]': nome, fields: 'id', limit: '1' });
+  const r = await chamar<Array<{ id: string }>>(sessao, `/folders?${parametros}`);
+
+  if (!r.ok || !r.dados[0]) {
+    console.warn(`[upload] pasta "${nome}" não encontrada no CMS — o arquivo será guardado na raiz.`);
+    pastaPublicaId = null;
+  } else {
+    pastaPublicaId = r.dados[0].id;
+  }
+  return pastaPublicaId;
+}
+
 export interface ArquivoEnviado {
   id: string;
   filename_download: string;
@@ -268,7 +298,11 @@ export async function enviarArquivo(
   pasta?: string,
 ): Promise<Saida<ArquivoEnviado>> {
   const forma = new FormData();
-  if (pasta) forma.append('folder', pasta);
+
+  // 'pasta' chega como NOME (é o que está em papeis.json e faz sentido ler);
+  // o Directus quer o UUID.
+  const idPasta = pasta ? await idDaPastaPublica(sessao, pasta) : null;
+  if (idPasta) forma.append('folder', idPasta);
   forma.append('title', nome);
   // O campo do arquivo tem de ser o ÚLTIMO: o Directus lê os metadados na
   // ordem em que chegam e ignora o que vier depois do binário.
