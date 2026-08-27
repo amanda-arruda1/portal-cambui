@@ -91,3 +91,79 @@ caminhos reais do Let's Encrypt:
   tabelas do Directus e zero usuários.
 - **Faixa da TrustIT** ainda não aplicada ao bloco `admin.` do Nginx nem à
   regra da 9025.
+
+---
+
+## Revisão de 2026-08-27 — o portal está atrás da Cloudflare
+
+O levantamento anterior parou em "existe um proxy `10.180.0.13` que encaminha
+a porta 80 para esta VM". A resolução dos nomes mostrou o resto do caminho:
+
+    cidadão -> Cloudflare (termina o TLS) -> proxy 10.180.0.13 -> esta VM:80
+
+Evidências, todas de 2026-08-27:
+
+- `www` e o apex resolvem para IPs da Cloudflare (`104.21.77.119`,
+  `172.67.207.93` e IPv6 `2606:4700::/32`); respostas trazem `server: cloudflare`
+  e `cf-ray`.
+- O que responde hoje **é o portal antigo**, um ASP.NET MVC 5
+  (`x-aspnetmvc-version: 5.2`, erros em `/Erro?aspxerrorpath=`), 166 KB de HTML.
+  Não é esta VM — a 80 daqui segue fechada no firewalld.
+- O certificado público é da **Google Trust Services** via Cloudflare, cobrindo
+  `prefeituradecambui.mg.gov.br` e `*.prefeituradecambui.mg.gov.br`, válido até
+  2026-11-09 e renovado pela própria Cloudflare.
+- `admin.prefeituradecambui.mg.gov.br` **não resolve**: o registro não existe.
+- `http://www…/.well-known/acme-challenge/<token>` devolve **302** para a página
+  de erro do portal antigo. O desafio HTTP-01 nunca chega até nós.
+
+### O que mudou na configuração
+
+1. **Sem redirect para HTTPS na origem.** O `10-http.conf` fazia
+   `return 301 https://$host` em tudo. Nessa topologia isso é um laço: a
+   Cloudflare já atendeu o cidadão em https e nos repassa em http; devolver
+   https manda o cidadão de volta para ela. O redirect http→https passa a ser
+   responsabilidade da borda ("Always Use HTTPS" no painel).
+2. **A porta 80 virou a porta de atendimento de verdade**, não um trampolim.
+   Os corpos dos sites saíram para `snippets/site-publico.conf` e
+   `snippets/site-admin.conf`, incluídos tanto na 80 quanto na 443 — servir o
+   mesmo conteúdo em duas portas com dois textos garantiria divergência.
+3. **IP real do cidadão** via `set_real_ip_from 10.180.0.13` +
+   `real_ip_header CF-Connecting-IP`. Sem isso todo acesso chegava como o IP do
+   proxy e o rate limit tratava o município inteiro como um cliente só: um
+   visitante ativo derrubaria o site para os demais.
+4. **`X-Forwarded-Proto` repassado como `$esquema_publico`**, não `$scheme`.
+   O último salto até nós é http; usar `$scheme` faria o Astro e o Directus
+   montarem links `http://` e o Directus recusar cookies `secure`.
+5. **Firewall restrito.** O 04 abre a 80 só para `10.180.0.13` (rich rule), não
+   para `0.0.0.0/0`. A VM não tem IP público: abrir para o mundo não traria um
+   visitante a mais, só exporia o servidor à rede interna.
+6. **Endpoint `/_saude`** em todos os server blocks, inclusive no
+   `default_server` — um health check do proxy feito por IP receberia 444 e
+   marcaria a VM como fora do ar.
+7. **O 05 mudou de papel.** O caminho HTTP-01 foi removido: falharia sempre e
+   gastaria a cota da autoridade. No lugar entraram `--diagnostico`,
+   `--origem-cloudflare` (instala um Origin Certificate) e `--dns-cloudflare`
+   (Let's Encrypt por DNS-01). Ambos gravam em `/etc/nginx/ssl/origem/`, que é
+   o que o `20-https.conf` espera — o Nginx não sabe de onde veio o par.
+
+### Validação feita
+
+Container `nginx:1.29-alpine` com a configuração publicada, sem tocar no host:
+
+| caso | resultado |
+|---|---|
+| `www` com `X-Forwarded-Proto: https` | 502 → página de implantação, **sem redirect** |
+| apex com XFP https | 301 → `https://www…` |
+| apex sem XFP | 301 → `http://www…` (esquema local) |
+| apex só com `CF-Visitor` | 301 → `https://www…` |
+| `/admin` no domínio público | 404 |
+| Host desconhecido | 444 |
+| `/_saude` por IP | 200 |
+| `CF-Connecting-IP: 189.45.12.200` | logado como cliente; `via=` mostra o salto |
+
+### Ainda em aberto
+
+- Quem administra a conta Cloudflare do município (necessário para o Origin
+  Certificate, para o registro `admin`, e para o "Always Use HTTPS").
+- Se o proxy `10.180.0.13` encaminha a 443. Hoje só manda a 80.
+- Plano da virada: o portal antigo continua atendendo até que o novo assuma.

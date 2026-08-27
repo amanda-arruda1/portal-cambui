@@ -1,11 +1,22 @@
-# Portal Cambuí — sites em HTTPS.
+# Portal Cambuí — TLS NA ORIGEM (opcional).
 #
 # ARQUIVO INATIVO. Só passa a valer quando renomeado para 20-https.conf, o que
-# o script 05-certificado.sh faz automaticamente APÓS a emissão. Ativá-lo antes
-# impede o Nginx de iniciar: ele aponta para certificados que ainda não existem.
+# o 05-certificado.sh faz após instalar o par de chaves. Ativá-lo antes impede
+# o Nginx de iniciar: ele aponta para certificados que ainda não existem.
 #
-# Um único certificado cobre os três nomes (SANs), emitido com
-# -d www.… -d …(apex) -d admin.…, por isso o diretório é o do primeiro nome.
+# QUANDO ISTO É NECESSÁRIO:
+#   O cidadão JÁ navega em https — a Cloudflare termina o TLS na borda. Este
+#   arquivo cobre o outro trecho: Cloudflare/proxy -> esta VM, hoje em texto
+#   claro dentro da rede do município. Ativar isto é o que permite pôr a
+#   Cloudflare em modo "Full (strict)", em vez de "Flexible".
+#
+#   Depende de duas coisas que ainda NÃO estão confirmadas:
+#     1. o proxy 10.180.0.13 encaminhar a 443 até aqui (hoje só manda a 80);
+#     2. a 443 liberada no firewalld para esse IP (o 04 faz, se pedido).
+#
+# ORIGEM DO CERTIFICADO: os caminhos abaixo são neutros de propósito. Serve
+# tanto um Cloudflare Origin Certificate quanto um Let's Encrypt por DNS-01 —
+# o 05-certificado.sh popula /etc/nginx/ssl/origem/ nos dois casos.
 
 # Host desconhecido batendo na 443: recusa o handshake, sem revelar nada.
 server {
@@ -23,9 +34,8 @@ server {
     http2       on;
     server_name prefeituradecambui.mg.gov.br;
 
-    ssl_certificate     /etc/letsencrypt/live/www.prefeituradecambui.mg.gov.br/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/www.prefeituradecambui.mg.gov.br/privkey.pem;
-    ssl_trusted_certificate /etc/letsencrypt/live/www.prefeituradecambui.mg.gov.br/chain.pem;
+    ssl_certificate     /etc/nginx/ssl/origem/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/origem/privkey.pem;
     include /etc/nginx/snippets/tls.conf;
 
     return 301 https://www.prefeituradecambui.mg.gov.br$request_uri;
@@ -38,41 +48,15 @@ server {
     http2       on;
     server_name www.prefeituradecambui.mg.gov.br;
 
-    ssl_certificate     /etc/letsencrypt/live/www.prefeituradecambui.mg.gov.br/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/www.prefeituradecambui.mg.gov.br/privkey.pem;
-    ssl_trusted_certificate /etc/letsencrypt/live/www.prefeituradecambui.mg.gov.br/chain.pem;
+    ssl_certificate     /etc/nginx/ssl/origem/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/origem/privkey.pem;
     include /etc/nginx/snippets/tls.conf;
-    include /etc/nginx/snippets/seguranca.conf;
 
-    # HSTS: ativar só depois de confirmar que o certificado renova sozinho.
-    # add_header Strict-Transport-Security "max-age=31536000" always;
+    # HSTS: NÃO ativar aqui. Quem fala com o navegador é a Cloudflare — o
+    # cabeçalho tem de sair de lá. Emitido nesta origem, ele nem chega ao
+    # cidadão, e se chegar é por caminho que não controlamos.
 
-    limit_req  zone=geral burst=60 nodelay;
-    limit_conn conexoes 40;
-
-    # Enquanto o Astro não existe (Fase 2), o 502 vira página de implantação.
-    error_page 502 503 504 /_manutencao.html;
-    location = /_manutencao.html {
-        root /var/www/portal;
-        internal;
-    }
-
-    location / {
-        proxy_pass http://127.0.0.1:4321;
-        include /etc/nginx/snippets/proxy.conf;
-    }
-
-    # Arquivos servidos pelo Directus (imagens de notícias, documentos).
-    location /assets/ {
-        proxy_pass http://127.0.0.1:8055/assets/;
-        include /etc/nginx/snippets/proxy.conf;
-        proxy_cache_valid 200 1h;
-        expires 7d;
-        add_header Cache-Control "public";
-    }
-
-    # O painel do Directus não se acessa pelo domínio público.
-    location /admin { return 404; }
+    include /etc/nginx/snippets/site-publico.conf;
 }
 
 # --- Painel administrativo (Directus) ---
@@ -82,31 +66,9 @@ server {
     http2       on;
     server_name admin.prefeituradecambui.mg.gov.br;
 
-    ssl_certificate     /etc/letsencrypt/live/www.prefeituradecambui.mg.gov.br/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/www.prefeituradecambui.mg.gov.br/privkey.pem;
-    ssl_trusted_certificate /etc/letsencrypt/live/www.prefeituradecambui.mg.gov.br/chain.pem;
+    ssl_certificate     /etc/nginx/ssl/origem/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/origem/privkey.pem;
     include /etc/nginx/snippets/tls.conf;
 
-    # Sem CSP própria: o Directus envia a dele. Impor uma aqui quebra o painel.
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy        "same-origin" always;
-
-    # QUANDO A FAIXA DA TRUSTIT FOR CONFIRMADA, restringir o painel a ela:
-    # allow 0.0.0.0/0;   <- trocar pela faixa
-    # deny  all;
-
-    limit_conn conexoes 20;
-
-    # Autenticação é o alvo de força bruta: limite bem mais apertado.
-    location ~ ^/auth/(login|refresh) {
-        limit_req zone=login burst=5 nodelay;
-        proxy_pass http://127.0.0.1:8055;
-        include /etc/nginx/snippets/proxy.conf;
-    }
-
-    location / {
-        limit_req zone=geral burst=40 nodelay;
-        proxy_pass http://127.0.0.1:8055;
-        include /etc/nginx/snippets/proxy.conf;
-    }
+    include /etc/nginx/snippets/site-admin.conf;
 }
