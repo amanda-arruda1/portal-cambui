@@ -34,6 +34,9 @@ export default defineConfig({
       { hostname: 'www.prefeituradecambui.mg.gov.br' },
       { hostname: 'prefeituradecambui.mg.gov.br' },
       { hostname: 'admin.prefeituradecambui.mg.gov.br' },
+      // Endereço de homologação, atendido pelo Caddy em 10.180.0.13. Sem ele
+      // aqui, todo formulário do painel levaria 403 neste host.
+      { hostname: 'portal.cambui.mg.gov.br' },
     ],
   },
 

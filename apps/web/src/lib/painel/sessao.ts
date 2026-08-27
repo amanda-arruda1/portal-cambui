@@ -44,6 +44,7 @@ const CHAVE = 'painel';
 
 export type FalhaEntrada =
   | { tipo: 'credenciais' }
+  | { tipo: 'email_malformado' }
   | { tipo: 'otp_necessario' }
   | { tipo: 'otp_invalido' }
   | { tipo: 'segundo_fator_ausente' }
@@ -52,6 +53,7 @@ export type FalhaEntrada =
 
 export const MENSAGEM: Record<FalhaEntrada['tipo'], string> = {
   credenciais: 'E-mail ou senha incorretos.',
+  email_malformado: 'Esse endereço de e-mail não está completo. Confira e tente de novo.',
   otp_necessario: 'Informe o código de seis dígitos do seu aplicativo autenticador.',
   otp_invalido: 'O código do autenticador não confere. Ele muda a cada 30 segundos — tente o próximo.',
   segundo_fator_ausente:
@@ -77,6 +79,10 @@ function classificarErro(corpo: unknown, status: number): FalhaEntrada {
   const mensagens = erros.map((e) => (e.message ?? '').toLowerCase());
 
   if (codigos.includes('INVALID_OTP')) return { tipo: 'otp_invalido' };
+  // O Directus recusa e-mail malformado com 400 antes de olhar a senha. Sem
+  // este caso, quem digitasse o endereço pela metade lia "sistema
+  // indisponível" e abriria chamado com a TI por um erro de digitação.
+  if (codigos.includes('INVALID_PAYLOAD')) return { tipo: 'email_malformado' };
   // O Directus responde INVALID_CREDENTIALS com a mensagem citando o OTP tanto
   // quando falta quanto quando a conta não tem segundo fator configurado.
   if (mensagens.some((m) => m.includes('otp') || m.includes('two-factor') || m.includes('tfa'))) {

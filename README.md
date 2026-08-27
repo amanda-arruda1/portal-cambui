@@ -4,11 +4,12 @@ Portal institucional do município de Cambuí/MG.
 Operação e engenharia: **TRUSTIT — Confiança e Tecnologia Ltda.**
 
 > **Estado em 27/08/2026:** Fases 0 a 3 concluídas. O portal público e o painel
-> de contribuição das secretarias estão **no ar no servidor**, mas o domínio
-> ainda é servido pelo **portal antigo** (ASP.NET, outra máquina) — a virada não
-> foi feita. O CMS está vazio de propósito: o esquema não foi aplicado porque
-> depende de um administrador, que depende do **e-mail institucional**. Ver
-> [O que falta](#o-que-falta).
+> de contribuição das secretarias estão no ar e podem ser vistos em
+> **https://portal.cambui.mg.gov.br** (endereço de homologação, fora dos
+> buscadores). O domínio oficial ainda é servido pelo **portal antigo**
+> (ASP.NET, outra máquina) — a virada não foi feita. O CMS está vazio de
+> propósito: o esquema não foi aplicado porque depende de um administrador, que
+> depende do **e-mail institucional**. Ver [O que falta](#o-que-falta).
 
 ## Stack
 
@@ -68,20 +69,44 @@ proxy).
 - `admin.prefeituradecambui.mg.gov.br` — painel do Directus. **O registro DNS
   ainda não existe**, e o acesso é para a TI, não para as secretarias.
 
-**Nome interno não previsto (descoberto em 27/08/2026):**
-`portal.cambui.mg.gov.br` existe no DNS **interno** do município e aponta para
-duas máquinas ao mesmo tempo — `10.180.5.110` (esta VM) e `10.180.0.13` (o
-proxy). Ninguém do projeto criou esse registro. Hoje ele **não serve nada**:
+- `portal.cambui.mg.gov.br` — **endereço de homologação, no ar**. Serve o portal
+  novo para conferência antes da virada. Ver abaixo.
 
-- o Nginx daqui não tem `server_name` para esse nome, então devolve `444`
-  (fecha a conexão sem responder), que é o comportamento do `default_server`;
-- e a porta 80 só aceita conexão vinda de `10.180.0.13`, então um navegador da
-  rede que caia no IP da VM é barrado antes do Nginx.
+### O endereço de homologação
 
-Se a intenção de quem criou era ter um endereço interno para conferir o portal
-novo antes da virada, dá para atender: basta declarar o `server_name` e ajustar
-a origem liberada. **Precisa de decisão** — abrir a 80 para a faixa interna
-amplia a superfície, e é o tipo de mudança que o operador executa.
+Descoberto em 27/08/2026: este nome já existia, criado fora do projeto, com o
+caminho inteiro montado — só a nossa ponta recusava. O trajeto real é:
+
+```
+navegador → NAT 177.10.44.44 → Caddy em 10.180.0.13 → esta VM :80
+            (TLS termina no Caddy, certificado Let's Encrypt próprio)
+```
+
+**Ele é público.** O DNS é de horizonte dividido: de fora resolve para
+`177.10.44.44` (o IP de saída NAT do município); de dentro, para `10.180.5.110`
+e `10.180.0.13`. Qualquer pessoa na internet alcança — não é um preview
+interno, e o certificado Let's Encrypt só existe porque o nome é publicamente
+alcançável.
+
+Consequências que já viraram configuração:
+
+- `X-Robots-Tag: noindex, nofollow, noarchive` e um `robots.txt` que bloqueia
+  tudo **apenas neste host** — enquanto o oficial for o portal antigo, este
+  endereço serve uma versão em construção do site do município e não pode
+  aparecer em buscador. O domínio oficial mantém o `robots.txt` normal.
+- A tag `canonical` continua apontando para `www.prefeituradecambui.mg.gov.br`,
+  então nem por engano o endereço de homologação disputa indexação.
+- `portal.cambui.mg.gov.br` entrou em `security.allowedDomains` no
+  `astro.config.mjs` — sem isso, todo formulário do painel levaria 403 neste
+  host.
+
+**O painel também responde aqui** (`/painel`), e portanto está exposto à
+internet. Hoje o risco é baixo porque o Directus tem zero usuários — não há
+credencial que passe. Mas o trecho Caddy → VM ainda é HTTP simples: é rede
+interna do município, bem melhor do que a internet aberta, e ainda assim não é
+TLS fim a fim. **Antes de cadastrar as secretarias, decidir entre** emitir o
+certificado de origem (`05-certificado.sh`) **ou** restringir `/painel` neste
+host à faixa da TrustIT.
 
 ## Estrutura
 
@@ -196,10 +221,13 @@ cd /opt/portal-cambui/apps/web && npm run build \
 3. `infra/directus/aplicar-papeis.mjs` — políticas, papéis e permissões;
 4. cadastro das pessoas das secretarias, com o campo `secretaria` preenchido.
 
-**Bloqueio de segurança — certificado de origem.** Sem TLS entre o proxy
-`10.180.0.13` e esta VM, a senha das secretarias trafega em claro nesse trecho.
-**Não cadastrar ninguém no painel antes disso.** Falta o token da Cloudflare com
-`Zone:DNS:Edit` e o e-mail para avisos de expiração.
+**Bloqueio de segurança — TLS até a origem.** O TLS termina no proxy
+(Cloudflare no domínio oficial, Caddy no de homologação) e o último trecho até
+esta VM é HTTP simples. É rede interna do município, mas a senha das secretarias
+passaria por ele em claro. **Antes de cadastrar as secretarias**, resolver por
+um dos dois caminhos: emitir o certificado de origem — falta o token da
+Cloudflare com `Zone:DNS:Edit` e o e-mail para avisos — ou restringir `/painel`
+à faixa da TrustIT.
 
 **Outras pendências:** faixa de IP da TrustIT (a 9025 está aberta a qualquer
 origem e o fail2ban segue parado por isso); o proxy encaminhar a 443; combinar
