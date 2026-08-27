@@ -1,0 +1,150 @@
+---
+/**
+ * Política de privacidade e cookies — LGPD (Lei 13.709/2018).
+ *
+ * Escrita para ser lida, não para proteger o município. Frase curta, sem
+ * "outrossim", e dizendo exatamente o que o portal faz hoje — inclusive que
+ * ele quase não coleta nada. Uma política honestamente curta vale mais do que
+ * seis páginas de texto padrão que ninguém lê.
+ */
+import Base from '../layouts/Base.astro';
+import Carreira from '../componentes/Carreira.astro';
+import TituloPagina from '../componentes/TituloPagina.astro';
+import { MUNICIPIO, ENDERECO, TELEFONES } from '../dados/instituicional';
+---
+
+<Base
+  titulo="Privacidade e cookies"
+  descricao="Como o portal da Prefeitura de Cambuí trata dados pessoais, conforme a Lei Geral de Proteção de Dados."
+>
+  <TituloPagina
+    rotulo="LGPD"
+    titulo="Privacidade e cookies"
+    chamada="O que este portal faz — e o que não faz — com dados pessoais, conforme a Lei 13.709/2018."
+    trilha={[{ rotulo: 'Privacidade e cookies' }]}
+  />
+
+  <Carreira numero="01" rotulo="O essencial, em três frases" fundo="papel">
+    <div class="conteudo-rico texto entra">
+      <p>
+        Este portal <strong>não pede cadastro</strong> para nada que o cidadão vá fazer nele, e
+        <strong>não usa cookies de publicidade nem de rastreamento</strong>.
+      </p>
+      <p>
+        O único cookie que gravamos é de <strong>sessão</strong>, e só para quem entra no painel de
+        conteúdo das secretarias — servidores da Prefeitura. Ele guarda apenas um identificador
+        aleatório, expira ao sair e não acompanha navegação.
+      </p>
+      <p>
+        Vários serviços do município acontecem em <strong>sistemas de terceiros</strong> (tributos,
+        ouvidoria, licenciamento, transparência). Quando você sai daqui para um deles, passa a valer
+        a política daquele sistema — e nós avisamos, em texto, sempre que um link leva para fora.
+      </p>
+    </div>
+  </Carreira>
+
+  <Carreira numero="02" rotulo="O que é registrado">
+    <div class="conteudo-rico texto entra">
+      <h2>Registros de acesso</h2>
+      <p>
+        O servidor do portal guarda registros técnicos de acesso — endereço IP, data, hora, página
+        pedida e navegador. São necessários para operar o serviço com segurança e identificar
+        ataques, e é a base legal do cumprimento de obrigação e do exercício regular de direitos.
+        Não são usados para traçar perfil de ninguém.
+      </p>
+
+      <h2>Formulários</h2>
+      <p>
+        A busca do portal não guarda o que você digita associado a você. Manifestações de ouvidoria
+        e pedidos de informação são feitos no sistema próprio do município (e-Ouve), com política e
+        prazos próprios.
+      </p>
+
+      <h2>Ferramenta de acessibilidade</h2>
+      <p>
+        O <strong>VLibras</strong>, tradutor oficial para Libras do Governo Federal, é carregado a
+        partir de <code>vlibras.gov.br</code>. Ao usá-lo, seu navegador se comunica com aquele
+        serviço, sob a política do gov.br.
+      </p>
+
+      <h2>Suas preferências</h2>
+      <p>
+        Tamanho de texto e alto contraste ficam guardados no seu próprio navegador
+        (<code>localStorage</code>) e nunca são enviados ao servidor. Limpar os dados do site apaga
+        essas escolhas.
+      </p>
+    </div>
+  </Carreira>
+
+  <Carreira numero="03" rotulo="Seus direitos" fundo="papel">
+    <div class="conteudo-rico texto entra">
+      <p>A Lei Geral de Proteção de Dados garante a você, entre outros direitos:</p>
+      <ul>
+        <li>saber se tratamos dados seus e quais são;</li>
+        <li>pedir correção de dado incompleto ou desatualizado;</li>
+        <li>pedir anonimização, bloqueio ou eliminação de dado desnecessário;</li>
+        <li>saber com quem compartilhamos;</li>
+        <li>revogar consentimento.</li>
+      </ul>
+      <p>
+        Para exercer qualquer um deles, procure a Prefeitura pelos canais abaixo ou registre um
+        pedido na <a href="http://cambui.eouve.com.br/" target="_blank" rel="noopener noreferrer">Ouvidoria / e-SIC</a>,
+        que tem prazo legal de resposta.
+      </p>
+
+      <h2>Encarregado pelo tratamento de dados</h2>
+      <p>
+        <strong>TODO(cliente):</strong> a LGPD exige a indicação pública de um encarregado (DPO),
+        com nome e canal de contato. Assim que a Prefeitura designar, o dado entra aqui.
+      </p>
+
+      <h2>Controlador</h2>
+      <p>
+        {MUNICIPIO.nomeCompleto}
+        {ENDERECO && (
+          <>
+            <br />{ENDERECO.logradouro}, {ENDERECO.numero} — {ENDERECO.bairro} — {ENDERECO.cidade}/{ENDERECO.uf} — CEP {ENDERECO.cep}
+          </>
+        )}
+        {TELEFONES.length > 0 && <><br />{TELEFONES[0].numero}</>}
+      </p>
+    </div>
+  </Carreira>
+
+  <Carreira numero="04" rotulo="Rever sua escolha de cookies">
+    <div class="entra">
+      <p class="texto-simples">
+        Você pode mudar a qualquer momento o que aceitou. O aviso volta a aparecer no pé da tela.
+      </p>
+      <button type="button" id="rever-cookies" class="botao">Rever preferências de cookies</button>
+      <p class="t-micro atualizado">Última atualização desta política: 27 de agosto de 2026.</p>
+    </div>
+  </Carreira>
+</Base>
+
+<style>
+  .texto { margin-top: 1.25rem; }
+  .texto-simples { margin-top: 1.25rem; max-width: var(--container-leitura); color: var(--color-musgo); }
+  .botao {
+    margin-top: 1.25rem;
+    font: inherit;
+    font-weight: 600;
+    min-height: 2.9rem;
+    padding: 0.7rem 1.4rem;
+    border-radius: 4px;
+    border: 2px solid var(--color-serra);
+    background: var(--color-serra);
+    color: var(--color-papel);
+    cursor: pointer;
+  }
+  .botao:hover { background: var(--color-serra-noite); border-color: var(--color-serra-noite); }
+  .atualizado { margin-top: 1.5rem; color: var(--color-musgo); }
+</style>
+
+<script>
+  document.getElementById('rever-cookies')?.addEventListener('click', () => {
+    try { localStorage.removeItem('cambui:cookies'); } catch { /* modo privado */ }
+    document.getElementById('aviso-cookies')?.removeAttribute('hidden');
+    document.getElementById('aviso-cookies')?.scrollIntoView({ block: 'nearest' });
+  });
+</script>

@@ -1,41 +1,77 @@
 ---
+/**
+ * A Prefeitura — secretarias.
+ *
+ * Chega-se aqui querendo falar com alguém. Por isso a lista mostra sigla,
+ * nome e, quando houver, o telefone direto — antes de qualquer descrição.
+ */
 import Base from '../../layouts/Base.astro';
-import EstadoVazio from '../../componentes/EstadoVazio.astro';
 import TituloPagina from '../../componentes/TituloPagina.astro';
+import Carreira from '../../componentes/Carreira.astro';
+import LinhaTarefa from '../../componentes/LinhaTarefa.astro';
 import { secretarias } from '../../lib/conteudo';
+import { AUTARQUIAS } from '../../dados/instituicional';
 
 const { dados, indisponivel } = await secretarias();
 ---
 
 <Base
-  titulo="Secretarias"
-  descricao="Secretarias e departamentos da Prefeitura Municipal de Cambuí, com responsáveis e canais de atendimento."
+  titulo="A Prefeitura"
+  descricao="Secretarias, autarquias e como falar com cada área da Prefeitura Municipal de Cambuí."
 >
-  <TituloPagina titulo="Secretarias" descricao="Estrutura administrativa e canais de atendimento." />
+  <TituloPagina
+    rotulo="A Prefeitura"
+    titulo="Com quem você precisa falar"
+    chamada="As secretarias do município, com endereço, telefone e horário de atendimento. Se não souber a qual delas recorrer, comece pelos serviços."
+    trilha={[{ rotulo: 'A Prefeitura' }]}
+  />
 
-  <div class="mx-auto max-w-6xl px-4 py-10">
+  <Carreira numero="01" rotulo="Secretarias municipais" fundo="papel">
     {
-      dados.length === 0 ? (
-        <EstadoVazio indisponivel={indisponivel} assunto="dados das secretarias" />
+      indisponivel || dados.length === 0 ? (
+        <p class="vazio">
+          A relação das secretarias está sendo publicada. Enquanto isso, o telefone geral da
+          Prefeitura atende e encaminha — <a href="/contato"><span class="fio-foco">ver contato</span></a>.
+        </p>
       ) : (
-        <ul class="grid gap-6 md:grid-cols-2">
-          {dados.map((secretaria) => (
-            <li class="rounded-lg border border-prata p-5">
-              <h2 class="text-xl font-bold text-azul-escuro">
-                <a href={`/secretarias/${secretaria.slug}`} class="hover:underline">
-                  {secretaria.nome}
-                </a>
-              </h2>
-              {secretaria.responsavel && (
-                <p class="mt-1 text-sm text-grafite">
-                  {secretaria.cargo_responsavel ?? 'Responsável'}: {secretaria.responsavel}
-                </p>
-              )}
-              {secretaria.descricao && <p class="mt-3 text-grafite">{secretaria.descricao}</p>}
+        <ul class="lista entra">
+          {dados.map((s) => (
+            <li>
+              <LinhaTarefa
+                tarefa={{
+                  rotulo: s.nome,
+                  detalhe: [s.sigla, s.telefone, s.horario_atendimento].filter(Boolean).join(' · ') || 'Ver endereço e contato',
+                  destino: `/secretarias/${s.slug}`,
+                }}
+              />
             </li>
           ))}
         </ul>
       )
     }
-  </div>
+  </Carreira>
+
+  <Carreira numero="02" rotulo="Autarquias" titulo="Serviços com portal próprio">
+    <ul class="lista entra">
+      {AUTARQUIAS.map((a) => (
+        <li>
+          <LinhaTarefa tarefa={{ rotulo: `${a.sigla} — ${a.nome}`, detalhe: a.descricao, destino: a.url, externo: true }} />
+        </li>
+      ))}
+    </ul>
+  </Carreira>
+
+  <Carreira numero="03" rotulo="Organograma e estrutura" fundo="papel">
+    <p class="pendente">
+      <strong>TODO(cliente):</strong> organograma institucional, competências de cada secretaria e a
+      relação dos conselhos municipais. O portal atual publica esse material; ele será migrado para
+      o CMS pela própria administração.
+    </p>
+  </Carreira>
 </Base>
+
+<style>
+  .lista { list-style: none; margin: 1.25rem 0 0; padding: 0; }
+  .vazio, .pendente { margin-top: 1.25rem; color: var(--color-musgo); max-width: var(--container-leitura); }
+  .vazio a { color: var(--color-serra); font-weight: 600; text-decoration: none; }
+</style>

@@ -1,0 +1,80 @@
+---
+/**
+ * A CARREIRA — unidade de composição do portal.
+ *
+ * Faixa horizontal com duas trilhas: a ourela (estreita, à esquerda, com o
+ * número e o rótulo da seção mais o fio tricotado) e o corpo (largo).
+ *
+ * Por que existe: se a unidade de composição é a faixa, a grade de
+ * quadradinhos com ícone e rótulo — o anti-padrão nº 1 dos portais de
+ * prefeitura — fica impossível de construir dentro do sistema. A escolha
+ * formal elimina o clichê antes de ele ser tentado.
+ */
+interface Props {
+  numero: string;
+  rotulo: string;
+  titulo?: string;
+  /** 'neblina' (padrão), 'papel' para destacar, 'serra' para inverter. */
+  fundo?: 'neblina' | 'papel' | 'serra';
+  id?: string;
+  /** Link opcional à direita do título — "ver todas", por exemplo. */
+  acao?: { rotulo: string; destino: string };
+}
+const { numero, rotulo, titulo, fundo = 'neblina', id, acao } = Astro.props;
+---
+
+<section id={id} class:list={['faixa', `f-${fundo}`, fundo === 'serra' && 'sobre-serra']}>
+  <div class="carreira">
+    <div class="ourela">
+      <div class="marca">
+        <span class="numero t-rotulo" aria-hidden="true">{numero}</span>
+        <span class="fio fio-ourela" aria-hidden="true"></span>
+      </div>
+      <div class="corpo">
+        <div class="cabeca">
+          <h2 class="t-rotulo rotulo">{rotulo}</h2>
+          {acao && (
+            <a href={acao.destino} class="acao">
+              <span class="fio-foco">{acao.rotulo}</span>
+              <span aria-hidden="true"> →</span>
+            </a>
+          )}
+        </div>
+        {titulo && <p class="t-secao titulo">{titulo}</p>}
+        <slot />
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .faixa { padding-block: clamp(2.5rem, 6vw, 4.5rem); }
+  .f-neblina { background: var(--color-neblina); }
+  .f-papel { background: var(--color-papel); }
+  .f-serra { background: var(--color-serra); color: var(--color-papel); }
+
+  .marca { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+  .numero { color: var(--color-carmim); }
+  .f-serra .numero { color: var(--color-papel); opacity: 0.9; }
+  .fio { flex: 1; min-height: 3rem; }
+  .f-serra .fio { filter: invert(1) brightness(2); opacity: 0.5; }
+
+  /* No celular a ourela vira só o fio: a estrutura não muda de natureza,
+     apenas perde a margem. O número migra para junto do rótulo. */
+  @media (max-width: 47.99rem) {
+    .marca { justify-content: stretch; }
+    .numero { display: none; }
+  }
+
+  .cabeca {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem 1.5rem;
+  }
+  .rotulo { color: var(--color-musgo); }
+  .f-serra .rotulo { color: color-mix(in srgb, var(--color-papel) 82%, transparent); }
+  .titulo { margin-top: 0.35rem; max-width: 24ch; }
+  .acao { color: inherit; text-decoration: none; font-weight: 600; font-size: 0.9375rem; }
+</style>

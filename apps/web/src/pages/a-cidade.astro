@@ -1,0 +1,107 @@
+---
+/**
+ * A cidade.
+ *
+ * É aqui que a identidade respira mais solta — e é o único lugar do portal
+ * onde isso é permitido. Serra, malharia e inverno são o que trazem gente a
+ * Cambuí; num portal de prefeitura essa metade costuma virar uma aba morta
+ * chamada "Turismo" com foto de banco de imagens.
+ *
+ * TODO(cliente): fotografias reais da serra, das malharias e do centro. Até
+ * elas chegarem, a página se sustenta em tipografia e no motivo do tricô —
+ * que é honesto, e melhor do que foto genérica de montanha.
+ */
+import Base from '../layouts/Base.astro';
+import Carreira from '../componentes/Carreira.astro';
+import SerraTecida from '../componentes/SerraTecida.astro';
+import LinhaTarefa from '../componentes/LinhaTarefa.astro';
+import { A_CIDADE } from '../dados/cidade';
+
+const NUMEROS = [
+  { valor: '1.030 m', rotulo: 'de altitude', nota: 'na Serra da Mantiqueira' },
+  { valor: 'BR-459', rotulo: 'corta o município', nota: 'a Fernão Dias passa ao lado' },
+  { valor: 'MG / SP', rotulo: 'na divisa', nota: 'Sul de Minas' },
+];
+
+const PARA_QUEM_CHEGA = [
+  { rotulo: 'Portal turístico de Cambuí', detalhe: 'Onde ficar, onde comer, o que visitar', destino: A_CIDADE.portalTuristico, externo: true },
+  { rotulo: 'Notícias e agenda da cidade', detalhe: 'Festivais, feiras e eventos do município', destino: '/noticias' },
+  { rotulo: 'Serviços para quem mora aqui', detalhe: 'IPTU, coleta, saúde, licenciamento', destino: '/servicos' },
+];
+---
+
+<Base
+  titulo="A cidade"
+  descricao="Cambuí fica a mais de mil metros de altitude, na Serra da Mantiqueira, na divisa de Minas com São Paulo. Cidade de malharia, de estrada e de inverno de verdade."
+  colado
+>
+  <div class="abertura">
+    <SerraTecida altura="clamp(9rem, 20vw, 15rem)" />
+    <div class="carreira">
+      <div class="ourela">
+        <span aria-hidden="true"></span>
+        <div class="corpo">
+          <p class="t-rotulo etiqueta">A cidade</p>
+          <h1 class="t-display frase">{A_CIDADE.chamada}</h1>
+          <p class="t-lead sub">{A_CIDADE.texto}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <Carreira numero="01" rotulo="Onde fica" fundo="papel">
+    <dl class="numeros entra">
+      {NUMEROS.map((n) => (
+        <div class="numero">
+          <dt class="valor">{n.valor}</dt>
+          <dd>
+            <span class="rotulo">{n.rotulo}</span>
+            <span class="nota t-micro">{n.nota}</span>
+          </dd>
+        </div>
+      ))}
+    </dl>
+    <p class="t-micro fonte">
+      TODO(cliente): confirmar a altitude oficial e a área do município com o setor de planejamento.
+    </p>
+  </Carreira>
+
+  <Carreira numero="02" rotulo="A malha" fundo="serra" titulo="A cidade que se faz por carreiras">
+    <div class="texto-serra entra">
+      <p class="t-lead">
+        A malharia é o que sustenta Cambuí e o que traz visitante de toda a região o ano inteiro. É
+        também a razão de este portal ser desenhado como é: o ponto de tricô que preenche a serra no
+        topo da página, a régua que separa cada seção e o fio que corre à esquerda de cada texto são
+        o mesmo motivo, em três escalas.
+      </p>
+      <p class="t-lead">
+        Uma carreira de ponto e uma carreira de montanha são o mesmo gesto — fios paralelos que,
+        repetidos, viram forma. O portal do município adota esse gesto como estrutura.
+      </p>
+    </div>
+  </Carreira>
+
+  <Carreira numero="03" rotulo="Para quem chega">
+    <ul class="lista entra">
+      {PARA_QUEM_CHEGA.map((t) => <li><LinhaTarefa tarefa={t} /></li>)}
+    </ul>
+  </Carreira>
+</Base>
+
+<style>
+  .abertura { background: var(--color-neblina); padding-bottom: clamp(2rem, 5vw, 3rem); }
+  .etiqueta { color: var(--color-carmim); margin-top: clamp(1.25rem, 3vw, 2rem); }
+  .frase { margin-top: 0.5rem; max-width: 14ch; }
+  .sub { margin-top: 1.25rem; max-width: var(--container-leitura); color: var(--color-musgo); }
+
+  .numeros { margin-top: 1.5rem; display: grid; gap: 1.75rem; }
+  @media (min-width: 44rem) { .numeros { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2.5rem; } }
+  .valor { font-family: var(--font-display); font-size: clamp(2rem, 4.5vw, 2.9rem); font-weight: 700; letter-spacing: -0.03em; color: var(--color-serra); line-height: 1; }
+  .numero dd { margin: 0.5rem 0 0; display: flex; flex-direction: column; gap: 0.15rem; }
+  .rotulo { font-weight: 600; }
+  .nota { color: var(--color-musgo); }
+  .fonte { margin-top: 2rem; color: var(--color-musgo); }
+
+  .texto-serra { margin-top: 1.25rem; max-width: var(--container-leitura); display: grid; gap: 1.1rem; }
+  .lista { list-style: none; margin: 1.25rem 0 0; padding: 0; }
+</style>

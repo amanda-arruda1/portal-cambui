@@ -1,0 +1,113 @@
+---
+/**
+ * Consentimento de cookies — LGPD (Lei 13.709/2018).
+ *
+ * Regras que o componente respeita, e que a maioria dos banners viola:
+ *   - recusar é TÃO FÁCIL quanto aceitar: dois botões do mesmo tamanho, do
+ *     mesmo peso visual, lado a lado. Nada de "aceitar" em destaque e
+ *     "gerenciar preferências" escondido em texto cinza;
+ *   - consentimento GRANULAR: o que é essencial não é negociável e está dito;
+ *     o que é opcional vem DESMARCADO;
+ *   - nada é carregado antes da escolha;
+ *   - o banner não bloqueia a leitura da página nem sequestra o foco — é um
+ *     diálogo ao pé da tela, não um muro.
+ *
+ * Estado de hoje: o portal usa UM cookie, de sessão, e só para quem entra no
+ * painel das secretarias. Não há analítica. O banner diz exatamente isso em
+ * vez de pedir consentimento genérico "para melhorar sua experiência".
+ */
+---
+
+<div id="aviso-cookies" class="aviso sem-impressao" role="region" aria-label="Aviso sobre cookies" hidden>
+  <div class="carreira">
+    <div class="ourela">
+      <span aria-hidden="true"></span>
+      <div class="corpo">
+        <h2 class="t-sub">Este site usa cookies</h2>
+        <p class="t-micro texto">
+          Usamos <strong>um cookie essencial</strong>, que mantém a sessão de quem entra no painel de
+          conteúdo das secretarias. Ele não identifica você nem acompanha sua navegação, e por ser
+          indispensável ao funcionamento não depende de consentimento.
+        </p>
+
+        <fieldset class="opcoes">
+          <legend class="sr-only">Escolha o que aceitar</legend>
+          <label class="opcao" for="cookie-essenciais">
+            <input type="checkbox" id="cookie-essenciais" checked disabled />
+            <span><strong>Essenciais</strong> — sessão e segurança. Sempre ativos.</span>
+          </label>
+          <label class="opcao" for="cookie-medicao">
+            <input type="checkbox" id="cookie-medicao" name="medicao" />
+            <span><strong>Medição de audiência</strong> — páginas mais procuradas, de forma
+              agregada. Hoje <em>não está em uso</em>; a escolha fica registrada para quando for.</span>
+          </label>
+        </fieldset>
+
+        <div class="botoes">
+          <button type="button" data-cookies="recusar">Recusar opcionais</button>
+          <button type="button" data-cookies="aceitar">Aceitar selecionados</button>
+          <a href="/privacidade" class="link">Política de privacidade</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .aviso {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 60;
+    background: var(--color-papel);
+    border-top: 3px solid var(--color-carmim);
+    box-shadow: 0 -8px 32px rgb(20 28 24 / 0.14);
+    padding-block: 1.25rem;
+  }
+  .texto { color: var(--color-musgo); max-width: var(--container-leitura); margin-top: 0.35rem; }
+  .opcoes { border: 0; padding: 0; margin: 0.9rem 0 0; display: grid; gap: 0.5rem; }
+  .opcao { display: flex; gap: 0.6rem; align-items: flex-start; font-size: 0.875rem; line-height: 1.5; max-width: var(--container-leitura); }
+  .opcao input { margin-top: 0.3rem; width: 1.1rem; height: 1.1rem; flex: none; accent-color: var(--color-serra); }
+
+  .botoes { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 1.1rem; }
+  /* Mesmo tamanho, mesmo peso: recusar não é o botão feio. */
+  .botoes button {
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    padding: 0.7rem 1.4rem;
+    min-height: 2.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 2px solid var(--color-serra);
+    background: var(--color-papel);
+    color: var(--color-serra);
+  }
+  .botoes button[data-cookies='aceitar'] { background: var(--color-serra); color: var(--color-papel); }
+  .botoes button:hover { background: var(--color-serra-noite); color: var(--color-papel); border-color: var(--color-serra-noite); }
+  .link { color: var(--color-serra); font-size: 0.875rem; }
+</style>
+
+<script>
+  const CHAVE = 'cambui:cookies';
+  const aviso = document.getElementById('aviso-cookies');
+
+  function jaDecidiu() {
+    try { return localStorage.getItem(CHAVE) !== null; } catch { return true; }
+  }
+
+  function registrar(medicao: boolean) {
+    try {
+      localStorage.setItem(CHAVE, JSON.stringify({ medicao, em: new Date().toISOString() }));
+    } catch { /* modo privado: a escolha vale pela sessão */ }
+    aviso?.setAttribute('hidden', '');
+  }
+
+  if (!jaDecidiu()) aviso?.removeAttribute('hidden');
+
+  aviso?.querySelector('[data-cookies="recusar"]')?.addEventListener('click', () => registrar(false));
+  aviso?.querySelector('[data-cookies="aceitar"]')?.addEventListener('click', () => {
+    const marcado = aviso.querySelector<HTMLInputElement>('input[name="medicao"]')?.checked ?? false;
+    registrar(marcado);
+  });
+</script>

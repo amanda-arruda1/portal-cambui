@@ -1,0 +1,413 @@
+# Portal de Cambuí — plano de design
+
+> Documento da passada 1. Escrito **antes** de qualquer código, revisado ao fim
+> com a autocrítica registrada na última seção.
+
+---
+
+## 1. Tese
+
+> **Cambuí é uma cidade feita de carreiras.** As carreiras de ponto que saem das
+> malharias — a economia que traz gente de toda a região — e as carreiras de
+> montanha da Mantiqueira que fecham o horizonte são o mesmo gesto: fios
+> paralelos que, repetidos, viram forma. **O portal adota a carreira como
+> unidade de composição.** O conteúdo se organiza em faixas horizontais lidas de
+> fio a fio, nunca em quadros; e a serra que o cidadão vê da janela aparece
+> **tricotada**, ponto a ponto, no topo da página.
+
+Por que isto é de Cambuí e de nenhum outro lugar: a malha não é metáfora
+emprestada, é o setor que sustenta a cidade e a razão pela qual visitantes
+sobem a serra. E a Mantiqueira não é "montanha genérica" — é o recorte
+específico que dá à cidade o clima de altitude, o inverno e os festivais.
+Trocar Cambuí por outro município quebraria as duas metades da tese ao mesmo
+tempo.
+
+**Consequência estrutural, e não só estética:** se a unidade é a carreira, a
+grade de quadradinhos com ícone e rótulo — o anti-padrão número um dos portais
+de prefeitura — fica *impossível de construir* dentro do sistema. A escolha
+formal já elimina o clichê.
+
+---
+
+## 2. Tokens de cor
+
+Extraídos do **brasão oficial do município**, por amostragem dos pixels do
+arquivo em `assets/marca/`. Não é paleta inventada: é a paleta que a cidade já
+tem. As três cores dominantes do brasão, fora o branco, são carmim (20,6% dos
+pixels), azul (11,3%) e verde-escuro (5,9%).
+
+| Token | Hex | O que representa | Onde vive |
+|---|---|---|---|
+| `--serra` | `#0C5430` | O verde do brasão, que é também a Mantiqueira coberta. **Substitui a faixa azul institucional** — é a decisão que mais afasta este portal dos seus pares. | Superfície dominante: hero, faixas de seção, rodapé |
+| `--serra-noite` | `#06301C` | O mesmo verde ao anoitecer na serra. Dá profundidade sem recorrer a preto. | Rodapé, base do hero, estados pressionados |
+| `--carmim` | `#A8303C` | O vermelho do brasão. **Único acento de ação do sistema** — se algo é carmim, é clicável ou é urgente. | Botões primários, sublinhado de foco, o fio do horizonte |
+| `--neblina` | `#E9EDEA` | A névoa que desce sobre a cidade. Neutro frio com viés verde — deliberadamente **não** é o creme `#F4F1EA` que virou assinatura de layout gerado por máquina. | Fundo de página |
+| `--tinta` | `#141C18` | Preto com resto de verde, como tinta sobre lã crua. Nunca `#000`. | Texto corrido |
+| `--musgo` | `#4C5A51` | O liquen na pedra. | Texto secundário, legendas, fios finos |
+
+Branco (`--papel`) entra como superfície, não como cor de marca.
+
+**O azul do brasão (`#304890`) foi deixado de fora de propósito.** Ele é a cor
+que arrastaria o portal de volta para o padrão que estamos fugindo. Fica
+reservado para o brasão em si, onde é obrigatório.
+
+### Contraste verificado (não estimado)
+
+Todos os pares em uso, medidos por script (`ferramentas/contraste.mjs`):
+
+| Par | Razão | AA texto (4.5:1) | AA grande/UI (3:1) |
+|---|---|---|---|
+| tinta sobre neblina | 14,69:1 | ✅ | ✅ |
+| tinta sobre papel | 17,37:1 | ✅ | ✅ |
+| musgo sobre neblina | 6,15:1 | ✅ | ✅ |
+| serra sobre neblina | 7,64:1 | ✅ | ✅ |
+| carmim sobre neblina | 5,63:1 | ✅ | ✅ |
+| carmim sobre papel | 6,66:1 | ✅ | ✅ |
+| papel sobre serra | 9,03:1 | ✅ | ✅ |
+| papel sobre serra-noite | 14,51:1 | ✅ | ✅ |
+| papel sobre carmim | 6,66:1 | ✅ | ✅ |
+
+Nenhum par usado no produto fica abaixo de 5,6:1. Sobra folga para o modo de
+alto contraste, que endurece para preto/branco puros.
+
+---
+
+## 3. Tipografia
+
+Duas famílias, ambas variáveis, ambas **auto-hospedadas**. Fonte via CDN do
+Google significaria que o navegador de cada cidadão faz uma requisição a um
+terceiro só para ler o site da própria prefeitura — inaceitável num portal
+público, e um salto de DNS+TLS a mais no 4G da serra.
+
+| Papel | Família | Peso do arquivo | Por quê |
+|---|---|---|---|
+| **Display** | Bricolage Grotesque (400–800, opsz 12–96) | 77 KB | Grotesca de terminais irregulares, quase cortada à mão. Lê como *feita*, não como corporativa — que é exatamente o registro da malharia. O eixo óptico deixa a manchete apertar sem um segundo arquivo. |
+| **Corpo** | Inter (400–700, opsz 14–32) | 73 KB | Altura de x generosa e aberturas largas. É a decisão certa para um público com fatia relevante de leitores idosos em tela de celular. |
+
+**Sem terceira família, e isso é escolha.** Uma face utilitária custaria mais
+30–70 KB no 4G de serra em troca de pouco: os números tabulares e os rótulos
+saem do próprio Inter com `font-variant-numeric: tabular-nums` e versalete
+espaçado.
+
+### Escala
+
+| Papel | Tamanho | Peso | Entrelinha | Tracking |
+|---|---|---|---|---|
+| Display (hero) | `clamp(2.6rem, 7vw, 5rem)` | 700 | 0,95 | −0,03em |
+| Título de página | `clamp(2rem, 4.2vw, 3rem)` | 700 | 1,05 | −0,02em |
+| Título de seção | `clamp(1.5rem, 2.6vw, 2.05rem)` | 600 | 1,15 | −0,01em |
+| Subtítulo | `1.25rem` | 600 | 1,3 | 0 |
+| **Corpo** | **`1.0625rem` (17px)** | 400 | 1,65 | 0 |
+| Corpo destacado | `1.1875rem` | 400 | 1,55 | 0 |
+| Rótulo | `0.8125rem` | 600 | 1,2 | 0,09em, versalete |
+| Micro | `0.875rem` | 400 | 1,5 | 0 |
+
+O corpo é **17px, não 16px**. Um pixel a mais custa nada e devolve muito para
+quem tem mais de sessenta anos lendo num celular na rua.
+
+---
+
+## 4. Layout
+
+### Duas alternativas estruturais consideradas
+
+**Alternativa A — "Mosaico".** Grade de 12 colunas; serviços e notícias em
+cartões; hero com imagem sangrada. É o que a maioria dos portais faz e o que os
+frameworks entregam de graça.
+
+*Descartada por três razões, e a terceira é decisiva:* (1) é literalmente o
+anti-padrão da grade de quadradinhos; (2) em 360px a grade degrada para uma
+pilha de caixas com rótulo truncado — "Emissão de Certidão…" — e alvo de toque
+pequeno; (3) o cartão obriga a **resumir** o nome do serviço, e resumir nome de
+serviço público é onde o cidadão se perde.
+
+**Alternativa B — "Carreiras". Escolhida.** A página é uma pilha de faixas
+horizontais sangradas. Dentro de cada faixa, uma grade assimétrica de duas
+trilhas:
+
+- a **ourela** (do tecido: a borda que não desfia) — trilha estreita à esquerda
+  que carrega o número da seção, o rótulo em versalete e o fio tricotado
+  vertical;
+- o **corpo** — trilha larga, com o conteúdo em **linhas de largura total**, não
+  em quadros.
+
+Cada serviço é uma linha inteira. Isso dá alvo de toque de 64px de altura
+ocupando a largura da tela, nome de serviço **nunca truncado**, e uma ordem de
+leitura que o leitor de tela percorre sem surpresa.
+
+Em 360px a ourela colapsa para um fio de 3px na borda esquerda; as linhas
+continuam sendo linhas. **A estrutura não muda de natureza no celular** — só
+perde a margem.
+
+### Wireframe — Home
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ ⏭ conteúdo · menu · busca      A− A A+  ◑ contraste  ⟨VLibras⟩│ ← barra de acessibilidade
+├──────────────────────────────────────────────────────────────┤
+│ ▨ BRASÃO   Prefeitura de Cambuí            Transparência ·   │
+│            Minas Gerais                    Ouvidoria · e-SIC │
+│  ┌────────────────────────────────────────────────────┐      │
+│  │ 🔎  O que você precisa resolver?                   │      │ ← busca é o maior
+│  └────────────────────────────────────────────────────┘      │   elemento do cabeçalho
+│  Serviços   A cidade   A Prefeitura   Transparência   Notícias│
+├══════════════════════════════════════════════════════════════┤
+│ ╱╲╱╲╱╲                    A SERRA TECIDA                     │
+│ ╱╲╱╲╱╲╱╲╱╲      (silhueta da Mantiqueira preenchida          │ ← elemento-assinatura
+│ ╱╲╱╲╱╲╱╲╱╲╱╲╱╲   com pontos de tricô; um fio carmim          │
+│ ╱╲╱╲╱╲╱╲╱╲╱╲╱╲╱╲ marca a linha do horizonte)                 │
+│                                                              │
+│   Cambuí resolve                                             │
+│   o seu dia.                                       ← display │
+├──────────────────────────────────────────────────────────────┤
+│ 01 │ O QUE VOCÊ PRECISA HOJE                                 │
+│ ▏  │ ──────────────────────────────────────────────────────  │
+│ ▏  │  Pagar meu IPTU                                    →    │ ← carreiras:
+│ ▏  │ ──────────────────────────────────────────────────────  │   linha inteira,
+│ ▏  │  Ver o dia da coleta no meu bairro                 →    │   verbo primeiro
+│ ▏  │ ──────────────────────────────────────────────────────  │
+│ ▏  │  Marcar consulta na unidade de saúde               →    │
+│ ▏  │ ──────────────────────────────────────────────────────  │
+│ ▏  │  Abrir empresa · alvará · habite-se                →    │
+│ ▏  │ ──────────────────────────────────────────────────────  │
+│ ▏  │  Ver licitações e editais                          →    │
+│ ▏  │ ──────────────────────────────────────────────────────  │
+│ ▏  │  Falar com a Ouvidoria                             →    │
+├──────────────────────────────────────────────────────────────┤
+│ 02 │ COLETA NO MEU BAIRRO            [ Centro        ▾ ]     │ ← módulo local,
+│ ▏  │ Seg · Qua · Sex, a partir das 7h                        │   não existe em
+├──────────────────────────────────────────────────────────────┤   portal nenhum
+│ 03 │ NOTÍCIAS                              todas as notícias │
+│ ▏  │ ┌───────────────────────────┐  27 ago · Obras           │
+│ ▏  │ │  imagem da chamada        │  Título da matéria líder  │ ← 1 líder + linhas,
+│ ▏  │ └───────────────────────────┘  linha fina de resumo     │   não 3 cartões
+│ ▏  │ ──────────────────────────────────────────────────────  │
+│ ▏  │ 26 ago · Saúde   Segunda matéria                        │
+│ ▏  │ 24 ago · Educação  Terceira matéria                     │
+├──────────────────────────────────────────────────────────────┤
+│ 04 │ A CIDADE                                                │
+│ ▏  │  malha · serra · inverno — faixa editorial de turismo   │
+├──────────────────────────────────────────────────────────────┤
+│ 05 │ TRANSPARÊNCIA E ACESSO À INFORMAÇÃO      (LAI em foco)  │
+├══════════════════════════════════════════════════════════════┤
+│  Prefeitura Municipal de Cambuí · CNPJ · Praça Coronel       │
+│  Justiniano, 164 · (35) 3431-1666 · seg a sex, 8h–17h        │ ← identificação, não
+│  Acessibilidade · Privacidade · Mapa do site                 │   5 colunas de links
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Wireframe — página interna (notícia)
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  [barra de acessibilidade + cabeçalho, idênticos]            │
+├──────────────────────────────────────────────────────────────┤
+│ ▏ Início › Notícias › esta matéria                           │
+│ ▏                                                            │
+│ ▏  27 de agosto de 2026 · Secretaria de Obras     ← rótulo   │
+│ ▏                                                            │
+│ ▏  Título da matéria em                                      │
+│ ▏  display, duas linhas                          ← 3.0rem    │
+│ ▏                                                            │
+│ ▏  Linha de resumo em corpo destacado, 1.1875rem.            │
+│ ▏ ──────────────────────────────────────────────────────     │
+│ ▏                                                            │
+│ ▏ ┌────────────────────────────────────────────────┐         │
+│ ▏ │  imagem, proporção 16:9, com legenda abaixo    │         │
+│ ▏ └────────────────────────────────────────────────┘         │
+│ ▏                                                            │
+│ ▏   Corpo em coluna de 62ch — medida de leitura, não a       │
+│ ▏   largura da tela. A ourela à esquerda acompanha a rolagem │
+│ ▏   com o fio tricotado, ancorando a leitura.                │
+│ ▏                                                            │
+│ ▏ ──────────────────────────────────────────────────────     │
+│ ▏  ← Voltar     Compartilhar     Falar com esta secretaria   │
+└──────────────────────────────────────────────────────────────┘
+```
+
+Medida de leitura fixa em **62ch**. A largura da tela não é a largura do texto.
+
+---
+
+## 5. Movimento
+
+**Princípio: o portal não se mexe sozinho.** Movimento aqui serve orientação,
+nunca decoração. Um momento orquestrado, dois microfeedbacks — e nada mais.
+
+| # | Movimento | Propósito | Curva | Duração |
+|---|---|---|---|---|
+| 1 | **A serra tricota** — no primeiro carregamento, os pontos da silhueta se revelam da esquerda para a direita, como carreira saindo do tear | Dar um instante de identidade, uma vez só, sem atrasar leitura nenhuma | `cubic-bezier(.22,.61,.36,1)` | 900ms |
+| 2 | **Fio de foco** — foco e hover puxam um sublinhado carmim que cresce do início da linha | Sinal de foco visível e com personalidade, sem `outline: none` | `ease-out` | 120ms |
+| 3 | **Entrada da faixa** — cada banda entra com 12px de deslocamento e opacidade, escalonada em 60ms | Faz a rolagem ter ritmo de carreira; acontece uma vez por elemento | `ease-out` | 400ms |
+
+Tudo em `transform` e `opacity`, no compositor. Nada anima largura, altura,
+`top` ou `left` — não há uma linha de layout animado no projeto.
+
+**`prefers-reduced-motion: reduce` desliga os três.** Não atenua: desliga. A
+serra aparece inteira e imóvel, o foco vira sublinhado estático, as faixas
+nascem visíveis. É um portal de governo; a preferência do sistema operacional
+não é sugestão.
+
+---
+
+## 6. Elemento-assinatura — "A Serra Tecida"
+
+O único componente pelo qual a página será lembrada, e onde toda a ousadia do
+projeto está concentrada.
+
+**O que é:** a silhueta do horizonte da Mantiqueira, preenchida com **pontos de
+tricô** — o "V" do ponto meia, repetido em carreiras. Três camadas de
+profundidade com opacidade decrescente lêem como serra sob neblina. Uma única
+carreira em carmim marca a linha do horizonte.
+
+**Por que funciona:** é a tese inteira em uma imagem. A montanha que o cidadão
+vê da janela, desenhada com o ponto que a cidade produz. Não é ilustração
+comprada nem foto de banco de imagens — não existe em nenhum outro portal
+porque não descreve nenhum outro lugar.
+
+**Como se sustenta tecnicamente:** um `<pattern>` SVG de um único ponto,
+azulejado dentro de uma silhueta recortada por `clipPath`. O peso é o de um
+ponto, não o de mil. Sem canvas, sem biblioteca, sem requisição extra —
+embutido no HTML e servido junto com a página.
+
+**Como vira sistema, e não enfeite:** o mesmo ponto, reduzido, é o fio vertical
+da ourela em toda página interna, e a régua que separa cada carreira. O motivo
+aparece três vezes em escalas diferentes; quem vê uma vez reconhece as outras.
+
+---
+
+## 7. Stack
+
+**Astro 5, SSR com adaptador Node** — a stack que o projeto já tem, e que
+continua certa: as páginas são majoritariamente estáticas, o JavaScript enviado
+ao navegador é apenas o que se pede explicitamente, e o conteúdo vem de um CMS
+que a prefeitura opera. Trocar de framework agora custaria a integração inteira
+com o Directus, o painel das secretarias e a camada de sanitização — sem ganho
+para o cidadão.
+
+Animação em **CSS nativo + IntersectionObserver**. Nenhuma biblioteca: GSAP ou
+Motion custariam de 30 a 70 KB para fazer três transições que o CSS faz de
+graça.
+
+---
+
+## 8. Autocrítica
+
+*Pergunta obrigatória: este plano seria o mesmo para a prefeitura de qualquer
+outra cidade?*
+
+Na primeira versão, **três partes seriam** — e foram reescritas:
+
+**(a) A paleta era genérica.** O primeiro rascunho tinha "azul institucional +
+verde + um acento quente", que é a paleta de metade dos municípios brasileiros.
+*Correção:* fui ao brasão, amostrei os pixels e adotei as cores que o município
+já tem — inclusive **descartando o azul do próprio brasão**, porque é ele que
+puxaria o resultado de volta ao padrão. Uma paleta tirada do brasão de Cambuí
+não é transplantável para Itajubá.
+
+**(b) A home tinha um bloco "Acesso Rápido".** Rótulo que não quer dizer nada e
+que existe em todos os portais. *Correção:* virou **"O que você precisa hoje"**,
+com verbo na frente — "Pagar meu IPTU", não "Tributos" — e ganhou ao lado um
+módulo que nenhum outro portal tem: **"Coleta no meu bairro"**, com os bairros
+reais levantados na auditoria (Água Branca, Braço das Antas, Cambuí Velho,
+Canguava, Cohab, Colinas do Itaim…). Um cidadão de outra cidade não reconhece
+essa lista; um de Cambuí reconhece a própria rua.
+
+**(c) O hero era "uma imagem bonita da serra".** Serra genérica serve para
+qualquer cidade de montanha do Brasil. *Correção:* a serra passou a ser
+**tricotada**, amarrando a paisagem à malharia. É a junção das duas metades que
+torna a imagem intransferível.
+
+*Segunda pergunta: o que ainda é genérico e eu aceito?* A estrutura de faixas
+horizontais e a coluna de leitura de 62ch são boas práticas transferíveis — e
+tudo bem. Identidade se carrega nos tokens, no motivo e no conteúdo; a
+carpintaria pode e deve ser convencional. **Ousadia concentrada num lugar só,
+disciplina em todo o resto.**
+
+*Terceira: onde a tese entra em conflito com o cidadão?* Um hero de assinatura
+ocupa espaço acima da dobra que poderia ser tarefa. Resolvi a favor do cidadão:
+a busca está **acima** do elemento-assinatura, no cabeçalho, e a serra tecida é
+deliberadamente **baixa** — uma faixa, não uma tela cheia. O primeiro bloco
+depois dela já é a lista de tarefas. Identidade não pode custar um rolar de
+tela a quem só quer pagar o IPTU.
+
+
+---
+
+## 9. Segunda crítica — depois de construído
+
+*Instrução: abrir o resultado e remover um elemento decorativo que não esteja
+servindo à tese. Se não achar nenhum, procurar de novo.*
+
+**Removido: a miniatura vazia da listagem de notícias.** Matéria sem foto
+recebia um retângulo com a textura de tricô no lugar da imagem, para manter o
+alinhamento da lista. Ao ver a lista pronta, ficou evidente o problema: era
+decoração fingindo conteúdo, e fazia a notícia sem foto parecer **quebrada** —
+como se a imagem tivesse falhado ao carregar. Pior, gastava o motivo do tricô
+num lugar onde ele não diz nada: o ponto significa alguma coisa na serra do
+hero e na régua que separa seções; num buraco de miniatura, significa "aqui
+faltou algo".
+
+Sem ela, o texto ocupa a largura inteira da linha e a lista fica mais legível.
+Menos elemento, mais leitura.
+
+**O que foi examinado e ficou:**
+
+- *Os números de seção na ourela* — servem à tese: a carreira numerada é o que
+  dá ritmo de leitura à rolagem, e some no celular, onde não caberia.
+- *A régua tricotada entre o cabeçalho de página e o corpo* — é o motivo em
+  escala média, a peça que amarra página interna e home no mesmo sistema.
+- *O véu do tear* — é o único movimento de assinatura, dura 900ms, roda uma vez
+  e desaparece por completo com `prefers-reduced-motion`.
+
+**O que eu removeria a seguir, se precisasse cortar mais:** o `<span>` com o
+número dentro de cada linha de tarefa na home. Ele é bonito e reforça a
+carreira, mas a lista já é numerada visualmente pela própria ordem. Mantive
+porque some abaixo de 30rem e não custa nada a quem lê no celular — mas é o
+próximo da fila.
+
+---
+
+## 10. Relatório final
+
+### Decisões, e por quê
+
+| Decisão | Razão | Alternativa descartada |
+|---|---|---|
+| Verde do brasão como cor institucional | É a decisão que mais afasta o portal dos seus pares; a faixa azul é o clichê nº 1 | Azul do próprio brasão — puxaria de volta ao padrão |
+| Paleta amostrada do brasão | Cor tirada do município não é transplantável | Paleta autoral "moderna" |
+| Linha em vez de cartão | Alvo de toque de largura total, nome de serviço nunca truncado | Grade de quadradinhos |
+| Catálogo por necessidade | O cidadão não sabe qual secretaria cuida do quê | Catálogo por secretaria |
+| Duas famílias, auto-hospedadas | Fonte via CDN faria o navegador do cidadão bater num terceiro | Google Fonts; terceira família |
+| Astro mantido | Trocar custaria toda a integração com CMS, painel e sanitização | Next/SvelteKit |
+| Animação em CSS puro | 3 transições que o CSS faz de graça | GSAP/Motion (30–70 KB) |
+| Transparência por link, não reimplementada | Duas versões do mesmo número é pior que uma só | Reconstruir os relatórios |
+
+### Riscos assumidos
+
+1. **O hero de assinatura ocupa espaço acima da dobra.** Mitigado deixando a
+   busca *antes* dele, no cabeçalho, e a serra deliberadamente baixa — uma
+   faixa, não uma tela. Na prática, o IPTU está a **um clique** da home.
+2. **Bricolage Grotesque é uma fonte com personalidade forte.** Se a
+   administração achar excessiva, trocar custa uma linha em `global.css`: só o
+   display muda, o corpo (Inter) segue.
+3. **`document.execCommand` no editor do painel** é obsoleto. Assumido para não
+   trazer um editor inteiro como dependência; o resultado passa pelo
+   sanitizador de qualquer forma.
+4. **Lighthouse não foi executado.** Não há navegador neste servidor. Medi o
+   que ele mede — payload, requisições, bloqueio de render, dimensões de imagem
+   — mas os números finais precisam ser confirmados numa máquina com Chrome.
+
+### O que ficou como `TODO(cliente)`
+
+| Onde | O que falta |
+|---|---|
+| `dados/instituicional.ts` | **CNPJ** da Prefeitura; e-mail institucional; confirmação do horário; perfis oficiais de redes sociais |
+| `dados/cidade.ts` | **Calendário real da coleta** por bairro (hoje a interface diz "a confirmar" em vez de inventar dia); lista completa de bairros e distritos; link direto da emissão da guia de IPTU |
+| `pages/privacidade.astro` | **Encarregado de dados (DPO)** — nome e canal, exigidos pela LGPD |
+| `pages/a-cidade.astro` | Altitude e área oficiais; fotografias reais da serra, das malharias e do centro |
+| `pages/secretarias/index.astro` | Organograma, competências e conselhos municipais |
+| Marca | Vetor do brasão (.svg) — hoje só existe o PNG |
+
+Nenhum desses buracos quebra a página: onde o dado falta, a interface diz que
+falta, em português, em vez de exibir um valor inventado.

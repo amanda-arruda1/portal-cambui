@@ -34,32 +34,80 @@ export const SITE = {
   urlPublica: process.env.PUBLIC_SITE_URL || 'https://www.prefeituradecambui.mg.gov.br',
 } as const;
 
-/** PENDENTE: fornecido pela prefeitura. */
+/**
+ * TODO(cliente): CNPJ da Prefeitura Municipal de Cambuí. É o único dado de
+ * identificação institucional que a auditoria do portal atual não expôs.
+ */
 export const CNPJ: string | null = null;
 
-/** PENDENTE: fornecido pela prefeitura. */
-export const ENDERECO: Endereco | null = null;
+/** Fornecido pela prefeitura no briefing de redesign. */
+export const ENDERECO: Endereco | null = {
+  logradouro: 'Praça Coronel Justiniano',
+  numero: '164',
+  bairro: 'Centro',
+  cidade: 'Cambuí',
+  uf: 'MG',
+  cep: '37600-000',
+};
 
-/** PENDENTE: fornecido pela prefeitura. Lista vazia = seção não aparece. */
-export const TELEFONES: Array<{ rotulo: string; numero: string }> = [];
+export const TELEFONES: Array<{ rotulo: string; numero: string }> = [
+  { rotulo: 'Prefeitura', numero: '(35) 3431-1666' },
+];
 
-/** PENDENTE: fornecido pela prefeitura. */
+/** TODO(cliente): e-mail institucional de contato ao cidadão. */
 export const EMAIL_CONTATO: string | null = null;
 
-/** PENDENTE: fornecido pela prefeitura. Ex.: "Segunda a sexta, das 8h às 17h". */
-export const HORARIO_ATENDIMENTO: string | null = null;
+/** TODO(cliente): confirmar o horário. Este é o praticado pela maioria das
+ *  secretarias segundo o portal atual. */
+export const HORARIO_ATENDIMENTO: string | null = 'Segunda a sexta, das 8h às 17h';
 
-/** PENDENTE: perfis oficiais confirmados pela prefeitura. */
+/** TODO(cliente): confirmar os perfis oficiais. O portal atual aponta para
+ *  Instagram, Facebook e YouTube, mas sem URL canônica legível. */
 export const REDES_SOCIAIS: Array<{ nome: string; url: string }> = [];
 
 /**
- * Sistemas de terceiros (Transparência, Diário Oficial, e-SIC/Ouvidoria).
- * DECISÃO DE PROJETO: o portal NÃO reconstrói a Transparência — ela é
- * obrigação legal atendida por sistema contábil homologado. Aqui só entram os
- * links, em destaque. PENDENTE: URLs a confirmar com a prefeitura.
+ * Sistemas de terceiros já em uso pelo município, levantados na auditoria do
+ * portal atual em 27/08/2026.
+ *
+ * DECISÃO DE PROJETO: o portal NÃO reconstrói a Transparência nem os serviços
+ * de tributos — são obrigações legais atendidas por sistemas homologados
+ * (SGP Cloud, e-Ouve, Aprova). Aqui só entram os links, em destaque e com
+ * linguagem de cidadão.
  */
-export const SISTEMAS_EXTERNOS: Array<{ nome: string; url: string; descricao: string }> = [];
+export const SISTEMAS_EXTERNOS: Array<{ nome: string; url: string; descricao: string }> = [
+  {
+    nome: 'Portal da Transparência',
+    url: 'https://portal.sgpcloud.net:9121/transparencia/',
+    descricao: 'Receitas, despesas, contratos, servidores e diárias.',
+  },
+  {
+    nome: 'Diário Oficial do Município',
+    url: 'https://www.diariomunicipal.com.br/amm-mg/',
+    descricao: 'Publicações oficiais, na plataforma da AMM-MG.',
+  },
+  {
+    nome: 'Legislação municipal',
+    url: 'https://leismunicipais.com.br/prefeitura/mg/cambui',
+    descricao: 'Leis, decretos e códigos do município.',
+  },
+  {
+    nome: 'Contratações públicas (PNCP)',
+    url: 'https://pncp.gov.br/app/editais?q=objeto&pagina=1&municipios=2359&status=todos',
+    descricao: 'Editais e contratos no portal nacional.',
+  },
+  {
+    nome: 'Fiscalizando com o TCE',
+    url: 'https://fiscalizandocomtce.tce.mg.gov.br/#/public/dashboard',
+    descricao: 'Painel do Tribunal de Contas de Minas Gerais.',
+  },
+];
 
-/** Há informação de contato suficiente para montar a seção? */
+/** Autarquias com portal próprio. */
+export const AUTARQUIAS: Array<{ nome: string; sigla: string; url: string; descricao: string }> = [
+  { nome: 'Serviço Autônomo de Água e Esgoto', sigla: 'SAAE', url: 'https://saaecambui.mg.gov.br/', descricao: 'Água, esgoto e segunda via de conta.' },
+  { nome: 'Fundação de Amparo e Pesquisa', sigla: 'FAPEM', url: 'https://fapem.mg.gov.br/', descricao: 'Ensino superior no município.' },
+];
+
+/** Há dados de atendimento suficientes para montar o bloco de contato? */
 export const TEM_CONTATO =
   ENDERECO !== null || TELEFONES.length > 0 || EMAIL_CONTATO !== null || HORARIO_ATENDIMENTO !== null;

@@ -1,108 +1,196 @@
 ---
 /**
- * Cabeçalho e navegação principal.
+ * Cabeçalho.
  *
- * O menu móvel usa <details>/<summary> em vez de JavaScript: se o script
- * falhar ou for bloqueado, o cidadão continua conseguindo navegar. Portal
- * público não pode depender de JS para o menu funcionar.
+ * O anti-padrão que este componente recusa: faixa superior azul-institucional
+ * com brasão à esquerda e menu horizontal genérico. Aqui:
+ *   - o fundo é a neblina, não uma faixa de cor chapada;
+ *   - o maior elemento não é o brasão nem o menu: é A BUSCA. O cidadão chega
+ *     com uma tarefa, e a busca é o caminho mais curto até ela;
+ *   - a Transparência e o e-SIC ficam no topo, sempre visíveis — exigência da
+ *     Lei de Acesso à Informação, não enfeite;
+ *   - o menu, no celular, é <details>: abre e fecha sem uma linha de
+ *     JavaScript, e continua funcionando se o script falhar.
  */
 import { MUNICIPIO } from '../dados/instituicional';
 
-const rota = Astro.url.pathname;
-
-const itens = [
-  { rotulo: 'Início', href: '/' },
-  { rotulo: 'Notícias', href: '/noticias' },
-  { rotulo: 'Serviços', href: '/servicos' },
-  { rotulo: 'Secretarias', href: '/secretarias' },
-  { rotulo: 'Documentos', href: '/documentos' },
-  { rotulo: 'Transparência', href: '/transparencia' },
-  { rotulo: 'Contato', href: '/contato' },
+const SECOES = [
+  { rotulo: 'Serviços', destino: '/servicos' },
+  { rotulo: 'A cidade', destino: '/a-cidade' },
+  { rotulo: 'A Prefeitura', destino: '/secretarias' },
+  { rotulo: 'Transparência', destino: '/transparencia' },
+  { rotulo: 'Notícias', destino: '/noticias' },
 ];
 
-const ativo = (href: string) => (href === '/' ? rota === '/' : rota.startsWith(href));
+const atual = Astro.url.pathname;
+const ehAtual = (destino: string) => atual === destino || (destino !== '/' && atual.startsWith(destino + '/'));
 ---
 
-<header class="nao-imprimir">
-  <div class="bg-azul-escuro text-papel">
-    <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-4">
-      <a href="/" class="flex items-center gap-3" aria-label={`${MUNICIPIO.nomeCompleto} — página inicial`}>
-        <img
-          src="/brasao.png"
-          alt={`Brasão da ${MUNICIPIO.nomeCompleto}`}
-          width="225"
-          height="102"
-          class="h-12 w-auto"
-          fetchpriority="high"
-        />
-      </a>
+<header class="cabecalho">
+  <div class="carreira topo">
+    <div class="ourela">
+      <span aria-hidden="true"></span>
+      <div class="corpo linha-topo">
+        <a href="/" class="marca" aria-label={`${MUNICIPIO.nomeCompleto} — página inicial`}>
+          <img src="/brasao.png" alt="" width="44" height="44" decoding="async" />
+          <span class="nomes">
+            <strong>Prefeitura de {MUNICIPIO.nome}</strong>
+            <span class="t-rotulo uf">Minas Gerais</span>
+          </span>
+        </a>
 
-      <form action="/busca" method="get" role="search" class="ml-auto flex w-full max-w-sm items-center gap-2">
-        <label for="busca-topo" class="sr-only">Buscar no portal</label>
-        <input
-          id="busca-topo"
-          type="search"
-          name="q"
-          placeholder="Buscar no portal"
-          autocomplete="off"
-          class="w-full rounded-md border border-white/25 bg-white/10 px-3 py-2 text-papel placeholder:text-white/70"
-        />
-        <button
-          type="submit"
-          class="rounded-md bg-papel px-3 py-2 font-semibold text-azul-escuro hover:bg-azul-claro"
-        >
-          Buscar
-        </button>
-      </form>
+        <!-- LAI: acesso destacado e sempre visível. -->
+        <nav aria-label="Acesso à informação" class="lai sem-impressao">
+          <a href="/transparencia"><span class="fio-foco">Transparência</span></a>
+          <a href="http://cambui.eouve.com.br/" target="_blank" rel="noopener noreferrer"><span class="fio-foco">Ouvidoria</span></a>
+          <a href="http://cambui.eouve.com.br/" target="_blank" rel="noopener noreferrer"><span class="fio-foco">e-SIC</span></a>
+        </nav>
+      </div>
     </div>
   </div>
 
-  <nav aria-label="Navegação principal" class="border-b border-prata bg-papel">
-    <div class="mx-auto max-w-6xl px-4">
-      <!-- Telas largas: menu horizontal -->
-      <ul class="hidden gap-1 md:flex">
-        {
-          itens.map((item) => (
-            <li>
-              <a
-                href={item.href}
-                aria-current={ativo(item.href) ? 'page' : undefined}
-                class:list={[
-                  'inline-block border-b-4 px-3 py-3 font-semibold hover:bg-azul-claro',
-                  ativo(item.href) ? 'border-vermelho text-azul-escuro' : 'border-transparent text-grafite',
-                ]}
-              >
-                {item.rotulo}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
+  <div class="carreira">
+    <div class="ourela">
+      <span class="fio fio-ourela" aria-hidden="true"></span>
+      <div class="corpo">
+        <form action="/busca" method="get" role="search" class="busca" id="busca">
+          <label for="q" class="t-rotulo etiqueta">O que você precisa resolver?</label>
+          <div class="campo">
+            <input
+              id="q"
+              name="q"
+              type="search"
+              autocomplete="off"
+              placeholder="IPTU, coleta de lixo, alvará, licitação…"
+              enterkeyhint="search"
+            />
+            <button type="submit">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="2" />
+                <path d="M13.5 13.5L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+              <span>Buscar</span>
+            </button>
+          </div>
+        </form>
 
-      <!-- Telas estreitas: sanfona nativa, sem JavaScript -->
-      <details class="md:hidden">
-        <summary class="cursor-pointer list-none py-3 font-semibold text-azul-escuro">
-          ☰ Menu
-        </summary>
-        <ul class="pb-3">
-          {
-            itens.map((item) => (
-              <li>
-                <a
-                  href={item.href}
-                  aria-current={ativo(item.href) ? 'page' : undefined}
-                  class:list={[
-                    'block rounded-md px-3 py-2 font-semibold',
-                    ativo(item.href) ? 'bg-azul-claro text-azul-escuro' : 'text-grafite',
-                  ]}
-                >
-                  {item.rotulo}
-                </a>
-              </li>
-            ))
-          }
-        </ul>
-      </details>
+        <nav id="menu" aria-label="Menu principal" class="menu sem-impressao">
+          <details class="sanfona">
+            <summary>
+              <span aria-hidden="true">☰</span> Seções do portal
+            </summary>
+            <ul>
+              {SECOES.map((s) => (
+                <li>
+                  <a href={s.destino} aria-current={ehAtual(s.destino) ? 'page' : undefined}>
+                    <span class="fio-foco">{s.rotulo}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </details>
+        </nav>
+      </div>
     </div>
-  </nav>
+  </div>
 </header>
+
+<style>
+  .cabecalho { background: var(--color-neblina); }
+  .topo { padding-top: 0.9rem; }
+  .linha-topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1.5rem; }
+
+  .marca { display: flex; align-items: center; gap: 0.7rem; text-decoration: none; color: inherit; }
+  .marca img { display: block; }
+  .nomes { display: flex; flex-direction: column; line-height: 1.15; }
+  .nomes strong { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; }
+  .uf { color: var(--color-musgo); }
+
+  .lai { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; font-size: 0.875rem; font-weight: 600; }
+  .lai a { color: var(--color-serra); text-decoration: none; }
+
+  /* A busca é o maior elemento do cabeçalho. É a tese aplicada: o cidadão
+     chega com uma tarefa. */
+  .busca { margin-top: 1.25rem; }
+  .etiqueta { display: block; color: var(--color-musgo); margin-bottom: 0.4rem; }
+  .campo { display: flex; gap: 0.5rem; }
+  .campo input {
+    flex: 1;
+    min-width: 0;
+    font: inherit;
+    font-size: 1.0625rem;
+    padding: 0.85rem 1rem;
+    min-height: 3.25rem;
+    border: 2px solid var(--color-serra);
+    border-radius: 4px;
+    background: var(--color-papel);
+    color: var(--color-tinta);
+  }
+  .campo input::placeholder { color: var(--color-musgo); opacity: 1; }
+  .campo button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font: inherit;
+    font-weight: 600;
+    padding: 0 1.35rem;
+    min-height: 3.25rem;
+    border: 2px solid var(--color-serra);
+    border-radius: 4px;
+    background: var(--color-serra);
+    color: var(--color-papel);
+    cursor: pointer;
+  }
+  .campo button:hover { background: var(--color-serra-noite); border-color: var(--color-serra-noite); }
+  @media (max-width: 30rem) { .campo button span { display: none; } .campo button { padding-inline: 1rem; } }
+
+  /* Menu: <details> no celular, lista horizontal no desktop. Sem JavaScript
+     em nenhum dos dois. */
+  .menu { margin-top: 1rem; padding-bottom: 1rem; }
+  .sanfona summary {
+    list-style: none;
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0.7rem 0;
+    min-height: 2.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-musgo) 28%, transparent);
+  }
+  .sanfona summary::-webkit-details-marker { display: none; }
+  .sanfona ul { list-style: none; margin: 0; padding: 0 0 0.5rem; display: grid; gap: 0.15rem; }
+  .sanfona a {
+    display: block;
+    padding: 0.7rem 0;
+    min-height: 2.75rem;
+    text-decoration: none;
+    color: inherit;
+    font-weight: 600;
+  }
+  .sanfona a[aria-current='page'] { color: var(--color-carmim); }
+
+  @media (min-width: 48rem) {
+    .sanfona summary { display: none; }
+    .sanfona ul {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 2rem;
+      border-top: 1px solid color-mix(in srgb, var(--color-musgo) 28%, transparent);
+      padding-top: 0.25rem;
+    }
+    .sanfona[open] ul, .sanfona ul { display: flex; }
+    .menu { margin-top: 1.5rem; }
+  }
+</style>
+
+<script>
+  /* No desktop o <details> precisa nascer aberto, senão o menu horizontal
+     some. Feito por script porque é ajuste de apresentação, não de conteúdo:
+     sem JavaScript, o menu continua acessível pelo próprio <summary>. */
+  const consulta = window.matchMedia('(min-width: 48rem)');
+  const sanfona = document.querySelector<HTMLDetailsElement>('.sanfona');
+  const sincronizar = () => { if (sanfona) sanfona.open = consulta.matches; };
+  sincronizar();
+  consulta.addEventListener('change', sincronizar);
+</script>

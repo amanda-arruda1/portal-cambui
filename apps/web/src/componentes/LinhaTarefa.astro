@@ -1,0 +1,70 @@
+---
+/**
+ * A LINHA DE TAREFA — substitui o cartão.
+ *
+ * Um serviço por linha, ocupando a largura inteira. Três razões, e a terceira
+ * é a que decide:
+ *   1. alvo de toque de 64px de altura por toda a largura da tela;
+ *   2. nome de serviço NUNCA truncado — cartão obriga a resumir, e resumir
+ *      nome de serviço público é onde o cidadão se perde;
+ *   3. ordem de leitura previsível para quem usa leitor de tela.
+ *
+ * O verbo vem primeiro: "Pagar meu IPTU", não "Tributos imobiliários".
+ */
+import type { Tarefa } from '../dados/cidade';
+
+interface Props {
+  tarefa: Tarefa;
+  /** Numeração visível na lista principal da home. */
+  indice?: number;
+}
+const { tarefa, indice } = Astro.props;
+---
+
+<a
+  href={tarefa.destino}
+  class="linha-tarefa"
+  {...tarefa.externo ? { target: '_blank', rel: 'noopener noreferrer' } : {}}
+>
+  <span class="texto">
+    {indice !== undefined && <span class="indice t-rotulo" aria-hidden="true">{String(indice).padStart(2, '0')}</span>}
+    <span class="rotulos">
+      <span class="rotulo t-sub"><span class="fio-foco">{tarefa.rotulo}</span></span>
+      <span class="detalhe t-micro">
+        {tarefa.detalhe}
+        {tarefa.externo && (
+          <>
+            {' · '}
+            <span class="externo">abre em outro site<span class="sr-only"> — abre em uma nova aba</span></span>
+          </>
+        )}
+      </span>
+    </span>
+  </span>
+  <svg class="seta" width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+    <path d="M4 11h13M12 6l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+</a>
+
+<style>
+  .texto { display: flex; align-items: baseline; gap: 1rem; min-width: 0; }
+  .indice { color: var(--color-carmim); flex: none; padding-top: 0.15rem; }
+  .rotulos { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+  .rotulo { font-family: var(--font-display); letter-spacing: -0.01em; }
+  .detalhe { color: var(--color-musgo); }
+  .seta { color: var(--color-carmim); }
+
+  /* Sobre a faixa verde, o secundário precisa continuar legível. */
+  :global(.f-serra) .detalhe { color: color-mix(in srgb, var(--color-papel) 80%, transparent); }
+  :global(.f-serra) .indice,
+  :global(.f-serra) .seta { color: var(--color-papel); }
+  :global(.f-serra) .linha-tarefa { border-color: color-mix(in srgb, var(--color-papel) 28%, transparent); }
+
+  /* "abre em outro site" é texto, não só um ícone: informação nenhuma neste
+     portal é transmitida apenas por cor ou por forma. */
+  .externo { text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.75rem; font-weight: 600; }
+
+  @media (max-width: 30rem) {
+    .indice { display: none; }
+  }
+</style>

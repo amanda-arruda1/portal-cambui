@@ -1,67 +1,120 @@
 ---
+/**
+ * Página de secretaria.
+ *
+ * Ordem deliberada: primeiro COMO FALAR com ela (endereço, telefone, horário),
+ * depois o que ela faz, e só então quem a dirige. O organograma interessa a
+ * quem estuda a Prefeitura; o telefone interessa a quem precisa dela hoje.
+ */
 import Base from '../../layouts/Base.astro';
-import { secretariaPorSlug } from '../../lib/conteudo';
-// Segunda barreira: conteúdo também entra pelo painel do Directus, que não
-// passa pelo formulário do painel de contribuição. Aqui nada escapa.
+import Carreira from '../../componentes/Carreira.astro';
+import TituloPagina from '../../componentes/TituloPagina.astro';
+import { noticiasRecentes, secretariaPorSlug } from '../../lib/conteudo';
+import { data, iso, recorte, semHtml } from '../../lib/formato';
 import { limpar } from '../../lib/sanitizar';
 
 const { slug } = Astro.params;
-const { dado: secretaria } = await secretariaPorSlug(slug ?? '');
+const { dado: sec } = await secretariaPorSlug(slug ?? '');
+if (!sec) return Astro.rewrite('/404');
 
-if (!secretaria) {
-  return Astro.rewrite('/404');
-}
+const { dados: noticias } = await noticiasRecentes(20);
+const daSecretaria = noticias.filter((n) => n.secretaria?.slug === sec.slug).slice(0, 4);
 
-const contatos: Array<{ rotulo: string; valor: string; href?: string }> = [];
-if (secretaria.responsavel) {
-  contatos.push({ rotulo: secretaria.cargo_responsavel ?? 'Responsável', valor: secretaria.responsavel });
-}
-if (secretaria.endereco) contatos.push({ rotulo: 'Endereço', valor: secretaria.endereco });
-if (secretaria.telefone) {
-  contatos.push({ rotulo: 'Telefone', valor: secretaria.telefone, href: `tel:${secretaria.telefone.replace(/\D/g, '')}` });
-}
-if (secretaria.email) contatos.push({ rotulo: 'E-mail', valor: secretaria.email, href: `mailto:${secretaria.email}` });
-if (secretaria.horario_atendimento) contatos.push({ rotulo: 'Atendimento', valor: secretaria.horario_atendimento });
+const contatos = [
+  sec.endereco && { rotulo: 'Endereço', valor: sec.endereco, href: null },
+  sec.telefone && { rotulo: 'Telefone', valor: sec.telefone, href: `tel:+55${sec.telefone.replace(/\D/g, '')}` },
+  sec.email && { rotulo: 'E-mail', valor: sec.email, href: `mailto:${sec.email}` },
+  sec.horario_atendimento && { rotulo: 'Atendimento', valor: sec.horario_atendimento, href: null },
+].filter(Boolean) as Array<{ rotulo: string; valor: string; href: string | null }>;
 ---
 
-<Base titulo={secretaria.nome} descricao={secretaria.descricao ?? undefined}>
-  <div class="mx-auto max-w-6xl px-4 py-10">
-    <nav aria-label="Você está aqui" class="nao-imprimir text-sm text-grafite">
-      <a href="/" class="underline">Início</a> ›
-      <a href="/secretarias" class="underline">Secretarias</a>
-    </nav>
+<Base
+  titulo={sec.nome}
+  descricao={recorte(semHtml(sec.descricao), 160) || `${sec.nome} da Prefeitura Municipal de Cambuí.`}
+>
+  <TituloPagina
+    rotulo={sec.sigla ?? 'Secretaria'}
+    titulo={sec.nome}
+    trilha={[{ rotulo: 'A Prefeitura', destino: '/secretarias' }, { rotulo: sec.nome }]}
+  />
 
-    <h1 class="mt-4 text-3xl font-bold text-azul-escuro sm:text-4xl">{secretaria.nome}</h1>
-    {secretaria.sigla && <p class="mt-1 text-grafite">{secretaria.sigla}</p>}
-
-    {secretaria.descricao && <div class="conteudo-rico mt-6" set:html={limpar(secretaria.descricao)} />}
-
+  <Carreira numero="01" rotulo="Como falar com esta secretaria" fundo="papel">
     {
-      contatos.length > 0 && (
-        <section class="mt-10">
-          <h2 class="text-2xl font-bold text-azul-escuro">Contato</h2>
-          <dl class="mt-4 grid gap-3 sm:grid-cols-2">
-            {contatos.map((item) => (
-              <div class="rounded-lg border border-prata p-4">
-                <dt class="text-sm font-semibold text-grafite">{item.rotulo}</dt>
-                <dd class="mt-1">
-                  {item.href ? (
-                    <a href={item.href} class="text-azul underline">
-                      {item.valor}
-                    </a>
-                  ) : (
-                    item.valor
-                  )}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </section>
+      contatos.length > 0 ? (
+        <dl class="contatos entra">
+          {contatos.map((c) => (
+            <div class="par">
+              <dt class="t-rotulo">{c.rotulo}</dt>
+              <dd>{c.href ? <a href={c.href}><span class="fio-foco">{c.valor}</span></a> : c.valor}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <p class="vazio">
+          Os dados de atendimento desta secretaria estão em publicação. Enquanto isso, o telefone
+          geral da Prefeitura atende e encaminha —{' '}
+          <a href="/contato"><span class="fio-foco">ver contato</span></a>.
+        </p>
       )
     }
 
-    <p class="nao-imprimir mt-10">
-      <a href="/secretarias" class="font-semibold text-azul underline">← Voltar para as secretarias</a>
-    </p>
-  </div>
+    {(sec.responsavel || sec.cargo_responsavel) && (
+      <p class="responsavel">
+        <span class="t-rotulo">Responsável</span><br />
+        {sec.responsavel}
+        {sec.cargo_responsavel && <span class="cargo"> — {sec.cargo_responsavel}</span>}
+      </p>
+    )}
+  </Carreira>
+
+  {
+    sec.descricao && (
+      <Carreira numero="02" rotulo="O que esta secretaria faz">
+        <div class="conteudo-rico texto entra" set:html={limpar(sec.descricao)} />
+      </Carreira>
+    )
+  }
+
+  {
+    daSecretaria.length > 0 && (
+      <Carreira numero="03" rotulo="Notícias desta secretaria" fundo="papel" acao={{ rotulo: 'Todas as notícias', destino: '/noticias' }}>
+        <ul class="lista entra">
+          {daSecretaria.map((n) => (
+            <li>
+              <a href={`/noticias/${n.slug}`} class="linha-tarefa">
+                <span class="texto-rel">
+                  <span class="t-rotulo meta"><time datetime={iso(n.data_publicacao)}>{data(n.data_publicacao)}</time></span>
+                  <span class="t-sub titulo-rel"><span class="fio-foco">{n.titulo}</span></span>
+                </span>
+                <svg class="seta" width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                  <path d="M4 11h13M12 6l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </Carreira>
+    )
+  }
 </Base>
+
+<style>
+  .contatos { margin-top: 1.5rem; display: grid; gap: 1.25rem; max-width: 46rem; }
+  @media (min-width: 40rem) { .contatos { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem 2.5rem; } }
+  .par dt { color: var(--color-musgo); }
+  .par dd { margin: 0.3rem 0 0; font-size: 1.0625rem; line-height: 1.5; }
+  .par a { color: var(--color-serra); text-decoration: none; font-weight: 600; }
+
+  .responsavel { margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid color-mix(in srgb, var(--color-musgo) 26%, transparent); max-width: 46rem; }
+  .responsavel .t-rotulo { color: var(--color-musgo); }
+  .cargo { color: var(--color-musgo); }
+  .vazio { margin-top: 1.25rem; color: var(--color-musgo); max-width: var(--container-leitura); }
+  .vazio a { color: var(--color-serra); font-weight: 600; text-decoration: none; }
+  .texto { margin-top: 1.25rem; }
+
+  .lista { list-style: none; margin: 1.25rem 0 0; padding: 0; }
+  .texto-rel { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+  .titulo-rel { font-family: var(--font-display); letter-spacing: -0.01em; }
+  .meta { color: var(--color-musgo); }
+  .seta { color: var(--color-carmim); flex: none; }
+</style>

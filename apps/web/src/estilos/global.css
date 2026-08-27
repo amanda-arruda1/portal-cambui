@@ -1,130 +1,308 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-/*
- * Portal Cambuí — tokens visuais.
- *
- * A paleta abaixo é a PROPOSTA extraída do brasão e ainda aguarda aprovação da
- * prefeitura. Está toda concentrada neste bloco justamente para que a troca
- * seja de uma linha por cor, sem caçar hexadecimais pelos componentes.
- *
- * Contraste (WCAG 2.1 AA, exigência de portal público — eMAG/Lei 13.146):
- *   --cor-azul     #234A8E sobre branco  = 8,3:1   texto e botões  OK
- *   --cor-vermelho #9E2B2B sobre branco  = 7,6:1   OK
- *   --cor-verde-texto #256628 sobre branco = 6,7:1 OK
- *   --cor-verde    #2E7D32 sobre branco  = 4,6:1   só para fundo/ícone grande
- *   --cor-grafite  #5B6470 sobre branco  = 5,8:1   texto secundário OK
- *   --cor-prata    #C7CBD1               = 1,7:1   SÓ bordas e fundos
- */
+/* ══════════════════════════════════════════════════════════════════════════
+   PORTAL DE CAMBUÍ — sistema de design
+   A tese está em DESIGN.md: a cidade se faz por carreiras — as de ponto das
+   malharias e as de montanha da Mantiqueira. Tudo aqui deriva disso.
+   Nenhum valor de cor ou de tipo aparece solto fora deste arquivo.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Fontes auto-hospedadas ────────────────────────────────────────────────
+   Servidas do próprio domínio de propósito: fonte via CDN faria o navegador
+   de cada cidadão bater num terceiro só para ler o site da prefeitura, e
+   custaria um DNS + TLS a mais no 4G da serra. */
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url('/fontes/bricolage-grotesque.woff2') format('woff2');
+  font-weight: 400 800;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('/fontes/inter.woff2') format('woff2');
+  font-weight: 400 700;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 @theme {
-  --color-azul: #234A8E;
-  --color-azul-escuro: #1A3868;
-  --color-azul-claro: #EAF0FA;
-  --color-vermelho: #9E2B2B;
-  --color-vinho: #8B2332;
-  --color-verde: #2E7D32;
-  --color-verde-texto: #256628;
-  --color-prata: #C7CBD1;
-  --color-grafite: #5B6470;
-  --color-trigo: #B08D57;
-  --color-tinta: #1A1A1A;
-  --color-papel: #FFFFFF;
-  --color-papel-suave: #F6F7F9;
+  /* ── Cor ────────────────────────────────────────────────────────────────
+     Amostrada dos pixels do brasão oficial. Contrastes verificados em
+     ferramentas/contraste.py — nenhum par em uso abaixo de 5,6:1. */
+  --color-serra: #0c5430;        /* verde do brasão / a Mantiqueira coberta */
+  --color-serra-noite: #06301c;  /* o mesmo verde ao anoitecer */
+  --color-carmim: #a8303c;       /* vermelho do brasão — ÚNICO acento de ação */
+  --color-neblina: #e9edea;      /* a névoa; fundo de página */
+  --color-tinta: #141c18;        /* preto com resto de verde; nunca #000 */
+  --color-musgo: #4c5a51;        /* liquen na pedra; texto secundário */
+  --color-papel: #ffffff;        /* superfície, não cor de marca */
 
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* O azul do brasão (#304890) fica FORA do sistema de propósito: é ele que
+     puxaria o portal de volta para a faixa azul institucional que a tese
+     recusa. Vive apenas dentro da imagem do brasão. */
 
-  /* Conteúdo de texto corrido não deve passar de ~75 caracteres por linha. */
-  --container-leitura: 68ch;
+  /* ── Ponte de compatibilidade ───────────────────────────────────────────
+     O PAINEL das secretarias (/painel) é outro produto: ferramenta interna,
+     fora do escopo do redesenho. Estes apelidos mapeiam os nomes que ele já
+     usa para a paleta nova, então ele herda a identidade sem uma linha
+     reescrita.
+
+     PÁGINA PÚBLICA NÃO USA ESTES NOMES. Se aparecer 'text-azul' numa página
+     do portal, é código velho que escapou da revisão. */
+  --color-azul: #0c5430;           /* → serra */
+  --color-azul-escuro: #06301c;    /* → serra-noite */
+  --color-azul-claro: #dbe5de;     /* tinta clara de serra */
+  --color-vermelho: #a8303c;       /* → carmim */
+  --color-vinho: #8a2531;
+  --color-verde: #0c5430;
+  --color-verde-texto: #0c5430;
+  --color-prata: #c3ccc6;
+  --color-grafite: #4c5a51;        /* → musgo */
+  --color-trigo: #8a6a2f;          /* atenção; 5,1:1 sobre papel */
+  --color-papel-suave: #e9edea;    /* → neblina */
+
+  --font-display: 'Bricolage Grotesque', 'Arial Narrow', system-ui, sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* ── Medida ─────────────────────────────────────────────────────────────
+     A largura da tela não é a largura do texto. */
+  --container-leitura: 62ch;
+  --container-carreira: 76rem;
+
+  /* ── Movimento ──────────────────────────────────────────────────────────
+     Uma curva para o gesto de assinatura, uma para microfeedback. */
+  --ease-tear: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --duracao-tear: 900ms;
+  --duracao-foco: 120ms;
+  --duracao-faixa: 400ms;
 }
 
-@layer base {
-  html {
-    scroll-behavior: smooth;
-    -webkit-text-size-adjust: 100%;
-  }
+/* ── Base ────────────────────────────────────────────────────────────────── */
 
-  /* Quem usa "reduzir movimento" não deve ser arrastado pela rolagem suave. */
-  @media (prefers-reduced-motion: reduce) {
-    html { scroll-behavior: auto; }
-    *, *::before, *::after {
-      animation-duration: 0.01ms !important;
-      transition-duration: 0.01ms !important;
-    }
-  }
-
-  body {
-    background-color: var(--color-papel);
-    color: var(--color-tinta);
-    font-family: var(--font-sans);
-    line-height: 1.6;
-  }
-
-  /* Foco visível SEMPRE. Portal público é navegado por teclado e leitor de
-     tela; remover o anel de foco é falha de acessibilidade, não estética. */
-  :focus-visible {
-    outline: 3px solid var(--color-azul);
-    outline-offset: 2px;
-    border-radius: 2px;
-  }
-
-  h1, h2, h3, h4 {
-    line-height: 1.25;
-    text-wrap: balance;
-    font-weight: 700;
-  }
-
-  /* Sublinhado nos links de texto: cor sozinha não distingue link para quem
-     não enxerga cor (WCAG 1.4.1). */
-  main a:not([class]) {
-    color: var(--color-azul);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-  main a:not([class]):hover { color: var(--color-azul-escuro); }
+:root {
+  /* Controlada pelo botão A−/A+ da barra de acessibilidade. Como toda a escala
+     é em rem, mudar isto redimensiona o portal inteiro sem quebrar layout. */
+  --escala-tipo: 1;
+  color-scheme: light;
 }
 
-/* Corpo de notícia e páginas: o HTML vem do editor do Directus, então a
-   estilização precisa alcançar tags que não passam por classe nossa. */
-@layer components {
-  .conteudo-rico {
-    max-width: var(--container-leitura);
-  }
-  .conteudo-rico > * + * { margin-top: 1rem; }
-  .conteudo-rico h2 { font-size: 1.5rem; margin-top: 2rem; }
-  .conteudo-rico h3 { font-size: 1.25rem; margin-top: 1.5rem; }
-  .conteudo-rico ul { list-style: disc; padding-left: 1.5rem; }
-  .conteudo-rico ol { list-style: decimal; padding-left: 1.5rem; }
-  .conteudo-rico li + li { margin-top: 0.25rem; }
-  .conteudo-rico a {
-    color: var(--color-azul);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-  .conteudo-rico blockquote {
-    border-left: 4px solid var(--color-prata);
-    padding-left: 1rem;
-    color: var(--color-grafite);
-  }
-  .conteudo-rico img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 0.5rem;
-  }
-  .conteudo-rico table {
-    width: 100%;
-    border-collapse: collapse;
-    display: block;
-    overflow-x: auto;
-  }
-  .conteudo-rico th, .conteudo-rico td {
-    border: 1px solid var(--color-prata);
-    padding: 0.5rem;
-    text-align: left;
+html {
+  font-size: calc(100% * var(--escala-tipo));
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-neblina);
+  color: var(--color-tinta);
+  font-family: var(--font-sans);
+  /* 17px, não 16: um pixel a mais custa nada e devolve muito a quem tem mais
+     de sessenta anos lendo no celular, na rua. */
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, .display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+/* ── Escala tipográfica ──────────────────────────────────────────────────── */
+
+.t-display { font-size: clamp(2.6rem, 7vw, 5rem);   line-height: 0.95; letter-spacing: -0.03em; }
+.t-pagina  { font-size: clamp(2rem, 4.2vw, 3rem);   line-height: 1.05; }
+.t-secao   { font-size: clamp(1.5rem, 2.6vw, 2.05rem); line-height: 1.15; font-weight: 600; }
+.t-sub     { font-size: 1.25rem;    line-height: 1.3;  font-weight: 600; }
+.t-lead    { font-size: 1.1875rem;  line-height: 1.55; }
+.t-micro   { font-size: 0.875rem;   line-height: 1.5; }
+
+.t-rotulo {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Foco ────────────────────────────────────────────────────────────────
+   Nunca outline:none. O foco é um traço carmim grosso e um deslocamento —
+   visível sobre neblina, sobre papel e sobre serra. */
+:focus-visible {
+  outline: 3px solid var(--color-carmim);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+.sobre-serra :focus-visible { outline-color: var(--color-papel); }
+
+/* ── O ponto: motivo do sistema ──────────────────────────────────────────
+   O "V" do ponto meia. Aparece em três escalas — no hero (grande), na régua
+   que separa cada carreira (média) e no fio da ourela (mínima). Quem vê uma
+   vez reconhece as outras. É SVG embutido: zero requisição. */
+.regua-tricô {
+  height: 6px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='6' viewBox='0 0 12 6'%3E%3Cpath d='M0 0.6 L3 5.4 L6 0.6 L9 5.4 L12 0.6' fill='none' stroke='%234c5a51' stroke-width='1.1' stroke-opacity='.55'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+}
+.fio-ourela {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='12' viewBox='0 0 6 12'%3E%3Cpath d='M0.6 0 L5.4 3 L0.6 6 L5.4 9 L0.6 12' fill='none' stroke='%234c5a51' stroke-width='1.1' stroke-opacity='.45'/%3E%3C/svg%3E");
+  background-repeat: repeat-y;
+  width: 6px;
+}
+
+/* ── Carreira: a unidade de composição ───────────────────────────────────
+   Faixa horizontal sangrada. Dentro, duas trilhas: a ourela (estreita, com
+   número e rótulo da seção) e o corpo (largo). Em 360px a ourela colapsa
+   para o fio de 6px — a estrutura não muda de natureza no celular. */
+.carreira {
+  display: grid;
+  grid-template-columns: 6px minmax(0, 1fr);
+  gap: 1.25rem;
+  max-width: var(--container-carreira);
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+.carreira > .ourela { display: contents; }
+
+@media (min-width: 48rem) {
+  .carreira {
+    grid-template-columns: 9rem minmax(0, 1fr);
+    gap: 2.5rem;
+    padding-inline: 2rem;
   }
 }
 
-/* Impressão: o cidadão imprime edital e notícia. Sem isso sai menu e rodapé. */
+/* ── Linha de tarefa: alvo de toque de largura total ─────────────────────
+   Substitui o cartão. Nome de serviço nunca truncado, alvo de 64px de altura
+   ocupando a linha inteira, e ordem de leitura previsível. */
+.linha-tarefa {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 4rem;
+  padding-block: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-musgo) 28%, transparent);
+  text-decoration: none;
+  color: inherit;
+}
+.linha-tarefa:last-child { border-bottom: 1px solid color-mix(in srgb, var(--color-musgo) 28%, transparent); }
+
+.linha-tarefa .seta {
+  flex: none;
+  transition: transform var(--duracao-foco) ease-out;
+}
+.linha-tarefa:hover .seta,
+.linha-tarefa:focus-visible .seta { transform: translateX(4px); }
+
+/* O sublinhado carmim que cresce — o "fio de foco" do DESIGN.md. */
+.fio-foco {
+  background-image: linear-gradient(var(--color-carmim), var(--color-carmim));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 2px;
+  transition: background-size var(--duracao-foco) ease-out;
+}
+a:hover .fio-foco,
+a:focus-visible .fio-foco,
+.fio-foco:hover,
+.fio-foco:focus-visible { background-size: 100% 2px; }
+
+/* ── Entrada da faixa ao rolar ──────────────────────────────────────────── */
+.entra {
+  opacity: 0;
+  transform: translate3d(0, 12px, 0);
+  transition:
+    opacity var(--duracao-faixa) ease-out,
+    transform var(--duracao-faixa) ease-out;
+}
+.entra.visivel { opacity: 1; transform: none; }
+
+/* ── Conteúdo vindo do CMS ──────────────────────────────────────────────── */
+.conteudo-rico {
+  max-width: var(--container-leitura);
+  /* Conteúdo vem do CMS: URL longa colada num parágrafo não pode empurrar a
+     página para além de 360px, e tabela larga rola dentro do próprio bloco
+     em vez de criar barra horizontal no documento inteiro. */
+  overflow-wrap: anywhere;
+  overflow-x: auto;
+}
+.conteudo-rico :is(img, video, table, pre) { max-width: 100%; }
+.conteudo-rico > * + * { margin-top: 1.1em; }
+.conteudo-rico h2 { font-size: 1.5rem; line-height: 1.2; margin-top: 2em; }
+.conteudo-rico h3 { font-size: 1.2rem; line-height: 1.3; margin-top: 1.6em; }
+.conteudo-rico a { color: var(--color-serra); text-underline-offset: 3px; }
+.conteudo-rico ul, .conteudo-rico ol { padding-left: 1.4em; }
+.conteudo-rico ul { list-style: disc; }
+.conteudo-rico ol { list-style: decimal; }
+.conteudo-rico li + li { margin-top: 0.4em; }
+.conteudo-rico blockquote {
+  border-left: 3px solid var(--color-carmim);
+  padding-left: 1rem;
+  color: var(--color-musgo);
+}
+.conteudo-rico table { width: 100%; border-collapse: collapse; }
+.conteudo-rico th, .conteudo-rico td {
+  border-bottom: 1px solid color-mix(in srgb, var(--color-musgo) 30%, transparent);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+/* ── Modo de alto contraste ─────────────────────────────────────────────
+   Não é um "tema escuro": endurece para preto e branco puros e engrossa os
+   traços. Exigência do eMAG. */
+[data-contraste='alto'] {
+  --color-neblina: #ffffff;
+  --color-papel: #ffffff;
+  --color-tinta: #000000;
+  --color-musgo: #1a1a1a;
+  --color-serra: #00331a;
+  --color-serra-noite: #000000;
+  --color-carmim: #8f0018;
+}
+[data-contraste='alto'] .regua-tricô,
+[data-contraste='alto'] .fio-ourela { background-image: none; background: #000; }
+[data-contraste='alto'] .fio-ourela { width: 3px; }
+[data-contraste='alto'] :focus-visible { outline-width: 4px; }
+[data-contraste='alto'] .serra-tecida { filter: grayscale(1) contrast(2); }
+
+/* ── prefers-reduced-motion ─────────────────────────────────────────────
+   Desliga, não atenua. É portal de governo: a preferência do sistema
+   operacional não é sugestão. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .entra { opacity: 1; transform: none; }
+  .serra-tecida .veu { display: none; }
+}
+
+/* ── Utilitário de leitor de tela ──────────────────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Impressão: o cidadão imprime edital e comprovante. */
 @media print {
-  .nao-imprimir { display: none !important; }
-  body { color: #000; background: #fff; }
-  .conteudo-rico { max-width: none; }
+  .sem-impressao { display: none !important; }
+  body { background: #fff; color: #000; font-size: 11pt; }
+  a[href^='http']::after { content: ' (' attr(href) ')'; font-size: 9pt; }
 }

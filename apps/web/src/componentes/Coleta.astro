@@ -1,0 +1,115 @@
+---
+/**
+ * COLETA NO MEU BAIRRO.
+ *
+ * O módulo que nenhum outro portal de prefeitura tem — e é justamente por isso
+ * que ele está na home. A auditoria do portal atual mostrou que a página de
+ * coleta de lixo é navegada bairro a bairro: é serviço de alto tráfego e de
+ * altíssima especificidade local. Um cidadão de outra cidade não reconhece
+ * esta lista; um de Cambuí reconhece a própria rua.
+ *
+ * Funciona sem JavaScript: a lista inteira é renderizada no servidor e o
+ * seletor apenas FILTRA o que já está na página. Sem script, o cidadão rola e
+ * acha o bairro dele.
+ *
+ * Enquanto o calendário real não vier da Secretaria de Obras, a interface diz
+ * que está em atualização — não inventa dia de coleta. Errar o dia do lixo é
+ * pior do que não informar.
+ */
+import { BAIRROS } from '../dados/cidade';
+
+const temCalendario = BAIRROS.some((b) => b.dias.length > 0);
+---
+
+<div class="coleta entra">
+  <form class="filtro" onsubmit="return false">
+    <label for="bairro" class="t-rotulo etiqueta">Escolha o seu bairro</label>
+    <select id="bairro" name="bairro">
+      <option value="">Todos os bairros</option>
+      {BAIRROS.map((b) => <option value={b.nome}>{b.nome}</option>)}
+    </select>
+  </form>
+
+  {
+    !temCalendario && (
+      <p class="aviso" role="status">
+        <strong>Calendário em atualização.</strong> Os dias de coleta estão sendo conferidos com a
+        Secretaria de Obras e Serviços Urbanos. Enquanto isso, a informação vale mais pelo telefone
+        da Prefeitura do que por um dia errado publicado aqui.
+      </p>
+    )
+  }
+
+  <ul class="bairros" id="lista-bairros">
+    {BAIRROS.map((b) => (
+      <li data-bairro={b.nome}>
+        <span class="nome">{b.nome}</span>
+        <span class="dias">
+          {b.dias.length > 0 ? b.dias.join(' · ') : <span class="pendente">a confirmar</span>}
+        </span>
+      </li>
+    ))}
+  </ul>
+
+  <p class="t-micro rodape-coleta">
+    Não encontrou o seu bairro ou o distrito? <a href="/contato"><span class="fio-foco">Fale com a Prefeitura</span></a>.
+  </p>
+</div>
+
+<style>
+  .coleta { margin-top: 1.5rem; }
+  .filtro { max-width: 26rem; }
+  .etiqueta { display: block; color: var(--color-musgo); margin-bottom: 0.4rem; }
+  select {
+    width: 100%;
+    font: inherit;
+    font-size: 1.0625rem;
+    min-height: 3rem;
+    padding: 0.6rem 0.9rem;
+    border: 2px solid var(--color-serra);
+    border-radius: 4px;
+    background: var(--color-papel);
+    color: var(--color-tinta);
+  }
+
+  .aviso {
+    margin-top: 1.25rem;
+    padding: 1rem 1.1rem;
+    border-left: 4px solid var(--color-carmim);
+    background: var(--color-papel);
+    color: var(--color-musgo);
+    max-width: var(--container-leitura);
+    border-radius: 0 4px 4px 0;
+  }
+
+  .bairros { list-style: none; margin: 1.5rem 0 0; padding: 0; }
+  .bairros li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: 0.8rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-musgo) 26%, transparent);
+  }
+  .bairros li:last-child { border-bottom: 1px solid color-mix(in srgb, var(--color-musgo) 26%, transparent); }
+  .bairros li[hidden] { display: none; }
+  .nome { font-weight: 600; }
+  .dias { color: var(--color-musgo); font-variant-numeric: tabular-nums; text-align: right; }
+  .pendente { font-size: 0.875rem; font-style: italic; }
+  .rodape-coleta { margin-top: 1.25rem; color: var(--color-musgo); }
+  .rodape-coleta a { color: var(--color-serra); text-decoration: none; font-weight: 600; }
+</style>
+
+<script>
+  /* Melhoria progressiva: a lista inteira já veio do servidor; o seletor só
+     esconde o que não interessa. Sem script, nada quebra — a pessoa rola. */
+  const seletor = document.getElementById('bairro') as HTMLSelectElement | null;
+  const itens = document.querySelectorAll<HTMLLIElement>('#lista-bairros li');
+
+  seletor?.addEventListener('change', () => {
+    const escolhido = seletor.value;
+    itens.forEach((li) => {
+      li.hidden = escolhido !== '' && li.dataset.bairro !== escolhido;
+    });
+  });
+</script>

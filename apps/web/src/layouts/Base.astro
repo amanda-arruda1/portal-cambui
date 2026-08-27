@@ -1,27 +1,28 @@
 ---
 /**
- * Esqueleto de toda página do portal.
+ * Esqueleto de toda página pública do portal.
  *
- * Concentra o que é obrigação de portal público e fácil de esquecer numa
- * página nova: idioma pt-BR, título e descrição próprios, URL canônica,
- * link de pular para o conteúdo e a estrutura de marcos (header/main/footer)
- * que o leitor de tela usa para navegar.
+ * Ordem do DOM = ordem do teclado e do leitor de tela: barra de acessibilidade
+ * (com os atalhos), cabeçalho, conteúdo, rodapé. Nada é reordenado por CSS.
  */
 import '../estilos/global.css';
+import BarraAcessibilidade from '../componentes/BarraAcessibilidade.astro';
 import Cabecalho from '../componentes/Cabecalho.astro';
 import Rodape from '../componentes/Rodape.astro';
+import AvisoCookies from '../componentes/AvisoCookies.astro';
 import { SITE } from '../dados/instituicional';
 import { emDemonstracao } from '../lib/demonstracao';
 
 interface Props {
   titulo: string;
   descricao?: string;
-  /** Some do índice de busca (páginas de erro, resultados de busca). */
   semIndexacao?: boolean;
   imagem?: string | null;
+  /** Páginas com hero próprio dispensam o respiro padrão do topo do <main>. */
+  colado?: boolean;
 }
 
-const { titulo, descricao = SITE.descricao, semIndexacao = false, imagem = null } = Astro.props;
+const { titulo, descricao = SITE.descricao, semIndexacao = false, imagem = null, colado = false } = Astro.props;
 
 const tituloCompleto = titulo === SITE.titulo ? titulo : `${titulo} — ${SITE.titulo}`;
 const canonica = new URL(Astro.url.pathname, SITE.urlPublica).href;
@@ -37,6 +38,11 @@ const canonica = new URL(Astro.url.pathname, SITE.urlPublica).href;
     <link rel="canonical" href={canonica} />
     {semIndexacao && <meta name="robots" content="noindex, follow" />}
 
+    <!-- As duas fontes são auto-hospedadas e entram no caminho crítico: sem o
+         preload, o texto pisca na troca e o CLS sobe. -->
+    <link rel="preload" href="/fontes/inter.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fontes/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin />
+
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE.titulo} />
     <meta property="og:title" content={tituloCompleto} />
@@ -45,40 +51,72 @@ const canonica = new URL(Astro.url.pathname, SITE.urlPublica).href;
     <meta property="og:locale" content="pt_BR" />
     {imagem && <meta property="og:image" content={new URL(imagem, SITE.urlPublica).href} />}
 
-    <meta name="theme-color" content="#1A3868" />
+    <meta name="theme-color" content="#0C5430" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="sitemap" href="/sitemap-index.xml" />
   </head>
 
-  <body class="flex min-h-screen flex-col">
+  <body class="pagina">
     {
-      /* Enquanto houver conteúdo de demonstração no banco, todo visitante
-         precisa saber — inclusive quem chegar por engano ao endereço de
-         homologação, que é público. */
       emDemonstracao() && (
-        <div role="alert" class="bg-vermelho px-4 py-2 text-center text-sm font-semibold text-papel">
+        <div role="alert" class="faixa-demo sem-impressao">
           Versão de demonstração — o conteúdo desta página é ilustrativo e
           <strong> não tem valor oficial</strong>. O portal do município continua sendo
-          <a href="https://www.prefeituradecambui.mg.gov.br" class="underline"> prefeituradecambui.mg.gov.br</a>.
+          <a href="https://www.prefeituradecambui.mg.gov.br"> prefeituradecambui.mg.gov.br</a>.
         </div>
       )
     }
 
-    <!-- Primeiro elemento focável da página: quem navega por teclado não
-         precisa percorrer o menu inteiro a cada página. -->
-    <a
-      href="#conteudo"
-      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-azul focus:px-4 focus:py-2 focus:text-papel"
-    >
-      Pular para o conteúdo principal
-    </a>
-
+    <BarraAcessibilidade />
     <Cabecalho />
 
-    <main id="conteudo" class="flex-1">
+    <main id="conteudo" class:list={['principal', !colado && 'respiro']}>
       <slot />
     </main>
 
     <Rodape />
+    <AvisoCookies />
+
+    <script>
+      /* Entrada das faixas ao rolar. Uma vez por elemento, e só se a pessoa
+         não pediu para reduzir movimento — a checagem é feita aqui e não só no
+         CSS porque, sem ela, o observador ainda rodaria à toa. */
+      const reduzir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const alvos = document.querySelectorAll('.entra');
+
+      if (reduzir || !('IntersectionObserver' in window)) {
+        alvos.forEach((el) => el.classList.add('visivel'));
+      } else {
+        const observador = new IntersectionObserver(
+          (entradas) => {
+            entradas.forEach((e, i) => {
+              if (!e.isIntersecting) return;
+              // Escalonamento de 60ms: dá ritmo de carreira à rolagem.
+              (e.target as HTMLElement).style.transitionDelay = `${Math.min(i, 4) * 60}ms`;
+              e.target.classList.add('visivel');
+              observador.unobserve(e.target);
+            });
+          },
+          { rootMargin: '0px 0px -12% 0px', threshold: 0.05 },
+        );
+        alvos.forEach((el) => observador.observe(el));
+      }
+    </script>
   </body>
 </html>
+
+<style>
+  .pagina { display: flex; min-height: 100vh; flex-direction: column; }
+  .principal { flex: 1; }
+  .respiro { padding-top: clamp(2rem, 5vw, 3.5rem); }
+
+  .faixa-demo {
+    background: var(--color-carmim);
+    color: var(--color-papel);
+    padding: 0.5rem 1rem;
+    text-align: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  .faixa-demo a { color: inherit; }
+</style>

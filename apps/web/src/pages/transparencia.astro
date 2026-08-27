@@ -1,74 +1,93 @@
 ---
+/**
+ * Transparência e acesso à informação.
+ *
+ * Obrigação da Lei 12.527/2011, e a página que mais sofre nos portais de
+ * prefeitura: costuma ser uma lista de links azuis para sistemas de nomes
+ * incompreensíveis. Aqui cada destino diz, em português, O QUE a pessoa vai
+ * encontrar do outro lado — e diz também que vai sair do portal.
+ *
+ * DECISÃO DE PROJETO: o portal NÃO reconstrói a Transparência. Ela é atendida
+ * por sistema contábil homologado (SGP Cloud). Reimplementá-la seria duplicar
+ * dado oficial com risco de divergência.
+ */
 import Base from '../layouts/Base.astro';
 import TituloPagina from '../componentes/TituloPagina.astro';
-import { linksUteis } from '../lib/conteudo';
+import Carreira from '../componentes/Carreira.astro';
+import LinhaTarefa from '../componentes/LinhaTarefa.astro';
 import { SISTEMAS_EXTERNOS } from '../dados/instituicional';
+import { NECESSIDADES } from '../dados/cidade';
 
-/**
- * DECISÃO DE PROJETO: o portal NÃO reimplementa o Portal da Transparência.
- * A transparência é obrigação da Lei Complementar 131/2009 e da Lei 12.527/2011
- * atendida pelo sistema contábil homologado do município — reconstruí-la aqui
- * significaria duplicar dado financeiro, que é a pior coisa que se pode fazer
- * com dado financeiro. Esta página é um índice de acesso: leva o cidadão ao
- * sistema oficial em um clique.
- */
-const { dados } = await linksUteis();
-
-// Links cadastrados no CMS têm prioridade; SISTEMAS_EXTERNOS é a lista fixa de
-// partida, usada enquanto o CMS não estiver alimentado.
-const doCms = dados.map((l) => ({ nome: l.nome, url: l.url, descricao: l.descricao ?? '' }));
-const links = doCms.length > 0 ? doCms : SISTEMAS_EXTERNOS;
+const lai = NECESSIDADES.find((n) => n.chave === 'transparencia')!;
 ---
 
 <Base
   titulo="Transparência"
-  descricao="Acesso ao Portal da Transparência, ao e-SIC e aos demais sistemas oficiais do Município de Cambuí."
+  descricao="Portal da Transparência, Lei de Acesso à Informação, e-SIC, licitações e contratos da Prefeitura Municipal de Cambuí."
 >
   <TituloPagina
-    titulo="Transparência e acesso à informação"
-    descricao="Onde consultar receitas, despesas, contratos e pedidos de informação."
+    rotulo="Lei de Acesso à Informação"
+    titulo="Onde o dinheiro público aparece"
+    chamada="Receitas, despesas, contratos, servidores e diárias ficam no Portal da Transparência do município. Aqui estão os caminhos — e o que você encontra em cada um."
+    trilha={[{ rotulo: 'Transparência' }]}
   />
 
-  <div class="mx-auto max-w-6xl px-4 py-10">
-    {
-      links.length > 0 ? (
-        <ul class="grid gap-4 sm:grid-cols-2">
-          {links.map((link) => (
-            <li class="rounded-lg border border-prata p-5">
-              <h2 class="text-lg font-bold text-azul-escuro">
-                <a href={link.url} rel="noopener noreferrer" target="_blank" class="underline">
-                  {link.nome}
-                  <span class="sr-only"> (abre em nova aba, site externo)</span>
-                  <span aria-hidden="true"> ↗</span>
-                </a>
-              </h2>
-              {link.descricao && <p class="mt-2 text-grafite">{link.descricao}</p>}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        /* Sem inventar URL: enquanto a prefeitura não confirmar os endereços
-           dos sistemas oficiais, a página diz a verdade em vez de apontar para
-           um link quebrado. */
-        <div class="rounded-lg border border-prata bg-papel-suave p-8">
-          <p class="text-lg font-semibold text-azul-escuro">Endereços em confirmação</p>
-          <p class="mt-2 max-w-(--container-leitura) text-grafite">
-            Os links para o Portal da Transparência, o Diário Oficial e o e-SIC estão sendo
-            confirmados junto aos sistemas oficiais do município e serão publicados aqui.
-            Enquanto isso, o atendimento presencial na sede da prefeitura segue disponível
-            para pedidos de acesso à informação.
-          </p>
-        </div>
-      )
-    }
+  <Carreira numero="01" rotulo="Pedir uma informação" fundo="papel" titulo="e-SIC — a Prefeitura tem prazo para responder">
+    <p class="texto">
+      Qualquer pessoa pode pedir informação a um órgão público, sem justificar o motivo, e receber
+      resposta em até <strong>20 dias</strong>, prorrogáveis por mais 10 — é o que diz a Lei
+      12.527/2011. O pedido é registrado no sistema de ouvidoria do município, que gera um número
+      de protocolo para você acompanhar.
+    </p>
+    <p class="acoes">
+      <a href="http://cambui.eouve.com.br/" target="_blank" rel="noopener noreferrer" class="botao">
+        Registrar pedido no e-SIC<span class="sr-only"> — abre em uma nova aba</span>
+      </a>
+    </p>
+  </Carreira>
 
-    <section class="mt-10 max-w-(--container-leitura)">
-      <h2 class="text-2xl font-bold text-azul-escuro">Pedido de acesso à informação</h2>
-      <p class="mt-3 text-grafite">
-        Qualquer pessoa pode solicitar informações públicas ao município, sem precisar
-        justificar o pedido, conforme a Lei nº 12.527/2011 (Lei de Acesso à Informação).
-        O prazo de resposta é de até 20 dias, prorrogável por mais 10 mediante justificativa.
-      </p>
-    </section>
-  </div>
+  <Carreira numero="02" rotulo="Consultar dados públicos">
+    <ul class="lista entra">
+      {SISTEMAS_EXTERNOS.map((s) => (
+        <li><LinhaTarefa tarefa={{ rotulo: s.nome, detalhe: s.descricao, destino: s.url, externo: true }} /></li>
+      ))}
+    </ul>
+  </Carreira>
+
+  <Carreira numero="03" rotulo="Atalhos mais procurados" fundo="papel">
+    <ul class="lista entra">
+      {lai.tarefas.map((t) => <li><LinhaTarefa tarefa={t} /></li>)}
+      <li>
+        <LinhaTarefa tarefa={{ rotulo: 'Editais e documentos publicados aqui', detalhe: 'Editais, licitações, decretos e portarias no portal', destino: '/documentos' }} />
+      </li>
+    </ul>
+  </Carreira>
+
+  <Carreira numero="04" rotulo="Por que os links saem do portal">
+    <p class="texto">
+      A Transparência do município é mantida em sistema contábil homologado, com dado que sai
+      direto da execução orçamentária. Republicar esses números aqui criaria uma segunda versão da
+      verdade, sujeita a ficar desatualizada — e um portal de prefeitura com dois valores
+      diferentes para a mesma despesa é pior do que um portal sem a informação.
+    </p>
+  </Carreira>
 </Base>
+
+<style>
+  .texto { margin-top: 1.25rem; max-width: var(--container-leitura); }
+  .lista { list-style: none; margin: 1.25rem 0 0; padding: 0; }
+  .acoes { margin-top: 1.5rem; }
+  .botao {
+    display: inline-flex;
+    align-items: center;
+    min-height: 3rem;
+    padding: 0.8rem 1.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    text-decoration: none;
+    background: var(--color-carmim);
+    color: var(--color-papel);
+    border: 2px solid var(--color-carmim);
+  }
+  .botao:hover { background: var(--color-serra); border-color: var(--color-serra); }
+</style>

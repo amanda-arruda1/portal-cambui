@@ -1,13 +1,64 @@
 ---
+/**
+ * Cabeçalho de página interna.
+ *
+ * Repete a estrutura da carreira — ourela + corpo — para que a página interna
+ * seja reconhecidamente o mesmo sistema da home, e não outro site.
+ */
 interface Props {
   titulo: string;
+  chamada?: string;
+  /** Apelido de 'chamada'. Existia na versão anterior do componente e continua
+   *  aceito para as páginas que ainda não foram harmonizadas. */
   descricao?: string;
+  /** Trilha de navegação. O último item é a página atual e não é link. */
+  trilha?: Array<{ rotulo: string; destino?: string }>;
+  rotulo?: string;
 }
-const { titulo, descricao } = Astro.props;
+const { titulo, chamada, descricao, trilha = [], rotulo } = Astro.props;
+const texto = chamada ?? descricao;
 ---
-<div class="border-b border-prata bg-papel-suave">
-  <div class="mx-auto max-w-6xl px-4 py-8">
-    <h1 class="text-3xl font-bold text-azul-escuro sm:text-4xl">{titulo}</h1>
-    {descricao && <p class="mt-2 max-w-2xl text-grafite">{descricao}</p>}
+
+<div class="cabeca-pagina">
+  <div class="carreira">
+    <div class="ourela">
+      <span class="fio fio-ourela" aria-hidden="true"></span>
+      <div class="corpo">
+        {trilha.length > 0 && (
+          <nav aria-label="Você está aqui" class="trilha t-micro">
+            <ol>
+              <li><a href="/">Início</a></li>
+              {trilha.map((t, i) => (
+                <li>
+                  <span aria-hidden="true">›</span>
+                  {t.destino && i < trilha.length - 1 ? (
+                    <a href={t.destino}>{t.rotulo}</a>
+                  ) : (
+                    <span aria-current="page">{t.rotulo}</span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
+        {rotulo && <p class="t-rotulo etiqueta">{rotulo}</p>}
+        <h1 class="t-pagina">{titulo}</h1>
+        {texto && <p class="t-lead chamada">{texto}</p>}
+      </div>
+    </div>
   </div>
+  <div class="regua-tricô" aria-hidden="true"></div>
 </div>
+
+<style>
+  .cabeca-pagina { padding-bottom: 2rem; }
+  .fio { min-height: 3rem; }
+  .trilha ol { list-style: none; display: flex; flex-wrap: wrap; gap: 0.35rem 0.5rem; margin: 0; padding: 0; color: var(--color-musgo); }
+  .trilha li { display: flex; gap: 0.5rem; }
+  .trilha a { color: var(--color-serra); text-decoration: none; }
+  .trilha a:hover { text-decoration: underline; }
+  .etiqueta { color: var(--color-carmim); margin-top: 1.25rem; }
+  h1 { margin-top: 0.5rem; max-width: 20ch; }
+  .chamada { margin-top: 1rem; max-width: var(--container-leitura); color: var(--color-musgo); }
+  .regua-tricô { margin-top: 2rem; }
+</style>

@@ -1,10 +1,16 @@
 ---
+/**
+ * Listagem de notícias.
+ *
+ * Linhas, não cartões: título de matéria não cabe truncado num quadrado, e a
+ * data importa mais do que a miniatura para quem procura um comunicado.
+ */
 import Base from '../../layouts/Base.astro';
-import CartaoNoticia from '../../componentes/CartaoNoticia.astro';
-import EstadoVazio from '../../componentes/EstadoVazio.astro';
 import Paginacao from '../../componentes/Paginacao.astro';
 import TituloPagina from '../../componentes/TituloPagina.astro';
 import { noticiasRecentes } from '../../lib/conteudo';
+import { arquivo } from '../../lib/directus';
+import { data, iso, recorte, semHtml } from '../../lib/formato';
 
 const POR_PAGINA = 12;
 
@@ -14,31 +20,111 @@ const bruto = Number.parseInt(Astro.url.searchParams.get('pagina') ?? '1', 10);
 const pagina = Number.isFinite(bruto) && bruto > 0 ? bruto : 1;
 
 const { dados, indisponivel } = await noticiasRecentes(POR_PAGINA, pagina);
-
-// O Directus devolve o total em meta.filter_count; sem ele (coleção ausente)
-// tratamos como página única.
 const totalPaginas = dados.length === POR_PAGINA ? pagina + 1 : pagina;
 ---
 
-<Base
-  titulo="Notícias"
-  descricao="Notícias e comunicados oficiais da Prefeitura Municipal de Cambuí."
->
-  <TituloPagina titulo="Notícias" descricao="Comunicados e ações da administração municipal." />
+<Base titulo="Notícias" descricao="Notícias e comunicados oficiais da Prefeitura Municipal de Cambuí.">
+  <TituloPagina
+    rotulo="Notícias"
+    titulo="Comunicados e ações da administração"
+    chamada="O que a Prefeitura publicou, da mais recente para a mais antiga."
+    trilha={[{ rotulo: 'Notícias' }]}
+  />
 
-  <div class="mx-auto max-w-6xl px-4 py-10">
-    {
-      dados.length === 0 ? (
-        <EstadoVazio indisponivel={indisponivel} assunto="notícias" />
-      ) : (
-        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {dados.map((noticia) => (
-            <CartaoNoticia noticia={noticia} />
-          ))}
-        </div>
-      )
-    }
+  <div class="carreira lista-noticias">
+    <div class="ourela">
+      <span class="fio fio-ourela" aria-hidden="true"></span>
+      <div class="corpo">
+        {
+          indisponivel || dados.length === 0 ? (
+            <p class="vazio">
+              {pagina > 1
+                ? 'Não há mais notícias nesta página.'
+                : 'Ainda não há notícias publicadas. Assim que as secretarias publicarem, elas aparecem aqui.'}
+              {' '}
+              <a href="/"><span class="fio-foco">Voltar ao início</span></a>
+            </p>
+          ) : (
+            <ul class="lista">
+              {dados.map((n) => (
+                <li>
+                  <a href={`/noticias/${n.slug}`} class="item">
+                    {/* Sem imagem, NÃO há caixa vazia. A versão anterior punha
+                        um retângulo texturizado no lugar: decoração fingindo
+                        conteúdo, que fazia a matéria sem foto parecer quebrada.
+                        Removida na segunda crítica do DESIGN.md — o texto
+                        simplesmente ocupa a largura toda, e fica melhor. */}
+                    {arquivo(n.imagem, { width: 320, quality: 70, fit: 'cover' }) && (
+                      <img
+                        class="miniatura"
+                        src={arquivo(n.imagem, { width: 320, quality: 70, fit: 'cover' })!}
+                        alt=""
+                        width="160"
+                        height="107"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    )}
+                    <span class="texto">
+                      <span class="t-rotulo meta">
+                        <time datetime={iso(n.data_publicacao)}>{data(n.data_publicacao)}</time>
+                        {n.secretaria && <> · {n.secretaria.nome}</>}
+                      </span>
+                      <span class="t-sub titulo"><span class="fio-foco">{n.titulo}</span></span>
+                      <span class="resumo t-micro">{n.resumo ?? recorte(semHtml(n.conteudo), 130)}</span>
+                    </span>
+                    <svg class="seta" width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                      <path d="M4 11h13M12 6l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )
+        }
 
-    <Paginacao pagina={pagina} totalPaginas={totalPaginas} base="/noticias" />
+        {!indisponivel && dados.length > 0 && (
+          <Paginacao pagina={pagina} totalPaginas={totalPaginas} base="/noticias" />
+        )}
+      </div>
+    </div>
   </div>
 </Base>
+
+<style>
+  .lista-noticias { padding-bottom: clamp(3rem, 7vw, 5rem); }
+  .fio { min-height: 6rem; }
+  .lista { list-style: none; margin: 0; padding: 0; }
+  .item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-block: 1.1rem;
+    min-height: 5rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-musgo) 26%, transparent);
+    text-decoration: none;
+    color: inherit;
+  }
+  .lista li:last-child .item { border-bottom: 1px solid color-mix(in srgb, var(--color-musgo) 26%, transparent); }
+
+  .miniatura {
+    flex: none;
+    width: 5rem;
+    height: 3.35rem;
+    object-fit: cover;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--color-musgo) 16%, transparent);
+  }
+  @media (min-width: 40rem) { .miniatura { width: 8.5rem; height: 5.7rem; } }
+
+  .texto { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; flex: 1; }
+  .meta { color: var(--color-musgo); }
+  .titulo { font-family: var(--font-display); letter-spacing: -0.01em; }
+  .resumo { color: var(--color-musgo); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  @media (max-width: 30rem) { .resumo { display: none; } }
+  .seta { color: var(--color-carmim); flex: none; }
+  .item:hover .seta { transform: translateX(4px); transition: transform var(--duracao-foco) ease-out; }
+
+  .vazio { color: var(--color-musgo); max-width: var(--container-leitura); }
+  .vazio a { color: var(--color-serra); font-weight: 600; text-decoration: none; }
+</style>

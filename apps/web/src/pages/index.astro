@@ -1,97 +1,201 @@
 ---
+/**
+ * Home.
+ *
+ * Ordem deliberada, e ela é a tese aplicada: a busca (no cabeçalho) vem antes
+ * do elemento-assinatura, e a lista de tarefas vem logo depois dele. Quem só
+ * quer pagar o IPTU não paga um rolar de tela pela identidade visual.
+ */
 import Base from '../layouts/Base.astro';
-import CartaoNoticia from '../componentes/CartaoNoticia.astro';
-import EstadoVazio from '../componentes/EstadoVazio.astro';
-import { noticiasEmDestaque, noticiasRecentes, servicos } from '../lib/conteudo';
-import { MUNICIPIO, SITE } from '../dados/instituicional';
+import Carreira from '../componentes/Carreira.astro';
+import LinhaTarefa from '../componentes/LinhaTarefa.astro';
+import SerraTecida from '../componentes/SerraTecida.astro';
+import Coleta from '../componentes/Coleta.astro';
+import { noticiasRecentes } from '../lib/conteudo';
+import { arquivo } from '../lib/directus';
+import { data, iso, recorte } from '../lib/formato';
+import { semHtml } from '../lib/formato';
+import { A_CIDADE, TAREFAS } from '../dados/cidade';
+import { SISTEMAS_EXTERNOS } from '../dados/instituicional';
 
-// As três consultas são independentes: em série, uma seção lenta atrasaria a
-// página inteira. Promise.all não é otimização prematura aqui — é o que mantém
-// a home abaixo de um segundo mesmo com o CMS pensativo.
-const [destaques, recentes, listaServicos] = await Promise.all([
-  noticiasEmDestaque(3),
-  noticiasRecentes(6),
-  servicos(6),
-]);
-
-// Se ninguém marcou destaque, as mais recentes ocupam o lugar — a home nunca
-// fica com um buraco só porque o redator não usou a marcação.
-const principais = destaques.dados.length > 0 ? destaques.dados : recentes.dados.slice(0, 3);
-const demais = recentes.dados.filter((n) => !principais.some((p) => p.id === n.id));
-
-const semNoticias = principais.length === 0;
+const { dados: noticias, indisponivel } = await noticiasRecentes(5);
+const [lider, ...demais] = noticias;
 ---
 
-<Base titulo={SITE.titulo} descricao={SITE.descricao}>
-  <section class="bg-azul-escuro text-papel">
-    <div class="mx-auto max-w-6xl px-4 py-12">
-      <h1 class="text-3xl font-bold sm:text-4xl">Prefeitura Municipal de {MUNICIPIO.nome}</h1>
-      <p class="mt-3 max-w-2xl text-white/85">
-        Notícias, serviços ao cidadão, documentos oficiais e informações das secretarias.
-      </p>
-
-      <ul class="mt-6 flex flex-wrap gap-3">
-        <li><a href="/servicos" class="inline-block rounded-md bg-papel px-4 py-2 font-semibold text-azul-escuro hover:bg-azul-claro">Serviços ao cidadão</a></li>
-        <li><a href="/transparencia" class="inline-block rounded-md border border-white/40 px-4 py-2 font-semibold hover:bg-white/10">Transparência</a></li>
-        <li><a href="/documentos" class="inline-block rounded-md border border-white/40 px-4 py-2 font-semibold hover:bg-white/10">Documentos oficiais</a></li>
-      </ul>
-    </div>
-  </section>
-
-  <section class="mx-auto max-w-6xl px-4 py-12">
-    <div class="flex flex-wrap items-baseline justify-between gap-2">
-      <h2 class="text-2xl font-bold text-azul-escuro">Notícias</h2>
-      <a href="/noticias" class="font-semibold text-azul underline">Ver todas as notícias</a>
-    </div>
-
-    {
-      semNoticias ? (
-        <div class="mt-6">
-          <EstadoVazio indisponivel={recentes.indisponivel} assunto="conteúdos" />
+<Base titulo="Prefeitura de Cambuí" colado>
+  <!-- ── Hero ──────────────────────────────────────────────────────────── -->
+  <div class="hero">
+    <SerraTecida />
+    <div class="carreira">
+      <div class="ourela">
+        <span aria-hidden="true"></span>
+        <div class="corpo">
+          <h1 class="t-display frase">
+            Cambuí<br />resolve o seu dia.
+          </h1>
+          <p class="t-lead sub">
+            Mais de mil metros de altitude, na Mantiqueira. Este é o portal onde você trata com a
+            Prefeitura — sem fila e sem adivinhar em qual secretaria bater.
+          </p>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 01 · Tarefas ──────────────────────────────────────────────────── -->
+  <Carreira numero="01" rotulo="O que você precisa hoje" fundo="papel" id="tarefas">
+    <ul class="lista entra">
+      {TAREFAS.map((t, i) => (
+        <li><LinhaTarefa tarefa={t} indice={i + 1} /></li>
+      ))}
+    </ul>
+    <p class="t-micro nota">
+      Não achou? <a href="/servicos"><span class="fio-foco">Veja todos os serviços por necessidade</span></a> —
+      organizados pelo que você precisa, não por secretaria.
+    </p>
+  </Carreira>
+
+  <!-- ── 02 · Coleta ───────────────────────────────────────────────────── -->
+  <Carreira numero="02" rotulo="Coleta no meu bairro" id="coleta">
+    <Coleta />
+  </Carreira>
+
+  <!-- ── 03 · Notícias ─────────────────────────────────────────────────── -->
+  <Carreira
+    numero="03"
+    rotulo="Notícias"
+    fundo="papel"
+    acao={{ rotulo: 'Todas as notícias', destino: '/noticias' }}
+  >
+    {
+      indisponivel || noticias.length === 0 ? (
+        <p class="vazio">
+          As notícias voltam assim que o sistema de conteúdo for publicado. Enquanto isso, os
+          serviços acima continuam funcionando normalmente.
+        </p>
       ) : (
-        <>
-          <div class="mt-6 grid gap-6 md:grid-cols-3">
-            {principais.map((noticia) => (
-              <CartaoNoticia noticia={noticia} destaque />
-            ))}
-          </div>
+        <div class="noticias entra">
+          <article class="lider">
+            <a href={`/noticias/${lider.slug}`} class="lider-link">
+              {arquivo(lider.imagem, { width: 900, quality: 72, fit: 'cover' }) && (
+                <img
+                  src={arquivo(lider.imagem, { width: 900, quality: 72, fit: 'cover' })!}
+                  alt={lider.imagem_descricao ?? ''}
+                  width="900"
+                  height="506"
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
+              <p class="t-rotulo meta">
+                <time datetime={iso(lider.data_publicacao)}>{data(lider.data_publicacao)}</time>
+                {lider.secretaria && <> · {lider.secretaria.nome}</>}
+              </p>
+              <h3 class="t-secao"><span class="fio-foco">{lider.titulo}</span></h3>
+              <p class="resumo">{lider.resumo ?? recorte(semHtml(lider.conteudo), 160)}</p>
+            </a>
+          </article>
 
           {demais.length > 0 && (
-            <div class="mt-6 grid gap-6 md:grid-cols-3">
-              {demais.map((noticia) => (
-                <CartaoNoticia noticia={noticia} />
+            <ul class="lista secundarias">
+              {demais.map((n) => (
+                <li>
+                  <a href={`/noticias/${n.slug}`} class="linha-tarefa">
+                    <span class="texto-noticia">
+                      <span class="t-rotulo meta">
+                        <time datetime={iso(n.data_publicacao)}>{data(n.data_publicacao)}</time>
+                        {n.secretaria && <> · {n.secretaria.nome}</>}
+                      </span>
+                      <span class="t-sub titulo-secundario"><span class="fio-foco">{n.titulo}</span></span>
+                    </span>
+                    <svg class="seta" width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                      <path d="M4 11h13M12 6l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </a>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
-        </>
+        </div>
       )
     }
-  </section>
+  </Carreira>
 
-  {
-    listaServicos.dados.length > 0 && (
-      <section class="bg-papel-suave">
-        <div class="mx-auto max-w-6xl px-4 py-12">
-          <div class="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 class="text-2xl font-bold text-azul-escuro">Serviços mais procurados</h2>
-            <a href="/servicos" class="font-semibold text-azul underline">Ver todos os serviços</a>
-          </div>
+  <!-- ── 04 · A cidade ─────────────────────────────────────────────────── -->
+  <Carreira numero="04" rotulo="A cidade" fundo="serra" titulo={A_CIDADE.chamada}>
+    <div class="cidade entra">
+      <p class="t-lead">{A_CIDADE.texto}</p>
+      <p class="acoes">
+        <a href="/a-cidade" class="botao">Conhecer Cambuí</a>
+        <a href={A_CIDADE.portalTuristico} target="_blank" rel="noopener noreferrer" class="botao vazado">
+          Portal turístico<span class="sr-only"> — abre em uma nova aba</span>
+        </a>
+      </p>
+    </div>
+  </Carreira>
 
-          <ul class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {listaServicos.dados.map((servico) => (
-              <li class="rounded-lg border border-prata bg-papel p-4">
-                <h3 class="font-bold text-azul-escuro">
-                  <a href={`/servicos#${servico.slug}`} class="hover:underline">
-                    {servico.nome}
-                  </a>
-                </h3>
-                {servico.descricao && <p class="mt-1 text-sm text-grafite">{servico.descricao}</p>}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-    )
-  }
+  <!-- ── 05 · Transparência ────────────────────────────────────────────── -->
+  <Carreira
+    numero="05"
+    rotulo="Transparência e acesso à informação"
+    acao={{ rotulo: 'Tudo sobre transparência', destino: '/transparencia' }}
+  >
+    <ul class="lista entra">
+      {SISTEMAS_EXTERNOS.slice(0, 3).map((s) => (
+        <li>
+          <LinhaTarefa tarefa={{ rotulo: s.nome, detalhe: s.descricao, destino: s.url, externo: true }} />
+        </li>
+      ))}
+    </ul>
+  </Carreira>
 </Base>
+
+<style>
+  .hero { background: var(--color-neblina); padding-bottom: clamp(2rem, 5vw, 3.5rem); }
+  .frase { margin-top: clamp(1.5rem, 4vw, 2.5rem); }
+  .sub { margin-top: 1.25rem; max-width: 52ch; color: var(--color-musgo); }
+
+  .lista { list-style: none; margin: 1.5rem 0 0; padding: 0; }
+  .nota { margin-top: 1.25rem; color: var(--color-musgo); }
+  .nota a { color: var(--color-serra); text-decoration: none; font-weight: 600; }
+  .vazio { margin-top: 1.25rem; color: var(--color-musgo); max-width: var(--container-leitura); }
+
+  .noticias { margin-top: 1.5rem; display: grid; gap: 2rem; }
+  @media (min-width: 60rem) { .noticias { grid-template-columns: 1.05fr 1fr; gap: 3rem; } }
+
+  .lider-link { text-decoration: none; color: inherit; display: block; }
+  .lider img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    background: color-mix(in srgb, var(--color-musgo) 18%, transparent);
+  }
+  .meta { color: var(--color-musgo); }
+  .lider h3 { margin-top: 0.4rem; }
+  .resumo { margin-top: 0.6rem; color: var(--color-musgo); max-width: 46ch; }
+
+  .secundarias { margin-top: 0; }
+  .texto-noticia { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+  .titulo-secundario { font-family: var(--font-display); letter-spacing: -0.01em; }
+  .secundarias .seta { color: var(--color-carmim); flex: none; }
+
+  .cidade { margin-top: 1.25rem; max-width: var(--container-leitura); }
+  .acoes { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .botao {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.9rem;
+    padding: 0.7rem 1.4rem;
+    border-radius: 4px;
+    font-weight: 600;
+    text-decoration: none;
+    background: var(--color-papel);
+    color: var(--color-serra);
+    border: 2px solid var(--color-papel);
+  }
+  .botao.vazado { background: transparent; color: var(--color-papel); }
+  .botao:hover { background: var(--color-carmim); border-color: var(--color-carmim); color: var(--color-papel); }
+</style>

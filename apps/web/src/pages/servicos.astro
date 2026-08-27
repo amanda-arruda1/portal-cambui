@@ -1,82 +1,123 @@
 ---
+/**
+ * Catálogo de serviços POR NECESSIDADE.
+ *
+ * A inversão que o briefing pede e que quase nenhum portal de prefeitura faz:
+ * o cidadão não sabe — nem deveria precisar saber — qual secretaria cuida do
+ * quê. Ele sabe o que precisa. Então o índice é "Minha casa e meu bairro",
+ * não "Secretaria de Obras e Serviços Urbanos".
+ *
+ * Os serviços cadastrados no CMS entram DEPOIS do catálogo curado, porque o
+ * catálogo é o caminho curto e o CMS é o inventário completo.
+ */
 import Base from '../layouts/Base.astro';
-import EstadoVazio from '../componentes/EstadoVazio.astro';
 import TituloPagina from '../componentes/TituloPagina.astro';
+import Carreira from '../componentes/Carreira.astro';
+import LinhaTarefa from '../componentes/LinhaTarefa.astro';
+import Coleta from '../componentes/Coleta.astro';
 import { servicos } from '../lib/conteudo';
-// Segunda barreira: conteúdo também entra pelo painel do Directus, que não
-// passa pelo formulário do painel de contribuição. Aqui nada escapa.
-import { limpar } from '../lib/sanitizar';
+import { NECESSIDADES } from '../dados/cidade';
 
-const { dados, indisponivel } = await servicos();
-
-// Agrupa por categoria preservando a ordem que veio do CMS (sort por
-// categoria, nome). Serviço sem categoria cai num grupo próprio no fim.
-const grupos = new Map<string, typeof dados>();
-for (const servico of dados) {
-  const chave = servico.categoria ?? 'Outros serviços';
-  const atual = grupos.get(chave);
-  if (atual) atual.push(servico);
-  else grupos.set(chave, [servico]);
-}
+const { dados: doCms, indisponivel } = await servicos();
+const foco = Astro.url.searchParams.get('necessidade');
 ---
 
 <Base
-  titulo="Serviços"
-  descricao="Serviços oferecidos pela Prefeitura Municipal de Cambuí ao cidadão."
+  titulo="Serviços ao cidadão"
+  descricao="Serviços da Prefeitura de Cambuí organizados pelo que você precisa resolver: casa e bairro, saúde, educação, trabalho, documentos e transparência."
 >
-  <TituloPagina titulo="Serviços ao cidadão" descricao="O que a prefeitura oferece e como solicitar." />
+  <TituloPagina
+    rotulo="Serviços"
+    titulo="O que você precisa resolver?"
+    chamada="Organizado pela sua necessidade, não pelo organograma da Prefeitura. Se você não souber a qual secretaria pertence o que procura, tudo bem — não precisa saber."
+    trilha={[{ rotulo: 'Serviços' }]}
+  />
 
-  <div class="mx-auto max-w-6xl px-4 py-10">
+  <!-- Índice: dois cliques até qualquer serviço, um até os mais buscados. -->
+  <div class="carreira indice sem-impressao">
+    <div class="ourela">
+      <span aria-hidden="true"></span>
+      <nav aria-label="Categorias de serviço" class="corpo">
+        <ul>
+          {NECESSIDADES.map((n) => (
+            <li><a href={`#${n.chave}`} class:list={['atalho', foco === n.chave && 'ativo']}>{n.titulo}</a></li>
+          ))}
+        </ul>
+      </nav>
+    </div>
+  </div>
+
+  {
+    NECESSIDADES.map((n, i) => (
+      <Carreira
+        numero={String(i + 1).padStart(2, '0')}
+        rotulo={n.titulo}
+        titulo={n.chamada}
+        fundo={i % 2 === 0 ? 'papel' : 'neblina'}
+        id={n.chave}
+      >
+        <ul class="lista entra">
+          {n.tarefas.map((t) => (
+            <li><LinhaTarefa tarefa={t} /></li>
+          ))}
+        </ul>
+
+        {n.chave === 'casa' && (
+          <div id="coleta" class="bloco-coleta">
+            <h3 class="t-sub">Coleta de lixo por bairro</h3>
+            <Coleta />
+          </div>
+        )}
+      </Carreira>
+    ))
+  }
+
+  <!-- Inventário completo, alimentado pelas secretarias. -->
+  <Carreira numero="07" rotulo="Todos os serviços cadastrados" fundo="papel">
     {
-      dados.length === 0 ? (
-        <EstadoVazio indisponivel={indisponivel} assunto="serviços" />
+      indisponivel || doCms.length === 0 ? (
+        <p class="vazio">
+          As secretarias ainda estão cadastrando o inventário completo. Os caminhos acima já levam
+          aos serviços que hoje funcionam.
+        </p>
       ) : (
-        [...grupos.entries()].map(([categoria, lista]) => (
-          <section class="mb-10">
-            <h2 class="text-2xl font-bold text-azul-escuro">{categoria}</h2>
-            <ul class="mt-4 grid gap-4 sm:grid-cols-2">
-              {lista.map((servico) => (
-                <li id={servico.slug} class="scroll-mt-24 rounded-lg border border-prata p-5">
-                  <h3 class="text-lg font-bold text-azul-escuro">{servico.nome}</h3>
-                  {servico.publico_alvo && (
-                    <p class="mt-1 text-sm text-grafite">Para: {servico.publico_alvo}</p>
-                  )}
-                  {servico.descricao && <p class="mt-2 text-grafite">{servico.descricao}</p>}
-                  {servico.como_solicitar && (
-                    <div class="conteudo-rico mt-3 text-sm" set:html={limpar(servico.como_solicitar)} />
-                  )}
-
-                  {servico.url_externa && (
-                    <p class="mt-3">
-                      <a
-                        href={servico.url_externa}
-                        rel="noopener noreferrer"
-                        target="_blank"
-                        class="font-semibold text-azul underline"
-                      >
-                        Acessar o serviço
-                        {/* O aviso é lido pelo leitor de tela; o ícone sozinho
-                            não informaria que a aba muda. */}
-                        <span class="sr-only"> (abre em nova aba, site externo)</span>
-                        <span aria-hidden="true"> ↗</span>
-                      </a>
-                    </p>
-                  )}
-
-                  {servico.secretaria && (
-                    <p class="mt-3 text-sm text-grafite">
-                      Responsável:{' '}
-                      <a href={`/secretarias/${servico.secretaria.slug}`} class="underline">
-                        {servico.secretaria.nome}
-                      </a>
-                    </p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))
+        <ul class="lista entra">
+          {doCms.map((s) => (
+            <li>
+              <LinhaTarefa
+                tarefa={{
+                  rotulo: s.nome,
+                  detalhe: [s.categoria, s.secretaria?.nome].filter(Boolean).join(' · ') || 'Serviço municipal',
+                  destino: s.url_externa ?? `/servicos#${s.slug}`,
+                  externo: Boolean(s.url_externa),
+                }}
+              />
+            </li>
+          ))}
+        </ul>
       )
     }
-  </div>
+  </Carreira>
 </Base>
+
+<style>
+  .indice { padding-bottom: 1rem; }
+  .indice ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .atalho {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0.5rem 1rem;
+    border: 2px solid color-mix(in srgb, var(--color-serra) 30%, transparent);
+    border-radius: 999px;
+    text-decoration: none;
+    color: var(--color-serra);
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+  .atalho:hover, .atalho.ativo { background: var(--color-serra); color: var(--color-papel); border-color: var(--color-serra); }
+
+  .lista { list-style: none; margin: 1.25rem 0 0; padding: 0; }
+  .vazio { margin-top: 1.25rem; color: var(--color-musgo); max-width: var(--container-leitura); }
+  .bloco-coleta { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 2px solid color-mix(in srgb, var(--color-musgo) 25%, transparent); }
+</style>

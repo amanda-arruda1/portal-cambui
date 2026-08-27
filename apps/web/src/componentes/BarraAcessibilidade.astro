@@ -1,0 +1,144 @@
+---
+/**
+ * Barra de acessibilidade — primeira coisa no documento.
+ *
+ * Reúne o que o eMAG pede e o que portal de governo brasileiro consolidou:
+ * atalhos de salto, controle de tamanho de fonte, alto contraste e VLibras.
+ *
+ * Fica ANTES do cabeçalho na ordem do DOM, que é a ordem que o leitor de tela
+ * e o teclado percorrem. Os atalhos são o primeiro elemento focável da página.
+ */
+---
+
+<div class="barra sem-impressao">
+  <div class="interna">
+    <nav aria-label="Atalhos de acessibilidade" class="atalhos">
+      <a href="#conteudo" accesskey="1">Ir para o conteúdo <kbd>1</kbd></a>
+      <a href="#menu" accesskey="2">Ir para o menu <kbd>2</kbd></a>
+      <a href="#busca" accesskey="3">Ir para a busca <kbd>3</kbd></a>
+      <a href="#rodape" accesskey="4">Ir para o rodapé <kbd>4</kbd></a>
+    </nav>
+
+    <div class="controles">
+      <div class="grupo" role="group" aria-label="Tamanho do texto">
+        <button type="button" data-fonte="menor" aria-label="Diminuir o tamanho do texto">A−</button>
+        <button type="button" data-fonte="normal" aria-label="Voltar o texto ao tamanho normal">A</button>
+        <button type="button" data-fonte="maior" aria-label="Aumentar o tamanho do texto">A+</button>
+      </div>
+      <button type="button" data-contraste aria-pressed="false" class="grupo unico">
+        Alto contraste
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Widget oficial do gov.br. Marcação exigida pelo plugin. -->
+<div {...{ vw: true }} class="enabled sem-impressao">
+  <div {...{ "vw-access-button": true }} class="active"></div>
+  <div {...{ "vw-plugin-wrapper": true }}><div class="vw-plugin-top-wrapper"></div></div>
+</div>
+
+<style>
+  .barra {
+    background: var(--color-serra-noite);
+    color: var(--color-papel);
+    font-size: 0.8125rem;
+  }
+  .interna {
+    max-width: var(--container-carreira);
+    margin-inline: auto;
+    padding: 0.35rem 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+  }
+  .atalhos { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
+  .atalhos a { color: inherit; text-decoration: none; padding: 0.25rem 0; }
+  .atalhos a:hover { text-decoration: underline; }
+  .atalhos kbd {
+    font: inherit;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+    padding: 0 0.3em;
+    opacity: 0.75;
+  }
+  .controles { display: flex; align-items: center; gap: 0.5rem; }
+  .grupo { display: flex; border: 1px solid color-mix(in srgb, currentColor 45%, transparent); border-radius: 4px; overflow: hidden; }
+  .grupo button, .grupo.unico {
+    background: none;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+    min-height: 2rem;
+  }
+  .grupo button + button { border-left: 1px solid color-mix(in srgb, currentColor 45%, transparent); }
+  .grupo button:hover, .grupo.unico:hover { background: color-mix(in srgb, currentColor 18%, transparent); }
+  .grupo.unico[aria-pressed='true'] { background: var(--color-carmim); border-color: var(--color-carmim); }
+  /* A barra é escura: o foco branco é o que enxerga sobre ela. */
+  .barra :focus-visible { outline-color: var(--color-papel); }
+
+  /* Os atalhos só aparecem ao receber foco no celular, onde não cabem. */
+  @media (max-width: 47.99rem) {
+    .atalhos a { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .atalhos a:focus {
+      position: static; width: auto; height: auto; clip: auto;
+      background: var(--color-carmim); padding: 0.25rem 0.5rem; border-radius: 3px;
+    }
+  }
+</style>
+
+<script>
+  /* Preferências de leitura ficam no navegador de quem usa — nunca no
+     servidor. São escolha pessoal, não dado do município. */
+  const raiz = document.documentElement;
+
+  const ESCALAS: Record<string, string> = { menor: '0.9', normal: '1', maior: '1.15' };
+
+  function aplicarFonte(chave: string) {
+    raiz.style.setProperty('--escala-tipo', ESCALAS[chave] ?? '1');
+    try { localStorage.setItem('cambui:fonte', chave); } catch { /* modo privado */ }
+  }
+
+  function aplicarContraste(ligado: boolean) {
+    raiz.dataset.contraste = ligado ? 'alto' : '';
+    document.querySelector<HTMLButtonElement>('button[data-contraste]')?.setAttribute('aria-pressed', String(ligado));
+    try { localStorage.setItem('cambui:contraste', ligado ? 'alto' : 'normal'); } catch { /* modo privado */ }
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('[data-fonte]').forEach((b) =>
+    b.addEventListener('click', () => aplicarFonte(b.dataset.fonte!)),
+  );
+  const botaoContraste = document.querySelector<HTMLButtonElement>('button[data-contraste]');
+  botaoContraste?.addEventListener('click', () => {
+    aplicarContraste(botaoContraste.getAttribute('aria-pressed') !== 'true');
+  });
+
+  try {
+    const f = localStorage.getItem('cambui:fonte');
+    if (f) aplicarFonte(f);
+    if (localStorage.getItem('cambui:contraste') === 'alto') aplicarContraste(true);
+  } catch { /* modo privado: segue no padrão */ }
+
+  /* VLibras entra em tempo ocioso. É script de terceiro e pesado; carregá-lo
+     no caminho crítico penalizaria o LCP de todo mundo para servir a quem
+     precisa dele — que continua sendo servido, um instante depois. */
+  function carregarVLibras() {
+    const s = document.createElement('script');
+    s.src = 'https://vlibras.gov.br/app/vlibras-plugin.js';
+    s.async = true;
+    s.onload = () => {
+      // @ts-expect-error — global instalado pelo próprio plugin
+      if (window.VLibras) new window.VLibras.Widget('https://vlibras.gov.br/app');
+    };
+    document.body.appendChild(s);
+  }
+  // Guardado numa variável, e não com 'in window' direto no if: o estreitamento
+  // de tipo do TypeScript transformaria 'window' em never no ramo do else.
+  const temOcioso = typeof (window as { requestIdleCallback?: unknown }).requestIdleCallback === 'function';
+  if (temOcioso) requestIdleCallback(carregarVLibras, { timeout: 4000 });
+  else window.addEventListener('load', () => setTimeout(carregarVLibras, 1200));
+</script>

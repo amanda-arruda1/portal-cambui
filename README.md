@@ -200,6 +200,53 @@ DIRECTUS_EMAIL=<admin> DIRECTUS_SENHA=<...> node infra/directus/popular-demonstr
    página. As imagens são gradientes gerados pelo próprio script — fotografia
    daria ao conteúdo falso aparência de reportagem real.
 
+## Rodar localmente
+
+Requer **Node 22 LTS**. O portal público funciona sem o CMS no ar — as seções
+degradam para um estado vazio honesto em vez de quebrar.
+
+```bash
+git clone <repo> portal-cambui && cd portal-cambui/apps/web
+npm ci
+
+# Sem CMS: o portal sobe e mostra as seções vazias.
+npm run dev                      # http://localhost:4321
+
+# Com o CMS local (Postgres + Redis + Directus em contêiner):
+cd ../.. && cp .env.example .env # preencher as senhas
+sudo bash infra/scripts/03-stack-subir.sh
+DIRECTUS_EMAIL=<admin> DIRECTUS_SENHA=<...> \
+  node infra/directus/popular-demonstracao.mjs --aplicar   # conteúdo ilustrativo
+```
+
+Variáveis que o frontend lê (ver `.env.web.example`):
+
+| Variável | Para quê |
+|---|---|
+| `PUBLIC_SITE_URL` | URL canônica, Open Graph e sitemap |
+| `DIRECTUS_INTERNAL_URL` | Onde o CMS responde (padrão `http://127.0.0.1:8055`) |
+| `SESSION_DIR` | Diretório de sessões do painel — **lido no BUILD**, não em execução |
+
+Produção: `npm run build` gera `dist/`, servido por `node dist/server/entry.mjs`
+sob o serviço `portal-web` (ver a seção de scripts).
+
+## Design
+
+A identidade visual tem plano escrito e autocrítica registrada em
+**[DESIGN.md](DESIGN.md)**. Em uma frase: *Cambuí é uma cidade feita de
+carreiras — as de ponto das malharias e as de montanha da Mantiqueira —, e o
+portal adota a carreira como unidade de composição.*
+
+- **Tokens** em `apps/web/src/estilos/global.css`, amostrados do brasão oficial.
+  Nenhum valor de cor ou de tipo aparece solto fora desse arquivo.
+- **Contraste** conferido por `ferramentas/contraste.py`: nenhum par em uso
+  abaixo de 5,6:1.
+- **Elemento-assinatura**: `apps/web/src/componentes/SerraTecida.astro` — a
+  silhueta da Mantiqueira preenchida com pontos de tricô.
+- **Componentes do sistema**: `Carreira` (a faixa), `LinhaTarefa` (a linha de
+  serviço, que substitui o cartão), `Coleta` (o módulo local),
+  `BarraAcessibilidade`, `AvisoCookies`.
+
 ## Verificações
 
 Rodam agora, sem depender de nada pendente:
@@ -210,6 +257,9 @@ cd /opt/portal-cambui/apps/web
 node scripts/testar-upload.mjs      # 25 inspeções + 7 nomes + EICAR contra o clamd real
 node scripts/verificar-campos.mjs   # formulários do painel x esquema do CMS
 npx astro check                     # tipos
+
+cd /opt/portal-cambui
+python3 ferramentas/contraste.py    # contraste de todos os pares de cor
 
 cd /opt/portal-cambui/infra/directus
 node aplicar-papeis.mjs --simular   # revisa as permissões sem token e sem CMS no ar
