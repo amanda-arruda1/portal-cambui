@@ -255,9 +255,14 @@ export async function listarSecretarias(sessao: Sessao): Promise<Saida<OpcaoSecr
  * foi o que aconteceu com os primeiros arquivos enviados de verdade.
  *
  * Resolvido em tempo de execução e guardado em memória: assim a pasta pode ser
- * recriada pelo painel do Directus sem que nada aqui precise mudar. Uma falha
- * na busca devolve null, e o arquivo vai para a raiz — melhor guardar fora da
- * pasta do que recusar o envio de um edital.
+ * recriada pelo painel do Directus sem que nada aqui precise mudar.
+ *
+ * Pasta ausente FALHA o envio, de propósito. A versão anterior caía para a raiz
+ * "para não recusar um edital" — e o resultado era pior: o arquivo ficava
+ * gravado e invisível, porque a política pública só libera leitura do que está
+ * na pasta. O edital não era publicado de verdade, e ninguém percebia até um
+ * cidadão reclamar do link morto. Recusar na hora é o que produz um chamado
+ * para a TI em vez de conteúdo fantasma.
  */
 let pastaPublicaId: string | null | undefined;
 
@@ -268,7 +273,7 @@ async function idDaPastaPublica(sessao: Sessao, nome: string): Promise<string | 
   const r = await chamar<Array<{ id: string }>>(sessao, `/folders?${parametros}`);
 
   if (!r.ok || !r.dados[0]) {
-    console.warn(`[upload] pasta "${nome}" não encontrada no CMS — o arquivo será guardado na raiz.`);
+    console.error(`[upload] pasta "${nome}" não encontrada no CMS — envios de arquivo estão bloqueados.`);
     pastaPublicaId = null;
   } else {
     pastaPublicaId = r.dados[0].id;
@@ -301,8 +306,19 @@ export async function enviarArquivo(
 
   // 'pasta' chega como NOME (é o que está em papeis.json e faz sentido ler);
   // o Directus quer o UUID.
-  const idPasta = pasta ? await idDaPastaPublica(sessao, pasta) : null;
-  if (idPasta) forma.append('folder', idPasta);
+  if (pasta) {
+    const idPasta = await idDaPastaPublica(sessao, pasta);
+    if (!idPasta) {
+      return {
+        ok: false,
+        status: 500,
+        motivo:
+          `A pasta de arquivos públicos ("${pasta}") não existe no sistema de conteúdo. ` +
+          'O arquivo não foi guardado porque ficaria invisível para o cidadão. Avise a TI.',
+      };
+    }
+    forma.append('folder', idPasta);
+  }
   forma.append('title', nome);
   // O campo do arquivo tem de ser o ÚLTIMO: o Directus lê os metadados na
   // ordem em que chegam e ignora o que vier depois do binário.

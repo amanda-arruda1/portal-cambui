@@ -198,10 +198,25 @@ console.log(`Directus em ${BASE}\n`);
 
 // 1. imagens
 console.log('==> imagens ilustrativas');
+
+/* A pasta NÃO é opcional. A política pública libera leitura só do que está em
+ * 'publicos' (infra/directus/papeis.json); arquivo fora dela devolve 403 e a
+ * imagem aparece quebrada no portal. Foi exatamente o que aconteceu na primeira
+ * aplicação: as quatro imagens subiram para a raiz e o cidadão via um ícone
+ * partido. Melhor abortar aqui do que gerar conteúdo invisível. */
+const pastas = await api('/folders?limit=-1&fields=id,name');
+const pastaPublica = pastas.find((f) => f.name === 'publicos');
+if (!pastaPublica) {
+  throw new Error(
+    "Pasta 'publicos' não existe no Directus. Rode aplicar-papeis.mjs antes — é ele que a cria.",
+  );
+}
+
 const idPorImagem = {};
 for (const [nome, cfg] of Object.entries(IMAGENS)) {
   const png = pngGradiente(1200, 630, cfg.de, cfg.para);
   const forma = new FormData();
+  forma.append('folder', pastaPublica.id);
   forma.append('title', `Imagem ilustrativa — ${nome}`);
   forma.append('description', cfg.alt);
   forma.append('file', new Blob([png], { type: 'image/png' }), `demo-${nome}.png`);
