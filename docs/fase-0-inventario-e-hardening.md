@@ -39,27 +39,35 @@ Registro iniciado em 2026-08-27.
 | 3 | Repositório NodeSource repontado de `pub_20.x` para `pub_22.x` | backup em `/root/nodesource-nodejs.repo.bak-20260827` |
 | 4 | Node.js atualizado | v22.23.2 LTS, npm 10.9.8 |
 | 5 | `dnf-automatic` instalado e configurado | `upgrade_type=security`, `apply_updates=yes`, timer ativo (diário) |
-| 6 | Docker CE instalado | 29.7.2 + Compose 5.5.0 + containerd 2.3.3 — **daemon deliberadamente parado** |
+| 6 | Docker CE instalado e ativo | 29.7.2 + Compose 5.5.0 + containerd 2.3.3 — subido após o firewalld; `hello-world` executado com sucesso |
 | 7 | EPEL + fail2ban instalados | `jail.local` escrito (sshd/9025) — **serviço deliberadamente parado** |
 | 8 | Estrutura do projeto criada | `/opt/portal-cambui/` (modo 750) sob controle de versão |
+| 9 | firewalld ativo | zona `public`: apenas `9025/tcp` e `dhcpv6-client`; serviços `ssh` (22) e `cockpit` (9090) removidos; 80/443 seguem fechados |
+| 10 | SELinux preparado | `/etc/selinux/config` em `permissive` e `/.autorelabel` agendado — **aguarda o reboot** |
 
-### Por que Docker e fail2ban ficaram parados
+### Notas de ordem e de risco
 
-- **Docker**: precisa subir *depois* do firewalld, senão o daemon cria suas
-  chains de rede fora do controle do firewall.
-- **fail2ban**: o `ignoreip` ainda não contém a faixa de gerência da TrustIT.
-  Ativar antes disso arrisca banir a própria equipe do acesso SSH.
+- **Docker depois do firewalld**: o daemon precisa subir com o firewall já ativo,
+  senão cria suas chains de rede fora dele. Confirmado: o firewalld passou a
+  expor uma zona `docker` com a interface `docker0` dentro.
+- **fail2ban segue parado**: o `ignoreip` ainda não contém a faixa de gerência da
+  TrustIT. Ativar antes disso arrisca banir a própria equipe do acesso SSH.
+- **SELinux vai para `permissive` antes de `enforcing`**: o sistema rodou com
+  SELinux desligado, então nada criado desde o provisionamento tem rótulo
+  correto. O relabel conserta no boot, mas um rótulo errado em `enforcing` pode
+  impedir o `sshd` de subir e deixar a máquina inacessível. Em `permissive` as
+  violações são apenas registradas, e a virada final não exige novo reboot.
 
 ## 3. Pendências que bloqueiam a Fase 1
 
-1. **Reboot autorizado** para reabilitar SELinux em modo `enforcing`
-   (exige relabel do sistema de arquivos + um reboot).
-2. **firewalld**: ativar liberando 9025 (restrita à faixa TrustIT), 80 e 443.
-3. **Inbound 80/443**: confirmar o caminho do cidadão até a VM — o
+1. **Reboot** para executar o relabel e ativar o SELinux (já preparado; falta
+   só reiniciar, e depois rodar `infra/scripts/02-selinux-enforcing.sh`).
+2. **Inbound 80/443**: confirmar o caminho do cidadão até a VM — o
    `177.10.44.44` faz NAT/port-forward? Existe VIP ou WAF na frente? É esse o
    IP do registro A? Sem essa definição o Certbot não valida o domínio.
-4. **E-mail administrativo** para o Let's Encrypt.
-5. **Faixa de IP de gerência da TrustIT** para travar o SSH/9025.
+3. **E-mail administrativo** para o Let's Encrypt.
+4. **Faixa de IP de gerência da TrustIT** para travar o SSH/9025 (hoje aberta a
+   qualquer origem) e preencher o `ignoreip` do fail2ban.
 
 ## 4. Pendências posteriores (não bloqueiam a Fase 1)
 
