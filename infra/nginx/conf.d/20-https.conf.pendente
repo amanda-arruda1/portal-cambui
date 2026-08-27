@@ -1,0 +1,112 @@
+# Portal Cambuí — sites em HTTPS.
+#
+# ARQUIVO INATIVO. Só passa a valer quando renomeado para 20-https.conf, o que
+# o script 05-certificado.sh faz automaticamente APÓS a emissão. Ativá-lo antes
+# impede o Nginx de iniciar: ele aponta para certificados que ainda não existem.
+#
+# Um único certificado cobre os três nomes (SANs), emitido com
+# -d www.… -d …(apex) -d admin.…, por isso o diretório é o do primeiro nome.
+
+# Host desconhecido batendo na 443: recusa o handshake, sem revelar nada.
+server {
+    listen      443 ssl default_server;
+    listen      [::]:443 ssl default_server;
+    http2       on;
+    server_name _;
+    ssl_reject_handshake on;
+}
+
+# --- Apex: só redireciona para o www ---
+server {
+    listen      443 ssl;
+    listen      [::]:443 ssl;
+    http2       on;
+    server_name prefeituradecambui.mg.gov.br;
+
+    ssl_certificate     /etc/letsencrypt/live/www.prefeituradecambui.mg.gov.br/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/www.prefeituradecambui.mg.gov.br/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/www.prefeituradecambui.mg.gov.br/chain.pem;
+    include /etc/nginx/snippets/tls.conf;
+
+    return 301 https://www.prefeituradecambui.mg.gov.br$request_uri;
+}
+
+# --- Portal público (Astro SSR) ---
+server {
+    listen      443 ssl;
+    listen      [::]:443 ssl;
+    http2       on;
+    server_name www.prefeituradecambui.mg.gov.br;
+
+    ssl_certificate     /etc/letsencrypt/live/www.prefeituradecambui.mg.gov.br/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/www.prefeituradecambui.mg.gov.br/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/www.prefeituradecambui.mg.gov.br/chain.pem;
+    include /etc/nginx/snippets/tls.conf;
+    include /etc/nginx/snippets/seguranca.conf;
+
+    # HSTS: ativar só depois de confirmar que o certificado renova sozinho.
+    # add_header Strict-Transport-Security "max-age=31536000" always;
+
+    limit_req  zone=geral burst=60 nodelay;
+    limit_conn conexoes 40;
+
+    # Enquanto o Astro não existe (Fase 2), o 502 vira página de implantação.
+    error_page 502 503 504 /_manutencao.html;
+    location = /_manutencao.html {
+        root /var/www/portal;
+        internal;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:4321;
+        include /etc/nginx/snippets/proxy.conf;
+    }
+
+    # Arquivos servidos pelo Directus (imagens de notícias, documentos).
+    location /assets/ {
+        proxy_pass http://127.0.0.1:8055/assets/;
+        include /etc/nginx/snippets/proxy.conf;
+        proxy_cache_valid 200 1h;
+        expires 7d;
+        add_header Cache-Control "public";
+    }
+
+    # O painel do Directus não se acessa pelo domínio público.
+    location /admin { return 404; }
+}
+
+# --- Painel administrativo (Directus) ---
+server {
+    listen      443 ssl;
+    listen      [::]:443 ssl;
+    http2       on;
+    server_name admin.prefeituradecambui.mg.gov.br;
+
+    ssl_certificate     /etc/letsencrypt/live/www.prefeituradecambui.mg.gov.br/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/www.prefeituradecambui.mg.gov.br/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/www.prefeituradecambui.mg.gov.br/chain.pem;
+    include /etc/nginx/snippets/tls.conf;
+
+    # Sem CSP própria: o Directus envia a dele. Impor uma aqui quebra o painel.
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy        "same-origin" always;
+
+    # QUANDO A FAIXA DA TRUSTIT FOR CONFIRMADA, restringir o painel a ela:
+    # allow 0.0.0.0/0;   <- trocar pela faixa
+    # deny  all;
+
+    limit_conn conexoes 20;
+
+    # Autenticação é o alvo de força bruta: limite bem mais apertado.
+    location ~ ^/auth/(login|refresh) {
+        limit_req zone=login burst=5 nodelay;
+        proxy_pass http://127.0.0.1:8055;
+        include /etc/nginx/snippets/proxy.conf;
+    }
+
+    location / {
+        limit_req zone=geral burst=40 nodelay;
+        proxy_pass http://127.0.0.1:8055;
+        include /etc/nginx/snippets/proxy.conf;
+    }
+}

@@ -20,6 +20,8 @@ uploads/
 backups/
 *.sql
 *.dump
+# ...mas a inicialização do banco é código, não dump: precisa ser versionada.
+!infra/docker/postgres/initdb/*.sql
 
 # Logs e temporários
 *.log

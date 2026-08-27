@@ -1,0 +1,157 @@
+# Portal Cambuí — camada de dados e CMS.
+#
+# Nenhum serviço daqui é exposto à rede externa: Postgres e Redis existem só na
+# rede interna do Compose, e o Directus publica apenas em 127.0.0.1, onde o
+# Nginx do host o alcança. Quem fala com a internet é o Nginx, e só ele.
+#
+#   docker compose --env-file ../../.env up -d
+#
+# As tags são fixas de propósito: atualização de versão é decisão, não efeito
+# colateral de um "pull".
+
+name: portal-cambui
+
+x-log: &log
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+
+  postgres:
+    image: postgres:16.15
+    container_name: portal-postgres
+    restart: unless-stopped
+    # Sem 'ports': o banco não é alcançável nem pelo host, só pela rede interna.
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Collation ICU pt-BR: sem isso "Álvaro" e "Ângela" ordenam errado.
+      # Só vale na criação do cluster — mudar depois exige recriar o volume.
+      POSTGRES_INITDB_ARGS: "--locale-provider=icu --icu-locale=pt-BR --encoding=UTF8 --locale=C.UTF-8"
+      TZ: America/Sao_Paulo
+    volumes:
+      - ../../data/postgres:/var/lib/postgresql/data:Z
+      - ./postgres/initdb:/docker-entrypoint-initdb.d:ro,Z
+    networks: [interna]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    logging: *log
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: portal-redis
+    restart: unless-stopped
+    # Sem 'ports'. Senha mesmo assim: rede interna não é motivo para cache aberto.
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+    environment:
+      TZ: America/Sao_Paulo
+      # Repetida aqui porque o healthcheck roda dentro do container e precisa
+      # autenticar; o --requirepass acima vem da interpolação do Compose.
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - ../../data/redis:/data:Z
+    networks: [interna]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    # O entrypoint do Redis roda como root só para ajustar o dono de /data e
+    # então cair para o usuário 'redis'. Sem estas capacidades ele falha em
+    # 'chown: Operation not permitted' e o container entra em loop de reinício.
+    cap_add: [CHOWN, DAC_OVERRIDE, SETGID, SETUID]
+    logging: *log
+
+  directus:
+    image: directus/directus:11.17.4
+    container_name: portal-directus
+    restart: unless-stopped
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    ports:
+      # Só o loopback do host. O Nginx faz o proxy a partir daqui.
+      - "127.0.0.1:8055:8055"
+    environment:
+      KEY: ${DIRECTUS_KEY}
+      SECRET: ${DIRECTUS_SECRET}
+      PUBLIC_URL: ${DIRECTUS_PUBLIC_URL}
+      TZ: America/Sao_Paulo
+
+      DB_CLIENT: pg
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+      CACHE_ENABLED: "true"
+      CACHE_STORE: redis
+      CACHE_AUTO_PURGE: "true"
+      REDIS: redis://:${REDIS_PASSWORD}@redis:6379
+
+      RATE_LIMITER_ENABLED: "true"
+      RATE_LIMITER_STORE: redis
+      RATE_LIMITER_POINTS: "50"
+      RATE_LIMITER_DURATION: "1"
+
+      # Admin criado só no primeiro boot, com o banco vazio.
+      ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD}
+
+      # O portal fica atrás do Nginx: cookies só por HTTPS.
+      SESSION_COOKIE_SECURE: "true"
+      SESSION_COOKIE_SAME_SITE: lax
+      REFRESH_TOKEN_COOKIE_SECURE: "true"
+      REFRESH_TOKEN_COOKIE_SAME_SITE: lax
+
+      STORAGE_LOCATIONS: local
+      STORAGE_LOCAL_DRIVER: local
+      STORAGE_LOCAL_ROOT: /directus/uploads
+      FILES_MAX_UPLOAD_SIZE: 50mb
+
+      EXTENSIONS_PATH: /directus/extensions
+      EXTENSIONS_AUTO_RELOAD: "false"
+
+      WEBSOCKETS_ENABLED: "false"
+      TELEMETRY: "false"
+      LOG_LEVEL: info
+    volumes:
+      # ':z' (minúsculo) porque o ClamAV vai precisar ler os uploads na Fase 2.
+      - ../../data/directus/uploads:/directus/uploads:z
+      - ../../data/directus/extensions:/directus/extensions:z
+    networks: [interna]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8055/server/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+    security_opt:
+      - no-new-privileges:true
+    logging: *log
+
+networks:
+  interna:
+    name: portal-cambui-interna
+    driver: bridge
