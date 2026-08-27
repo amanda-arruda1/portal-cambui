@@ -1,0 +1,28 @@
+# Segredos — NUNCA versionar
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+secrets/
+
+# Dependências e build
+node_modules/
+dist/
+.astro/
+.output/
+build/
+
+# Dados de runtime (volumes, uploads, dumps)
+data/
+uploads/
+backups/
+*.sql
+*.dump
+
+# Logs e temporários
+*.log
+logs/
+tmp/
+.DS_Store
