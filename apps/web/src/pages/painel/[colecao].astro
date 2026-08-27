@@ -1,0 +1,173 @@
+---
+/**
+ * Lista de uma coleção com as ações do fluxo editorial.
+ *
+ * As rotas fixas (/painel/entrar, /painel/sair, /painel/estado) têm
+ * precedência sobre esta dinâmica — é regra do Astro, mas vale registrar,
+ * porque uma coleção chamada "entrar" nunca abriria aqui.
+ *
+ * O POST desta mesma página executa a transição de situação. Quem valida se a
+ * transição é permitida é o Directus, pela 'validation' da permissão de update
+ * (infra/directus/papeis.json); as checagens daqui só evitam bater na porta
+ * para levar 403.
+ */
+import Painel from '../../layouts/Painel.astro';
+import { ROTULO, colecaoOuNulo, listarFila, mudarSituacao } from '../../lib/painel/cms.ts';
+import { APARENCIA, ORDEM_DA_FILA, TRANSICOES, transicoesDe } from '../../lib/painel/fluxo.ts';
+import { conflitoDeInteresse, podeNoPapel } from '../../lib/painel/sessao.ts';
+import { dataHora } from '../../lib/formato.ts';
+import type { Situacao } from '../../lib/tipos.ts';
+
+const sessao = Astro.locals.sessao!;
+
+const colecao = colecaoOuNulo(Astro.params.colecao ?? '');
+if (!colecao) return Astro.rewrite('/404');
+
+let aviso: { tipo: 'ok' | 'erro'; texto: string } | null = null;
+
+if (Astro.request.method === 'POST') {
+  const formulario = await Astro.request.formData();
+  const id = String(formulario.get('id') ?? '');
+  const acao = String(formulario.get('acao') ?? '');
+  const destino = String(formulario.get('destino') ?? '') as Situacao;
+  const autor = String(formulario.get('autor') ?? '') || null;
+
+  const transicao = TRANSICOES.find((t) => t.acao === acao && t.para === destino);
+
+  if (!id || !transicao) {
+    aviso = { tipo: 'erro', texto: 'Ação inválida.' };
+  } else if (!podeNoPapel(sessao.usuario.papel, transicao.acao)) {
+    aviso = { tipo: 'erro', texto: 'Sua função no portal não permite esta ação.' };
+  } else if (conflitoDeInteresse(sessao, autor, transicao.acao)) {
+    aviso = { tipo: 'erro', texto: 'Você redigiu este item — a conferência precisa ser de outra pessoa.' };
+  } else {
+    const r = await mudarSituacao(sessao, colecao, id, destino);
+    if (r.ok) {
+      aviso = { tipo: 'ok', texto: `${transicao.rotulo}: concluído.` };
+      console.info(`[fluxo] ${sessao.usuario.email} moveu ${colecao}/${id} para "${destino}"`);
+    } else {
+      aviso = { tipo: 'erro', texto: r.motivo };
+      console.warn(`[fluxo] ${sessao.usuario.email} falhou ao mover ${colecao}/${id}: ${r.motivo}`);
+    }
+  }
+}
+
+const resultado = await listarFila(sessao, colecao, ORDEM_DA_FILA);
+const itens = resultado.ok ? resultado.dados : [];
+const indisponivel = resultado.ok ? null : resultado.motivo;
+
+/** Agrupa por situação preservando a ordem da fila. */
+const grupos = ORDEM_DA_FILA.map((situacao) => ({
+  situacao,
+  itens: itens.filter((i) => i.status === situacao),
+})).filter((g) => g.itens.length > 0);
+---
+
+<Painel titulo={ROTULO[colecao]} sessao={sessao}>
+  <nav class="text-sm text-grafite">
+    <a href="/painel" class="text-azul underline">Fila</a> <span aria-hidden="true">›</span> {ROTULO[colecao]}
+  </nav>
+
+  <h1 class="mt-2 text-2xl font-bold text-azul-escuro">{ROTULO[colecao]}</h1>
+
+  {
+    aviso && (
+      <div
+        role={aviso.tipo === 'erro' ? 'alert' : 'status'}
+        class={`mt-4 rounded-md border-l-4 bg-papel p-4 ${
+          aviso.tipo === 'erro' ? 'border-vermelho text-vermelho' : 'border-verde text-verde-texto'
+        }`}
+      >
+        {aviso.texto}
+      </div>
+    )
+  }
+
+  {
+    indisponivel && (
+      <div role="status" class="mt-6 rounded-lg border-l-4 border-trigo bg-papel p-5 text-grafite">
+        {indisponivel}
+      </div>
+    )
+  }
+
+  {
+    !indisponivel && grupos.length === 0 && (
+      <p class="mt-6 rounded-lg border border-prata bg-papel p-5 text-grafite">
+        Nenhum item nesta coleção ainda.
+      </p>
+    )
+  }
+
+  {
+    grupos.map((grupo) => (
+      <section class="mt-8">
+        <h2 class="text-lg font-bold text-azul-escuro">
+          {APARENCIA[grupo.situacao].rotulo}
+          <span class="ml-2 font-normal text-grafite">({grupo.itens.length})</span>
+        </h2>
+
+        <ul class="mt-3 space-y-3">
+          {grupo.itens.map((item) => {
+            const acoes = transicoesDe(sessao, item.status, item.user_created);
+            return (
+              <li class="rounded-lg border border-prata bg-papel p-4">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                  <span class="font-semibold text-tinta">{item.rotulo}</span>
+                  <span class={`rounded-full border px-2 py-0.5 text-sm ${APARENCIA[item.status].classe}`}>
+                    {APARENCIA[item.status].rotulo}
+                  </span>
+                </div>
+
+                {item.date_updated && (
+                  <p class="mt-1 text-sm text-grafite">
+                    Última alteração em {dataHora(item.date_updated)}
+                  </p>
+                )}
+
+                {acoes.length > 0 && (
+                  <div class="mt-3 flex flex-wrap gap-2">
+                    {acoes.map((t) =>
+                      t.impedimento ? (
+                        <p class="text-sm text-grafite">{t.impedimento}</p>
+                      ) : (
+                        <form method="post" data-confirmar={t.confirmar ?? undefined}>
+                          <input type="hidden" name="id" value={item.id} />
+                          <input type="hidden" name="acao" value={t.acao} />
+                          <input type="hidden" name="destino" value={t.para} />
+                          <input type="hidden" name="autor" value={item.user_created ?? ''} />
+                          <button
+                            type="submit"
+                            class={
+                              t.peso === 'principal'
+                                ? 'rounded-md bg-azul px-3 py-1.5 text-sm font-semibold text-papel hover:bg-azul-escuro'
+                                : 'rounded-md border border-prata px-3 py-1.5 text-sm font-semibold text-grafite hover:border-azul hover:text-azul'
+                            }
+                          >
+                            {t.rotulo}
+                          </button>
+                        </form>
+                      ),
+                    )}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    ))
+  }
+</Painel>
+
+<script>
+  /* Confirmação das ações irreversíveis do ponto de vista do cidadão.
+     Progressive enhancement: sem JavaScript o formulário envia direto — a
+     permissão do Directus continua sendo a trava de verdade. */
+  document.querySelectorAll<HTMLFormElement>('form[data-confirmar]').forEach((formulario) => {
+    formulario.addEventListener('submit', (evento) => {
+      const pergunta = formulario.dataset.confirmar;
+      if (pergunta && !window.confirm(pergunta)) evento.preventDefault();
+    });
+  });
+</script>

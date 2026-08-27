@@ -27,6 +27,14 @@ Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
 Environment=PORT=4321
 
+# O painel de contribuição varre cada arquivo enviado ANTES de guardá-lo, e
+# fala com o clamd pelo socket unix /run/clamd.scan/clamd.sock, que é 660 do
+# grupo 'virusgroup'. Sem este grupo suplementar o socket dá EACCES, a varredura
+# falha e — por política de falhar fechado — TODO envio de arquivo é recusado.
+# Declarado na unit, não com usermod: assim o requisito viaja junto com o
+# serviço e não depende de alguém lembrar de um comando solto.
+SupplementaryGroups=virusgroup
+
 ExecStart=/usr/bin/node /opt/portal-cambui/apps/web/dist/server/entry.mjs
 Restart=always
 RestartSec=5s

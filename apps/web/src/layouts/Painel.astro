@@ -1,0 +1,75 @@
+---
+/**
+ * Esqueleto das telas do painel de contribuição.
+ *
+ * Separado do Base.astro de propósito: o painel não leva cabeçalho de portal,
+ * não leva rodapé institucional, não entra no sitemap e não tem canonical. São
+ * dois produtos diferentes que só compartilham a folha de estilo.
+ */
+import '../estilos/global.css';
+import type { Sessao } from '../lib/painel/sessao.ts';
+
+interface Props {
+  titulo: string;
+  sessao?: Sessao;
+}
+const { titulo, sessao } = Astro.props;
+---
+
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{titulo} — Painel de conteúdo</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#1A3868" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+
+  <body class="flex min-h-screen flex-col bg-papel-suave">
+    <a
+      href="#conteudo"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-azul focus:px-4 focus:py-2 focus:text-papel"
+    >
+      Pular para o conteúdo principal
+    </a>
+
+    <header class="border-b-4 border-azul-escuro bg-azul text-papel">
+      <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <a href="/painel" class="text-lg font-bold">Painel de conteúdo</a>
+
+        {
+          sessao && (
+            <div class="flex items-center gap-4 text-sm">
+              <span>
+                {sessao.usuario.nome}
+                <span class="text-azul-claro">
+                  {' · '}
+                  {sessao.usuario.papel}
+                  {sessao.usuario.secretariaNome ? ` · ${sessao.usuario.secretariaNome}` : ''}
+                </span>
+              </span>
+              <form method="post" action="/painel/sair">
+                <button
+                  type="submit"
+                  class="rounded-md border border-papel px-3 py-1 font-semibold hover:bg-papel hover:text-azul"
+                >
+                  Sair
+                </button>
+              </form>
+            </div>
+          )
+        }
+      </div>
+    </header>
+
+    <main id="conteudo" class="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+      <slot />
+    </main>
+
+    <footer class="border-t border-prata px-4 py-4 text-center text-sm text-grafite">
+      Prefeitura Municipal de Cambuí — uso restrito a servidores autorizados.
+    </footer>
+  </body>
+</html>

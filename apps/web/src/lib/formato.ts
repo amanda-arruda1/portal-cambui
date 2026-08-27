@@ -20,6 +20,15 @@ export function dataCurta(valor: string | null | undefined): string {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeZone: FUSO }).format(d);
 }
 
+/** Data com hora. Usada no painel de contribuição: quem revisa precisa saber
+ *  se a alteração foi há cinco minutos ou na semana passada. */
+export function dataHora(valor: string | null | undefined): string {
+  if (!valor) return '';
+  const d = new Date(valor);
+  if (Number.isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: FUSO }).format(d);
+}
+
 /** Valor do atributo datetime= de <time>: precisa ser ISO, não pt-BR. */
 export function iso(valor: string | null | undefined): string {
   if (!valor) return '';

@@ -23,6 +23,20 @@ export default defineConfig({
     port: 4321,
   },
 
+  // Sem esta lista o Astro NÃO confia no Host nem no X-Forwarded-Host e monta
+  // Astro.url como "http://localhost" — comportamento proposital dele, contra
+  // injeção de cabeçalho Host. A consequência aqui era grave e silenciosa: a
+  // verificação de origem embutida compara Origin com Astro.url.origin, então
+  // TODO formulário do painel (entrar, aprovar, publicar) levava 403 em
+  // produção. Declarados os domínios, a URL volta a ser a real.
+  security: {
+    allowedDomains: [
+      { hostname: 'www.prefeituradecambui.mg.gov.br' },
+      { hostname: 'prefeituradecambui.mg.gov.br' },
+      { hostname: 'admin.prefeituradecambui.mg.gov.br' },
+    ],
+  },
+
   integrations: [
     sitemap({
       // Páginas de erro e a busca não entram no índice.

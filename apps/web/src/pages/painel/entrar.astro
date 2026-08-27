@@ -1,0 +1,136 @@
+---
+/**
+ * Entrada no painel.
+ *
+ * Duas etapas no mesmo formulário: e-mail e senha; se a conta exigir segundo
+ * fator, o campo do código aparece e o resto é preenchido de novo. Manter numa
+ * tela só evita guardar credencial em estado intermediário do servidor.
+ */
+import Painel from '../../layouts/Painel.astro';
+import { entrar, guardar, MENSAGEM, type FalhaEntrada } from '../../lib/painel/sessao.ts';
+
+let erro: string | null = null;
+let pedirCodigo = false;
+let emailPreenchido = '';
+
+/** Só caminho interno: destino vindo da URL não pode virar redirecionamento
+ *  para fora do domínio. */
+function destinoSeguro(bruto: string | null): string {
+  if (!bruto) return '/painel';
+  if (!bruto.startsWith('/') || bruto.startsWith('//')) return '/painel';
+  return bruto;
+}
+
+let destino = destinoSeguro(Astro.url.searchParams.get('destino'));
+
+if (Astro.request.method === 'POST') {
+  const formulario = await Astro.request.formData();
+  const email = String(formulario.get('email') ?? '').trim();
+  const senha = String(formulario.get('senha') ?? '');
+  const codigo = String(formulario.get('codigo') ?? '').trim();
+  destino = destinoSeguro(String(formulario.get('destino') ?? ''));
+  emailPreenchido = email;
+
+  if (!email || !senha) {
+    erro = 'Preencha o e-mail e a senha.';
+  } else {
+    const r = await entrar(email, senha, codigo || undefined);
+    if (r.ok) {
+      await guardar(Astro.session as any, r.sessao);
+      // 303: a próxima requisição é GET, então recarregar a página de destino
+      // não reenvia a senha.
+      return Astro.redirect(destino, 303);
+    }
+
+    const falha: FalhaEntrada = r.falha;
+    erro = MENSAGEM[falha.tipo];
+    pedirCodigo = falha.tipo === 'otp_necessario' || falha.tipo === 'otp_invalido';
+    if (falha.tipo === 'cms_indisponivel') {
+      console.error(`[painel] entrada falhou: ${falha.detalhe}`);
+    }
+  }
+}
+---
+
+<Painel titulo="Entrar">
+  <div class="mx-auto max-w-md">
+    <h1 class="text-2xl font-bold text-azul-escuro">Entrar no painel</h1>
+    <p class="mt-2 text-grafite">
+      Acesso restrito a servidores autorizados das secretarias.
+    </p>
+
+    {
+      erro && (
+        <div role="alert" class="mt-6 rounded-md border-l-4 border-vermelho bg-papel p-4 text-vermelho">
+          {erro}
+        </div>
+      )
+    }
+
+    <form method="post" class="mt-6 space-y-4 rounded-lg border border-prata bg-papel p-6">
+      <input type="hidden" name="destino" value={destino} />
+
+      <div>
+        <label for="email" class="block font-semibold text-azul-escuro">E-mail institucional</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          autocomplete="username"
+          value={emailPreenchido}
+          class="mt-1 w-full rounded-md border border-prata px-3 py-2"
+        />
+      </div>
+
+      <div>
+        <label for="senha" class="block font-semibold text-azul-escuro">Senha</label>
+        <input
+          id="senha"
+          name="senha"
+          type="password"
+          required
+          autocomplete="current-password"
+          class="mt-1 w-full rounded-md border border-prata px-3 py-2"
+        />
+      </div>
+
+      {
+        pedirCodigo && (
+          <div>
+            <label for="codigo" class="block font-semibold text-azul-escuro">
+              Código do autenticador
+            </label>
+            <input
+              id="codigo"
+              name="codigo"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]{6}"
+              maxlength="6"
+              autocomplete="one-time-code"
+              required
+              autofocus
+              class="mt-1 w-full rounded-md border border-prata px-3 py-2 font-mono tracking-widest"
+            />
+            <p class="mt-1 text-sm text-grafite">
+              Seis dígitos, do aplicativo autenticador do seu celular. O código muda a cada 30 segundos.
+            </p>
+          </div>
+        )
+      }
+
+      <button
+        type="submit"
+        class="w-full rounded-md bg-azul px-4 py-2 font-semibold text-papel hover:bg-azul-escuro"
+      >
+        Entrar
+      </button>
+    </form>
+
+    <p class="mt-4 text-sm text-grafite">
+      Esqueceu a senha ou perdeu o acesso ao autenticador? Procure a equipe de TI — a
+      redefinição não é feita por esta tela.
+    </p>
+  </div>
+</Painel>

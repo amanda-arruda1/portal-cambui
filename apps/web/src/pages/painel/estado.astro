@@ -1,0 +1,116 @@
+---
+/**
+ * Estado do sistema, para quem está na secretaria e para a TI.
+ *
+ * Existe por um motivo prático: quando o envio de arquivo falha, a pergunta é
+ * "é o meu arquivo ou é o sistema?". Esta tela responde antes de alguém abrir
+ * chamado — e mostra o antivírus, que é a peça capaz de recusar TODO envio
+ * quando está fora (a política é falhar fechado).
+ *
+ * Fica atrás da sessão de propósito: mesmo sendo diagnóstico, revela quais
+ * coleções existem e como o CMS responde.
+ */
+import Painel from '../../layouts/Painel.astro';
+import { saudeDoCms } from '../../lib/directus.ts';
+import { disponivel } from '../../lib/upload/clamav.ts';
+import { COLECOES_EDITAVEIS, ROTULO, contarPorSituacao, type ColecaoEditavel } from '../../lib/painel/cms.ts';
+import { TIPOS_ACEITOS } from '../../lib/upload/politica.ts';
+
+const sessao = Astro.locals.sessao!;
+
+const [cms, antivirus, colecoes] = await Promise.all([
+  saudeDoCms(),
+  disponivel(),
+  Promise.all(
+    COLECOES_EDITAVEIS.map(async (colecao: ColecaoEditavel) => {
+      const r = await contarPorSituacao(sessao, colecao);
+      return { colecao, rotulo: ROTULO[colecao], ok: r.ok, motivo: r.ok ? null : r.motivo };
+    }),
+  ),
+]);
+
+const MiB = 1024 * 1024;
+const sinal = (ok: boolean) => (ok ? 'text-verde-texto' : 'text-vermelho');
+---
+
+<Painel titulo="Estado do sistema" sessao={sessao}>
+  <nav class="text-sm text-grafite">
+    <a href="/painel" class="text-azul underline">Fila</a> <span aria-hidden="true">›</span> Estado do sistema
+  </nav>
+
+  <h1 class="mt-2 text-2xl font-bold text-azul-escuro">Estado do sistema</h1>
+
+  <div class="mt-6 grid gap-4 sm:grid-cols-2">
+    <section class="rounded-lg border border-prata bg-papel p-5">
+      <h2 class="font-bold text-azul-escuro">Sistema de conteúdo</h2>
+      <p class={`mt-2 font-semibold ${sinal(cms.ok)}`}>
+        {cms.ok ? 'Respondendo normalmente' : 'Sem resposta'}
+      </p>
+      <p class="mt-1 text-sm text-grafite">{cms.detalhe}</p>
+    </section>
+
+    <section class="rounded-lg border border-prata bg-papel p-5">
+      <h2 class="font-bold text-azul-escuro">Antivírus</h2>
+      <p class={`mt-2 font-semibold ${sinal(antivirus.ok)}`}>
+        {antivirus.ok ? 'Ativo — envios liberados' : 'Fora do ar — envios bloqueados'}
+      </p>
+      <p class="mt-1 text-sm text-grafite">
+        {
+          antivirus.ok
+            ? 'Todo arquivo é verificado antes de ser guardado.'
+            : 'Enquanto o antivírus não responder, nenhum arquivo é aceito. É proposital: melhor recusar do que guardar sem verificar. Avise a TI.'
+        }
+      </p>
+    </section>
+  </div>
+
+  <section class="mt-8">
+    <h2 class="text-lg font-bold text-azul-escuro">Coleções de conteúdo</h2>
+    <ul class="mt-3 divide-y divide-prata rounded-lg border border-prata bg-papel">
+      {
+        colecoes.map((c) => (
+          <li class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3">
+            <span class="font-semibold text-tinta">{c.rotulo}</span>
+            <span class={`text-sm font-semibold ${sinal(c.ok)}`}>
+              {c.ok ? 'disponível' : (c.motivo ?? 'indisponível')}
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="mt-8">
+    <h2 class="text-lg font-bold text-azul-escuro">Arquivos aceitos</h2>
+    <p class="mt-1 text-grafite">
+      Formato conferido pelo conteúdo, não pelo nome: renomear um arquivo não o faz passar.
+    </p>
+    <div class="mt-3 overflow-x-auto">
+      <table class="w-full min-w-md border-collapse text-left">
+        <thead>
+          <tr class="border-b-2 border-prata text-azul-escuro">
+            <th scope="col" class="py-2 pr-4 font-semibold">Tipo</th>
+            <th scope="col" class="py-2 pr-4 font-semibold">Extensões</th>
+            <th scope="col" class="py-2 font-semibold">Tamanho máximo</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            TIPOS_ACEITOS.map((t) => (
+              <tr class="border-b border-prata">
+                <td class="py-2 pr-4">{t.rotulo}</td>
+                <td class="py-2 pr-4 font-mono text-sm text-grafite">{t.extensoes.join(' ')}</td>
+                <td class="py-2 text-grafite">{Math.round(t.tamanhoMaximo / MiB)} MB</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="mt-3 text-sm text-grafite">
+      Não aceitamos <code>.svg</code>, <code>.zip</code>, <code>.doc</code>, <code>.xls</code> nem
+      arquivos de programa. PDF com JavaScript embutido e planilha com fórmula no início de um campo
+      também são recusados — os dois executam algo no computador de quem baixar.
+    </p>
+  </section>
+</Painel>
