@@ -72,13 +72,22 @@ async function pedir(caminho: string, opcoes: RequestInit = {}): Promise<Respons
   });
 }
 
-/** Códigos que o Directus usa quando o segundo fator está no caminho. */
-function classificarErro(corpo: unknown, status: number): FalhaEntrada {
+/**
+ * Códigos que o Directus usa quando o segundo fator está no caminho.
+ *
+ * 'tinhaCodigo' existe porque o Directus responde INVALID_OTP tanto para código
+ * errado quanto para código AUSENTE — e só quem chamou sabe a diferença. Sem
+ * isso, quem entrasse pela primeira vez numa conta com 2FA lia "o código não
+ * confere" sem ter digitado código nenhum.
+ */
+function classificarErro(corpo: unknown, status: number, tinhaCodigo: boolean): FalhaEntrada {
   const erros = (corpo as { errors?: Array<{ message?: string; extensions?: { code?: string } }> })?.errors ?? [];
   const codigos = erros.map((e) => e.extensions?.code ?? '');
   const mensagens = erros.map((e) => (e.message ?? '').toLowerCase());
 
-  if (codigos.includes('INVALID_OTP')) return { tipo: 'otp_invalido' };
+  if (codigos.includes('INVALID_OTP')) {
+    return tinhaCodigo ? { tipo: 'otp_invalido' } : { tipo: 'otp_necessario' };
+  }
   // O Directus recusa e-mail malformado com 400 antes de olhar a senha. Sem
   // este caso, quem digitasse o endereço pela metade lia "sistema
   // indisponível" e abriria chamado com a TI por um erro de digitação.
@@ -86,7 +95,7 @@ function classificarErro(corpo: unknown, status: number): FalhaEntrada {
   // O Directus responde INVALID_CREDENTIALS com a mensagem citando o OTP tanto
   // quando falta quanto quando a conta não tem segundo fator configurado.
   if (mensagens.some((m) => m.includes('otp') || m.includes('two-factor') || m.includes('tfa'))) {
-    return { tipo: 'otp_necessario' };
+    return tinhaCodigo ? { tipo: 'otp_invalido' } : { tipo: 'otp_necessario' };
   }
   if (status === 401 || codigos.includes('INVALID_CREDENTIALS')) return { tipo: 'credenciais' };
   return { tipo: 'cms_indisponivel', detalhe: `HTTP ${status}` };
@@ -129,7 +138,7 @@ export async function entrar(
 
   if (!resposta.ok) {
     const corpo = await resposta.json().catch(() => ({}));
-    return { ok: false, falha: classificarErro(corpo, resposta.status) };
+    return { ok: false, falha: classificarErro(corpo, resposta.status, Boolean(otp)) };
   }
 
   const dados = (await resposta.json()).data as { access_token: string; refresh_token: string; expires: number };

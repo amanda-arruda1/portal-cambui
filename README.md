@@ -226,7 +226,9 @@ ponta a ponta e o item de teste, removido.
 2. criar as pessoas das secretarias no Directus, com papel e o campo
    `secretaria` preenchido;
 3. quem for **Publicador** precisa configurar o segundo fator **antes** de
-   receber o papel: a política exige 2FA e a conta fica inacessível sem ele;
+   receber o papel — a política exige 2FA e a conta fica inacessível sem ele.
+   A ordem é: criar como **Revisor** → a pessoa entra e cadastra o autenticador
+   em `/painel/conta` → aí sim recebe o papel de Publicador;
 4. preencher `apps/web/src/dados/instituicional.ts` quando a prefeitura enviar
    CNPJ, endereço, telefones e horários.
 

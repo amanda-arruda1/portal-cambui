@@ -18,7 +18,9 @@ cadastradas — os dois dependem do e-mail institucional.
 | `portal-web` no grupo `virusgroup` | unit do systemd | aplicado |
 | Telas de redigir e editar | `/painel/<coleção>/novo` e `/painel/<coleção>/<id>` | no ar |
 | Sanitização do texto rico | gravação **e** exibição | no ar |
-| Papéis e permissões | `infra/directus/papeis.json` | escrito, **não aplicado** |
+| Cadastro de pessoas | `/painel/usuarios` (só Administrator) | no ar |
+| Verificação em duas etapas | `/painel/conta` | no ar |
+| Papéis e permissões | `infra/directus/papeis.json` | **aplicado** em 27/08/2026 |
 
 Testes que rodam hoje, sem depender de ninguém:
 
@@ -108,6 +110,39 @@ lista e cabeçalho ele funciona em todos os navegadores atuais. O resultado pass
 pelo sanitizador do servidor de qualquer jeito, então o risco de ele produzir
 algo estranho é de formatação, não de segurança.
 
+## Operar o painel: pessoas e segundo fator
+
+O painel do Directus nunca foi alcançável (o registro `admin.` não existe) e o
+projeto pediu que as secretarias não o vejam. As duas telas que faltavam para
+operar sem ele:
+
+**`/painel/usuarios`** — cadastro de pessoas, restrito a quem tem o papel
+Administrator. Senha inicial gerada no servidor e mostrada uma única vez; só
+letras e números, porque senha com símbolo se perde num copiar-e-colar ou numa
+leitura por telefone, que é como ela chega à secretaria. Sem exclusão: quem sai
+vira *Arquivado*, o que bloqueia o acesso e preserva a autoria. Duas travas que
+a tela impõe: redator sem secretaria é recusado (o filtro da permissão compara
+com a secretaria da pessoa, e nulo não casa com nada — a fila ficaria vazia para
+sempre, sem erro visível), e ninguém retira a própria função de administrador
+nem desativa a própria conta.
+
+**`/painel/conta`** — cadastro do autenticador (TOTP). QR gerado no servidor e
+embutido como SVG na página: o segredo do segundo fator não sai desta máquina,
+nem para um serviço de imagem. A chave também aparece em texto, agrupada de
+quatro em quatro, para quem for digitar à mão.
+
+**A ordem para criar um Publicador não pode ser invertida.** A política tem
+`enforce_tfa`, então um Publicador sem segundo fator não entra — e é preciso
+entrar para cadastrar o segundo fator. O caminho é: criar a pessoa como
+**Revisor** → ela entra e cadastra o autenticador em `/painel/conta` → só então
+recebe o papel de **Publicador**. A lista de pessoas mostra em vermelho toda
+conta de Publicador sem segundo fator, para que ninguém descubra isso no dia em
+que precisar publicar.
+
+O emissor que aparece no celular é reescrito para "Portal Cambui": o Directus
+gera "Directus:<e-mail>", que não diz nada para quem trabalha na secretaria. Só
+o segredo e os parâmetros de cálculo importam para o código funcionar.
+
 ## Controle de acesso do CMS
 
 `infra/directus/papeis.json` é uma **matriz explícita** de 3 políticas × 6
@@ -166,6 +201,15 @@ no manifesto foi o padrão `./.sessoes`, dentro de `/opt`, que o
 `ProtectSystem=strict` deixa somente-leitura. Ninguém teria conseguido entrar no
 painel: a senha seria aceita e a pessoa voltaria à tela de entrada. O padrão
 agora é o caminho de produção.
+
+**O Directus responde `INVALID_OTP` para código errado E para código ausente.**
+Quem entrasse pela primeira vez numa conta com 2FA lia "o código não confere"
+sem ter digitado código nenhum. Só quem chamou sabe a diferença, então ela é
+feita na aplicação.
+
+**O campo `folder` do Directus é chave UUID, não rótulo.** Mandando o nome da
+pasta, o Postgres recusa com `invalid input syntax for type uuid` e o envio
+morre em HTTP 500 — com o erro de SQL cru na tela de quem está na secretaria.
 
 **A verificação embutida do Astro não cobre JSON.** Ela só barra requisição de
 outra origem quando o `Content-Type` é de formulário (ou não existe); um POST

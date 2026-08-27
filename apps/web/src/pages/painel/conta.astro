@@ -1,0 +1,237 @@
+---
+/**
+ * Minha conta: senha e verificação em duas etapas.
+ *
+ * A tela é de quem está logado, sobre a própria conta — nenhuma ação aqui
+ * alcança outra pessoa. Por isso não há checagem de papel: todo mundo que entra
+ * pode (e deve) trocar a própria senha e cadastrar o próprio autenticador.
+ */
+import Painel from '../../layouts/Painel.astro';
+import { ativar, desativar, gerarSegredo, qrEmSvg, segredoLegivel } from '../../lib/painel/doisfatores.ts';
+import type { SegredoPendente } from '../../lib/painel/doisfatores.ts';
+
+const sessao = Astro.locals.sessao!;
+const armazem = Astro.session as any;
+
+/** Chave do segredo em cadastramento. Fica na sessão do SERVIDOR, não num
+ *  campo oculto: assim ele não volta pelo navegador a cada envio. */
+const CHAVE_PENDENTE = 'tfa_pendente';
+
+let aviso: { tipo: 'ok' | 'erro'; texto: string } | null = null;
+let pendente: SegredoPendente | null = (await armazem.get(CHAVE_PENDENTE)) ?? null;
+let temSegundoFator = sessao.usuario.temSegundoFator;
+
+if (Astro.request.method === 'POST') {
+  const f = await Astro.request.formData();
+  const acao = String(f.get('acao') ?? '');
+  const pega = (n: string) => String(f.get(n) ?? '').trim();
+
+  if (acao === 'gerar') {
+    const r = await gerarSegredo(sessao, pega('senha'));
+    if (r.ok) {
+      pendente = r.dados;
+      armazem.set(CHAVE_PENDENTE, r.dados);
+    } else {
+      aviso = { tipo: 'erro', texto: r.motivo };
+    }
+  } else if (acao === 'ativar') {
+    if (!pendente) {
+      aviso = { tipo: 'erro', texto: 'O cadastro expirou. Comece de novo.' };
+    } else {
+      const r = await ativar(sessao, pendente.secret, pega('codigo'));
+      if (r.ok) {
+        temSegundoFator = true;
+        sessao.usuario.temSegundoFator = true;
+        armazem.set('painel', sessao);
+        armazem.set(CHAVE_PENDENTE, null);
+        pendente = null;
+        aviso = { tipo: 'ok', texto: 'Verificação em duas etapas ativada. A partir do próximo acesso, o código será pedido.' };
+        // O segredo NÃO entra no log — só o fato.
+        console.info(`[conta] ${sessao.usuario.email} ativou a verificação em duas etapas`);
+      } else {
+        aviso = { tipo: 'erro', texto: r.motivo };
+      }
+    }
+  } else if (acao === 'desativar') {
+    const r = await desativar(sessao, pega('codigo'));
+    if (r.ok) {
+      temSegundoFator = false;
+      sessao.usuario.temSegundoFator = false;
+      armazem.set('painel', sessao);
+      aviso = { tipo: 'ok', texto: 'Verificação em duas etapas desativada.' };
+      console.info(`[conta] ${sessao.usuario.email} desativou a verificação em duas etapas`);
+    } else {
+      aviso = { tipo: 'erro', texto: r.motivo };
+    }
+  } else if (acao === 'cancelar') {
+    armazem.set(CHAVE_PENDENTE, null);
+    pendente = null;
+  }
+}
+
+const qr = pendente ? await qrEmSvg(pendente.otpauth) : null;
+
+const campo = 'mt-1 w-full rounded-md border border-prata bg-papel px-3 py-2';
+const ehPublicador = sessao.usuario.papel === 'Publicador';
+---
+
+<Painel titulo="Minha conta" sessao={sessao}>
+  <nav class="text-sm text-grafite">
+    <a href="/painel" class="text-azul underline">Fila</a> <span aria-hidden="true">›</span> Minha conta
+  </nav>
+
+  <h1 class="mt-2 text-2xl font-bold text-azul-escuro">Minha conta</h1>
+  <p class="mt-1 text-grafite">{sessao.usuario.email} · {sessao.usuario.papel}</p>
+
+  {
+    aviso && (
+      <div
+        role={aviso.tipo === 'erro' ? 'alert' : 'status'}
+        class={`mt-4 rounded-md border-l-4 bg-papel p-4 ${aviso.tipo === 'erro' ? 'border-vermelho text-vermelho' : 'border-verde text-verde-texto'}`}
+      >
+        {aviso.texto}
+      </div>
+    )
+  }
+
+  <section class="mt-6 rounded-lg border border-prata bg-papel p-6">
+    <h2 class="text-lg font-bold text-azul-escuro">Verificação em duas etapas</h2>
+
+    {
+      temSegundoFator ? (
+        <>
+          <p class="mt-2 font-semibold text-verde-texto">Ativa nesta conta.</p>
+          <p class="mt-1 text-grafite">
+            A cada acesso, além da senha, será pedido o código de seis dígitos do seu aplicativo
+            autenticador.
+          </p>
+
+          <form method="post" class="mt-5 max-w-sm" data-confirmar="Desativar a verificação em duas etapas? Se sua função exigir o segundo fator, você não conseguirá mais entrar.">
+            <input type="hidden" name="acao" value="desativar" />
+            <label for="codigo" class="block font-semibold text-azul-escuro">
+              Para desativar, informe o código atual
+            </label>
+            <input
+              id="codigo"
+              name="codigo"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]{6}"
+              maxlength="6"
+              autocomplete="one-time-code"
+              class={`${campo} font-mono tracking-widest`}
+            />
+            {ehPublicador && (
+              <p class="mt-2 rounded-md border-l-4 border-vermelho bg-papel-suave p-3 text-sm text-vermelho">
+                <strong>Cuidado:</strong> sua função é Publicador, que exige o segundo fator.
+                Desativando, você fica sem conseguir entrar até que alguém troque sua função.
+              </p>
+            )}
+            <button type="submit" class="mt-3 rounded-md border border-vermelho px-4 py-2 font-semibold text-vermelho hover:bg-vermelho hover:text-papel">
+              Desativar
+            </button>
+          </form>
+        </>
+      ) : pendente && qr ? (
+        <>
+          <p class="mt-2 text-grafite">
+            Abra o aplicativo autenticador do seu celular (Google Authenticator, Microsoft
+            Authenticator, Authy ou o gerenciador de senhas que você já usa) e leia o código abaixo.
+          </p>
+
+          <div class="mt-5 flex flex-wrap items-start gap-8">
+            <div class="rounded-lg border border-prata bg-papel p-3" set:html={qr} />
+
+            <div>
+              <p class="font-semibold text-azul-escuro">Não consegue ler o código?</p>
+              <p class="mt-1 text-grafite">Digite esta chave no aplicativo:</p>
+              <p class="mt-2 font-mono text-lg tracking-wider select-all">{segredoLegivel(pendente.secret)}</p>
+              <p class="mt-2 text-sm text-grafite">Tipo: baseado em tempo · 6 dígitos · 30 segundos</p>
+            </div>
+          </div>
+
+          <form method="post" class="mt-6 max-w-sm">
+            <input type="hidden" name="acao" value="ativar" />
+            <label for="codigo" class="block font-semibold text-azul-escuro">
+              Confirme com o código que apareceu no aplicativo
+            </label>
+            <input
+              id="codigo"
+              name="codigo"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]{6}"
+              maxlength="6"
+              autocomplete="one-time-code"
+              autofocus
+              required
+              class={`${campo} font-mono text-lg tracking-widest`}
+            />
+            <p class="mt-1 text-sm text-grafite">
+              O código muda a cada 30 segundos. Se der erro, espere o próximo e tente de novo.
+            </p>
+            <div class="mt-4 flex flex-wrap gap-3">
+              <button type="submit" class="rounded-md bg-azul px-5 py-2 font-semibold text-papel hover:bg-azul-escuro">
+                Ativar
+              </button>
+              <button type="submit" name="acao" value="cancelar" class="rounded-md border border-prata px-5 py-2 font-semibold text-grafite hover:border-azul hover:text-azul">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </>
+      ) : (
+        <>
+          <p class="mt-2 text-grafite">
+            Ainda não configurada. Com ela ativa, entrar passa a exigir a senha <strong>e</strong> um
+            código de seis dígitos gerado no seu celular — de modo que a senha sozinha, se vazar,
+            não basta para publicar em nome da prefeitura.
+          </p>
+
+          {ehPublicador && (
+            <p class="mt-3 rounded-md border-l-4 border-trigo bg-papel-suave p-3 text-grafite">
+              Sua função é <strong>Publicador</strong>, que exige o segundo fator. Configure agora:
+              no próximo acesso ele será obrigatório.
+            </p>
+          )}
+
+          <form method="post" class="mt-5 max-w-sm">
+            <input type="hidden" name="acao" value="gerar" />
+            <label for="senha" class="block font-semibold text-azul-escuro">
+              Confirme sua senha para começar
+            </label>
+            <input
+              id="senha"
+              name="senha"
+              type="password"
+              autocomplete="current-password"
+              required
+              class={campo}
+            />
+            <button type="submit" class="mt-3 rounded-md bg-azul px-5 py-2 font-semibold text-papel hover:bg-azul-escuro">
+              Configurar
+            </button>
+          </form>
+        </>
+      )
+    }
+  </section>
+
+  <section class="mt-6 rounded-lg border border-prata bg-papel p-6">
+    <h2 class="text-lg font-bold text-azul-escuro">Precisa trocar a senha?</h2>
+    <p class="mt-2 text-grafite">
+      A troca de senha ainda não é feita por esta tela. Peça a quem administra o portal para gerar
+      uma nova em <span class="font-mono">Pessoas</span> — ela aparece uma única vez e você a usa no
+      acesso seguinte.
+    </p>
+  </section>
+</Painel>
+
+<script>
+  document.querySelectorAll<HTMLFormElement>('form[data-confirmar]').forEach((formulario) => {
+    formulario.addEventListener('submit', (evento) => {
+      const pergunta = formulario.dataset.confirmar;
+      if (pergunta && !window.confirm(pergunta)) evento.preventDefault();
+    });
+  });
+</script>
