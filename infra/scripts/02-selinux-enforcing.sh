@@ -35,7 +35,7 @@ echo "==> violações (AVC) ainda pendentes desde o boot:"
 # O AVC do bind do sshd é esperado e foi resolvido acima; filtra para não travar à toa.
 PENDENTES="$(ausearch -m AVC,USER_AVC -ts boot 2>/dev/null \
   | grep 'type=AVC' \
-  | grep -v "comm=\"sshd\".*src=${PORTA_SSH}.*name_bind" || true)"
+  | grep -vE "name_bind.*comm=\"sshd\".*src=${PORTA_SSH}\b" || true)"
 if [[ -n "$PENDENTES" ]]; then
   echo "$PENDENTES" | tail -40
   echo
