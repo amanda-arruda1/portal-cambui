@@ -1,0 +1,108 @@
+---
+/**
+ * Cabeçalho e navegação principal.
+ *
+ * O menu móvel usa <details>/<summary> em vez de JavaScript: se o script
+ * falhar ou for bloqueado, o cidadão continua conseguindo navegar. Portal
+ * público não pode depender de JS para o menu funcionar.
+ */
+import { MUNICIPIO } from '../dados/instituicional';
+
+const rota = Astro.url.pathname;
+
+const itens = [
+  { rotulo: 'Início', href: '/' },
+  { rotulo: 'Notícias', href: '/noticias' },
+  { rotulo: 'Serviços', href: '/servicos' },
+  { rotulo: 'Secretarias', href: '/secretarias' },
+  { rotulo: 'Documentos', href: '/documentos' },
+  { rotulo: 'Transparência', href: '/transparencia' },
+  { rotulo: 'Contato', href: '/contato' },
+];
+
+const ativo = (href: string) => (href === '/' ? rota === '/' : rota.startsWith(href));
+---
+
+<header class="nao-imprimir">
+  <div class="bg-azul-escuro text-papel">
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-4">
+      <a href="/" class="flex items-center gap-3" aria-label={`${MUNICIPIO.nomeCompleto} — página inicial`}>
+        <img
+          src="/brasao.png"
+          alt={`Brasão da ${MUNICIPIO.nomeCompleto}`}
+          width="225"
+          height="102"
+          class="h-12 w-auto"
+          fetchpriority="high"
+        />
+      </a>
+
+      <form action="/busca" method="get" role="search" class="ml-auto flex w-full max-w-sm items-center gap-2">
+        <label for="busca-topo" class="sr-only">Buscar no portal</label>
+        <input
+          id="busca-topo"
+          type="search"
+          name="q"
+          placeholder="Buscar no portal"
+          autocomplete="off"
+          class="w-full rounded-md border border-white/25 bg-white/10 px-3 py-2 text-papel placeholder:text-white/70"
+        />
+        <button
+          type="submit"
+          class="rounded-md bg-papel px-3 py-2 font-semibold text-azul-escuro hover:bg-azul-claro"
+        >
+          Buscar
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <nav aria-label="Navegação principal" class="border-b border-prata bg-papel">
+    <div class="mx-auto max-w-6xl px-4">
+      <!-- Telas largas: menu horizontal -->
+      <ul class="hidden gap-1 md:flex">
+        {
+          itens.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                aria-current={ativo(item.href) ? 'page' : undefined}
+                class:list={[
+                  'inline-block border-b-4 px-3 py-3 font-semibold hover:bg-azul-claro',
+                  ativo(item.href) ? 'border-vermelho text-azul-escuro' : 'border-transparent text-grafite',
+                ]}
+              >
+                {item.rotulo}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+
+      <!-- Telas estreitas: sanfona nativa, sem JavaScript -->
+      <details class="md:hidden">
+        <summary class="cursor-pointer list-none py-3 font-semibold text-azul-escuro">
+          ☰ Menu
+        </summary>
+        <ul class="pb-3">
+          {
+            itens.map((item) => (
+              <li>
+                <a
+                  href={item.href}
+                  aria-current={ativo(item.href) ? 'page' : undefined}
+                  class:list={[
+                    'block rounded-md px-3 py-2 font-semibold',
+                    ativo(item.href) ? 'bg-azul-claro text-azul-escuro' : 'text-grafite',
+                  ]}
+                >
+                  {item.rotulo}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </details>
+    </div>
+  </nav>
+</header>

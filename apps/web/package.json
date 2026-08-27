@@ -1,0 +1,31 @@
+{
+  "name": "portal-cambui-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Portal institucional da Prefeitura Municipal de Cambuí/MG — frontend Astro 5 (SSR)",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "start": "node ./dist/server/entry.mjs",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.5.5",
+    "@astrojs/sitemap": "^3.7.3",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^5.18.2",
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "vite": "6.4.3"
+  }
+}

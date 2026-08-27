@@ -1,0 +1,18 @@
+---
+import Base from '../layouts/Base.astro';
+
+Astro.response.status = 500;
+---
+
+<Base titulo="Erro no servidor" semIndexacao>
+  <div class="mx-auto max-w-6xl px-4 py-20 text-center">
+    <h1 class="text-3xl font-bold text-azul-escuro">Não foi possível carregar esta página</h1>
+    <p class="mx-auto mt-3 max-w-(--container-leitura) text-grafite">
+      Houve uma falha ao montar o conteúdo. A equipe técnica é avisada automaticamente.
+      Tente novamente em alguns minutos.
+    </p>
+    <p class="mt-8">
+      <a href="/" class="rounded-md bg-azul px-4 py-2 font-semibold text-papel">Ir para o início</a>
+    </p>
+  </div>
+</Base>

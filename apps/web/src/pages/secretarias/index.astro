@@ -1,0 +1,41 @@
+---
+import Base from '../../layouts/Base.astro';
+import EstadoVazio from '../../componentes/EstadoVazio.astro';
+import TituloPagina from '../../componentes/TituloPagina.astro';
+import { secretarias } from '../../lib/conteudo';
+
+const { dados, indisponivel } = await secretarias();
+---
+
+<Base
+  titulo="Secretarias"
+  descricao="Secretarias e departamentos da Prefeitura Municipal de Cambuí, com responsáveis e canais de atendimento."
+>
+  <TituloPagina titulo="Secretarias" descricao="Estrutura administrativa e canais de atendimento." />
+
+  <div class="mx-auto max-w-6xl px-4 py-10">
+    {
+      dados.length === 0 ? (
+        <EstadoVazio indisponivel={indisponivel} assunto="dados das secretarias" />
+      ) : (
+        <ul class="grid gap-6 md:grid-cols-2">
+          {dados.map((secretaria) => (
+            <li class="rounded-lg border border-prata p-5">
+              <h2 class="text-xl font-bold text-azul-escuro">
+                <a href={`/secretarias/${secretaria.slug}`} class="hover:underline">
+                  {secretaria.nome}
+                </a>
+              </h2>
+              {secretaria.responsavel && (
+                <p class="mt-1 text-sm text-grafite">
+                  {secretaria.cargo_responsavel ?? 'Responsável'}: {secretaria.responsavel}
+                </p>
+              )}
+              {secretaria.descricao && <p class="mt-3 text-grafite">{secretaria.descricao}</p>}
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</Base>

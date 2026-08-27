@@ -1,0 +1,12 @@
+[Unit]
+Description=Portal Cambui - varredura antivirus dos uploads do CMS
+Documentation=man:clamdscan(1)
+After=clamd@scan.service
+Wants=clamd@scan.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/portal-varrer-uploads
+# A varredura é de fundo: não pode competir com o portal atendendo cidadão.
+Nice=10
+IOSchedulingClass=idle

@@ -1,0 +1,92 @@
+---
+import Base from '../layouts/Base.astro';
+import TituloPagina from '../componentes/TituloPagina.astro';
+import { secretarias } from '../lib/conteudo';
+import {
+  EMAIL_CONTATO,
+  ENDERECO,
+  HORARIO_ATENDIMENTO,
+  MUNICIPIO,
+  TELEFONES,
+  TEM_CONTATO,
+} from '../dados/instituicional';
+
+const { dados } = await secretarias();
+const comContato = dados.filter((s) => s.telefone || s.email || s.endereco);
+---
+
+<Base
+  titulo="Contato"
+  descricao={`Canais de atendimento da ${MUNICIPIO.nomeCompleto}.`}
+>
+  <TituloPagina titulo="Contato" descricao="Como falar com a administração municipal." />
+
+  <div class="mx-auto max-w-6xl px-4 py-10">
+    {
+      TEM_CONTATO ? (
+        <section>
+          <h2 class="text-2xl font-bold text-azul-escuro">Sede da prefeitura</h2>
+          <address class="mt-4 space-y-2 not-italic text-grafite">
+            {ENDERECO && (
+              <p>
+                {ENDERECO.logradouro}, {ENDERECO.numero} — {ENDERECO.bairro}
+                <br />
+                {ENDERECO.cidade}/{ENDERECO.uf} — CEP {ENDERECO.cep}
+              </p>
+            )}
+            {TELEFONES.map((t) => (
+              <p>
+                {t.rotulo}:{' '}
+                <a href={`tel:${t.numero.replace(/\D/g, '')}`} class="text-azul underline">
+                  {t.numero}
+                </a>
+              </p>
+            ))}
+            {EMAIL_CONTATO && (
+              <p>
+                E-mail:{' '}
+                <a href={`mailto:${EMAIL_CONTATO}`} class="text-azul underline">
+                  {EMAIL_CONTATO}
+                </a>
+              </p>
+            )}
+            {HORARIO_ATENDIMENTO && <p>{HORARIO_ATENDIMENTO}</p>}
+          </address>
+        </section>
+      ) : (
+        /* Sem telefone de exemplo, sem endereço de exemplo. */
+        <div class="max-w-(--container-leitura) rounded-lg border border-prata bg-papel-suave p-8">
+          <p class="text-lg font-semibold text-azul-escuro">Dados de atendimento em publicação</p>
+          <p class="mt-2 text-grafite">
+            Os canais oficiais de atendimento da prefeitura estão sendo publicados neste portal.
+            O atendimento presencial na sede do município continua normalmente.
+          </p>
+        </div>
+      )
+    }
+
+    {
+      comContato.length > 0 && (
+        <section class="mt-12">
+          <h2 class="text-2xl font-bold text-azul-escuro">Secretarias</h2>
+          <ul class="mt-4 grid gap-4 sm:grid-cols-2">
+            {comContato.map((secretaria) => (
+              <li class="rounded-lg border border-prata p-5">
+                <h3 class="font-bold text-azul-escuro">
+                  <a href={`/secretarias/${secretaria.slug}`} class="hover:underline">
+                    {secretaria.nome}
+                  </a>
+                </h3>
+                <div class="mt-2 space-y-1 text-sm text-grafite">
+                  {secretaria.telefone && <p>{secretaria.telefone}</p>}
+                  {secretaria.email && <p>{secretaria.email}</p>}
+                  {secretaria.endereco && <p>{secretaria.endereco}</p>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+  </div>
+</Base>

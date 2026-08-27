@@ -1,0 +1,101 @@
+---
+import Base from '../layouts/Base.astro';
+import EstadoVazio from '../componentes/EstadoVazio.astro';
+import Paginacao from '../componentes/Paginacao.astro';
+import TituloPagina from '../componentes/TituloPagina.astro';
+import { arquivo } from '../lib/directus';
+import { documentos } from '../lib/conteudo';
+import { data } from '../lib/formato';
+import type { TipoDocumento } from '../lib/tipos';
+
+const POR_PAGINA = 25;
+
+const TIPOS: Array<{ chave: TipoDocumento | ''; rotulo: string }> = [
+  { chave: '', rotulo: 'Todos' },
+  { chave: 'edital', rotulo: 'Editais' },
+  { chave: 'licitacao', rotulo: 'Licitações' },
+  { chave: 'diario_oficial', rotulo: 'Diário Oficial' },
+  { chave: 'lei', rotulo: 'Leis' },
+  { chave: 'decreto', rotulo: 'Decretos' },
+  { chave: 'portaria', rotulo: 'Portarias' },
+];
+
+// Só aceitamos tipo que existe na lista: qualquer outra coisa vinda da URL é
+// descartada em vez de virar filtro no CMS.
+const tipoBruto = Astro.url.searchParams.get('tipo') ?? '';
+const tipo = TIPOS.some((t) => t.chave === tipoBruto) ? tipoBruto : '';
+
+const bruto = Number.parseInt(Astro.url.searchParams.get('pagina') ?? '1', 10);
+const pagina = Number.isFinite(bruto) && bruto > 0 ? bruto : 1;
+
+const { dados, indisponivel } = await documentos(tipo || undefined, POR_PAGINA, pagina);
+const totalPaginas = dados.length === POR_PAGINA ? pagina + 1 : pagina;
+const base = tipo ? `/documentos?tipo=${tipo}` : '/documentos';
+---
+
+<Base
+  titulo="Documentos oficiais"
+  descricao="Editais, licitações, leis, decretos, portarias e edições do Diário Oficial do Município de Cambuí."
+>
+  <TituloPagina
+    titulo="Documentos oficiais"
+    descricao="Editais, licitações, leis, decretos, portarias e Diário Oficial."
+  />
+
+  <div class="mx-auto max-w-6xl px-4 py-10">
+    <nav aria-label="Filtrar por tipo" class="nao-imprimir mb-8">
+      <ul class="flex flex-wrap gap-2">
+        {
+          TIPOS.map((item) => (
+            <li>
+              <a
+                href={item.chave ? `/documentos?tipo=${item.chave}` : '/documentos'}
+                aria-current={tipo === item.chave ? 'page' : undefined}
+                class:list={[
+                  'inline-block rounded-md border px-3 py-1.5 font-semibold',
+                  tipo === item.chave
+                    ? 'border-azul bg-azul text-papel'
+                    : 'border-prata text-grafite hover:bg-papel-suave',
+                ]}
+              >
+                {item.rotulo}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    {
+      dados.length === 0 ? (
+        <EstadoVazio indisponivel={indisponivel} assunto="documentos" />
+      ) : (
+        <ul class="divide-y divide-prata border-y border-prata">
+          {dados.map((documento) => {
+            const destino = documento.url_externa ?? arquivo(documento.arquivo);
+            return (
+              <li class="py-4">
+                <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <h2 class="text-lg font-semibold text-azul-escuro">
+                    {destino ? (
+                      <a href={destino} class="underline" rel="noopener noreferrer">
+                        {documento.titulo}
+                      </a>
+                    ) : (
+                      documento.titulo
+                    )}
+                  </h2>
+                  {documento.numero && <span class="text-sm text-grafite">nº {documento.numero}</span>}
+                </div>
+                <p class="mt-1 text-sm text-grafite">{data(documento.data_documento)}</p>
+                {documento.descricao && <p class="mt-1 text-grafite">{documento.descricao}</p>}
+              </li>
+            );
+          })}
+        </ul>
+      )
+    }
+
+    <Paginacao pagina={pagina} totalPaginas={totalPaginas} base={base} />
+  </div>
+</Base>

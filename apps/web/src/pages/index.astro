@@ -1,0 +1,97 @@
+---
+import Base from '../layouts/Base.astro';
+import CartaoNoticia from '../componentes/CartaoNoticia.astro';
+import EstadoVazio from '../componentes/EstadoVazio.astro';
+import { noticiasEmDestaque, noticiasRecentes, servicos } from '../lib/conteudo';
+import { MUNICIPIO, SITE } from '../dados/instituicional';
+
+// As três consultas são independentes: em série, uma seção lenta atrasaria a
+// página inteira. Promise.all não é otimização prematura aqui — é o que mantém
+// a home abaixo de um segundo mesmo com o CMS pensativo.
+const [destaques, recentes, listaServicos] = await Promise.all([
+  noticiasEmDestaque(3),
+  noticiasRecentes(6),
+  servicos(6),
+]);
+
+// Se ninguém marcou destaque, as mais recentes ocupam o lugar — a home nunca
+// fica com um buraco só porque o redator não usou a marcação.
+const principais = destaques.dados.length > 0 ? destaques.dados : recentes.dados.slice(0, 3);
+const demais = recentes.dados.filter((n) => !principais.some((p) => p.id === n.id));
+
+const semNoticias = principais.length === 0;
+---
+
+<Base titulo={SITE.titulo} descricao={SITE.descricao}>
+  <section class="bg-azul-escuro text-papel">
+    <div class="mx-auto max-w-6xl px-4 py-12">
+      <h1 class="text-3xl font-bold sm:text-4xl">Prefeitura Municipal de {MUNICIPIO.nome}</h1>
+      <p class="mt-3 max-w-2xl text-white/85">
+        Notícias, serviços ao cidadão, documentos oficiais e informações das secretarias.
+      </p>
+
+      <ul class="mt-6 flex flex-wrap gap-3">
+        <li><a href="/servicos" class="inline-block rounded-md bg-papel px-4 py-2 font-semibold text-azul-escuro hover:bg-azul-claro">Serviços ao cidadão</a></li>
+        <li><a href="/transparencia" class="inline-block rounded-md border border-white/40 px-4 py-2 font-semibold hover:bg-white/10">Transparência</a></li>
+        <li><a href="/documentos" class="inline-block rounded-md border border-white/40 px-4 py-2 font-semibold hover:bg-white/10">Documentos oficiais</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 py-12">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h2 class="text-2xl font-bold text-azul-escuro">Notícias</h2>
+      <a href="/noticias" class="font-semibold text-azul underline">Ver todas as notícias</a>
+    </div>
+
+    {
+      semNoticias ? (
+        <div class="mt-6">
+          <EstadoVazio indisponivel={recentes.indisponivel} assunto="conteúdos" />
+        </div>
+      ) : (
+        <>
+          <div class="mt-6 grid gap-6 md:grid-cols-3">
+            {principais.map((noticia) => (
+              <CartaoNoticia noticia={noticia} destaque />
+            ))}
+          </div>
+
+          {demais.length > 0 && (
+            <div class="mt-6 grid gap-6 md:grid-cols-3">
+              {demais.map((noticia) => (
+                <CartaoNoticia noticia={noticia} />
+              ))}
+            </div>
+          )}
+        </>
+      )
+    }
+  </section>
+
+  {
+    listaServicos.dados.length > 0 && (
+      <section class="bg-papel-suave">
+        <div class="mx-auto max-w-6xl px-4 py-12">
+          <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 class="text-2xl font-bold text-azul-escuro">Serviços mais procurados</h2>
+            <a href="/servicos" class="font-semibold text-azul underline">Ver todos os serviços</a>
+          </div>
+
+          <ul class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {listaServicos.dados.map((servico) => (
+              <li class="rounded-lg border border-prata bg-papel p-4">
+                <h3 class="font-bold text-azul-escuro">
+                  <a href={`/servicos#${servico.slug}`} class="hover:underline">
+                    {servico.nome}
+                  </a>
+                </h3>
+                {servico.descricao && <p class="mt-1 text-sm text-grafite">{servico.descricao}</p>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    )
+  }
+</Base>

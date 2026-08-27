@@ -1,0 +1,44 @@
+---
+import Base from '../../layouts/Base.astro';
+import CartaoNoticia from '../../componentes/CartaoNoticia.astro';
+import EstadoVazio from '../../componentes/EstadoVazio.astro';
+import Paginacao from '../../componentes/Paginacao.astro';
+import TituloPagina from '../../componentes/TituloPagina.astro';
+import { noticiasRecentes } from '../../lib/conteudo';
+
+const POR_PAGINA = 12;
+
+// Página vem da URL, ou seja, do cidadão: '?pagina=abc' e '?pagina=-5' têm de
+// virar 1 em vez de gerar consulta inválida ao CMS.
+const bruto = Number.parseInt(Astro.url.searchParams.get('pagina') ?? '1', 10);
+const pagina = Number.isFinite(bruto) && bruto > 0 ? bruto : 1;
+
+const { dados, indisponivel } = await noticiasRecentes(POR_PAGINA, pagina);
+
+// O Directus devolve o total em meta.filter_count; sem ele (coleção ausente)
+// tratamos como página única.
+const totalPaginas = dados.length === POR_PAGINA ? pagina + 1 : pagina;
+---
+
+<Base
+  titulo="Notícias"
+  descricao="Notícias e comunicados oficiais da Prefeitura Municipal de Cambuí."
+>
+  <TituloPagina titulo="Notícias" descricao="Comunicados e ações da administração municipal." />
+
+  <div class="mx-auto max-w-6xl px-4 py-10">
+    {
+      dados.length === 0 ? (
+        <EstadoVazio indisponivel={indisponivel} assunto="notícias" />
+      ) : (
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {dados.map((noticia) => (
+            <CartaoNoticia noticia={noticia} />
+          ))}
+        </div>
+      )
+    }
+
+    <Paginacao pagina={pagina} totalPaginas={totalPaginas} base="/noticias" />
+  </div>
+</Base>

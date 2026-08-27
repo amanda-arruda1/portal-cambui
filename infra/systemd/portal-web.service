@@ -1,0 +1,78 @@
+# Portal Cambuí — servidor SSR do Astro.
+#
+# Roda no host (não em container) porque o Nginx do host precisa alcançá-lo em
+# 127.0.0.1:4321 e porque o build usa o Node 22 já instalado e mantido pelo
+# dnf-automatic. Em compensação, o confinamento vem do próprio systemd: as
+# diretivas abaixo dão a este processo pouco mais do que ler o próprio dist e
+# falar com o Directus pelo loopback.
+
+[Unit]
+Description=Portal Cambui - aplicacao web (Astro SSR)
+Documentation=https://docs.astro.build/en/guides/integrations-guide/node/
+After=network-online.target docker.service
+Wants=network-online.target
+# O Directus roda em container; se ele não estiver de pé o portal ainda sobe e
+# degrada as seções — por isso 'Wants' e não 'Requires'.
+
+[Service]
+Type=simple
+User=portal-web
+Group=portal-web
+WorkingDirectory=/opt/portal-cambui/apps/web
+
+# Só as variáveis que o frontend precisa. O .env geral tem senha de banco e
+# não deve ser lido por este processo.
+EnvironmentFile=/opt/portal-cambui/.env.web
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=4321
+
+ExecStart=/usr/bin/node /opt/portal-cambui/apps/web/dist/server/entry.mjs
+Restart=always
+RestartSec=5s
+
+# --- Confinamento ---
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+# O V8 gera código em tempo de execução: com MemoryDenyWriteExecute=true o Node
+# nem inicia. É a única diretiva desta lista que precisa ficar desligada.
+MemoryDenyWriteExecute=false
+RemoveIPC=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+SystemCallArchitectures=native
+# AF_NETLINK entra porque o adaptador do Astro chama os.networkInterfaces()
+# ao subir, só para logar o endereço de escuta; sem ele o boot despeja um
+# "Unhandled rejection ... uv_interface_addresses" a cada partida e o log de
+# verdade fica difícil de ler. Netlink enumera interfaces, não dá alcance de
+# rede — o IPAddressDeny=any abaixo continua valendo.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+
+# ProtectSystem=strict deixa tudo somente-leitura; a sessão do Astro é a única
+# coisa que precisa escrever.
+StateDirectory=portal-cambui
+Environment=SESSION_DIR=/var/lib/portal-cambui/sessoes
+
+# Este processo só conversa com o Directus e o Nginx, ambos em loopback. Se um
+# dia precisar sair para a internet (ex.: webhook), abrir aqui explicitamente.
+IPAddressDeny=any
+IPAddressAllow=localhost
+
+[Install]
+WantedBy=multi-user.target

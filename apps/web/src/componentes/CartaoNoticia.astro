@@ -1,0 +1,49 @@
+---
+import { arquivo } from '../lib/directus';
+import { data, iso, recorte } from '../lib/formato';
+import type { Noticia } from '../lib/tipos';
+
+interface Props {
+  noticia: Noticia;
+  destaque?: boolean;
+}
+const { noticia, destaque = false } = Astro.props;
+
+// Redimensionamento no próprio Directus: evita mandar a foto original de 4 MB
+// para o celular do cidadão numa listagem.
+const capa = arquivo(noticia.imagem, { width: destaque ? 800 : 480, quality: 75, fit: 'cover' });
+const resumo = noticia.resumo ?? recorte(noticia.conteudo, 160);
+---
+<article class="group relative flex h-full flex-col overflow-hidden rounded-lg border border-prata bg-papel">
+  <!-- alt: a descrição vem do CMS. Quando o redator não preenche, a imagem é
+       tratada como decorativa e o alt vazio impede que o leitor de tela leia o
+       nome do arquivo em voz alta. -->
+  {
+    capa && (
+      <img
+        src={capa}
+        alt={noticia.imagem_descricao ?? ''}
+        width={destaque ? 800 : 480}
+        height={destaque ? 450 : 270}
+        loading="lazy"
+        class="aspect-video w-full object-cover"
+      />
+    )
+  }
+  <div class="flex flex-1 flex-col p-4">
+    <p class="text-sm text-grafite">
+      <time datetime={iso(noticia.data_publicacao)}>{data(noticia.data_publicacao)}</time>
+      {noticia.secretaria && <span> · {noticia.secretaria.nome}</span>}
+    </p>
+
+    <h3 class:list={['mt-2 font-bold text-azul-escuro', destaque ? 'text-xl' : 'text-lg']}>
+      <!-- O link cobre o cartão inteiro pelo ::after, mas o texto clicável do
+           link continua sendo o título — é o que o leitor de tela anuncia. -->
+      <a href={`/noticias/${noticia.slug}`} class="after:absolute after:inset-0 group-hover:underline">
+        {noticia.titulo}
+      </a>
+    </h3>
+
+    {resumo && <p class="mt-2 text-grafite">{resumo}</p>}
+  </div>
+</article>

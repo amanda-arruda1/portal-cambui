@@ -1,0 +1,100 @@
+---
+/**
+ * Rodapé institucional.
+ *
+ * Cada bloco só é renderizado se o dado existir. Enquanto a prefeitura não
+ * enviar endereço, telefones, CNPJ e horário, esses blocos simplesmente não
+ * aparecem — o portal não inventa contato, e é isso que permite entrar no ar
+ * antes de a papelada chegar.
+ */
+import {
+  CNPJ,
+  EMAIL_CONTATO,
+  ENDERECO,
+  HORARIO_ATENDIMENTO,
+  MUNICIPIO,
+  REDES_SOCIAIS,
+  TELEFONES,
+  TEM_CONTATO,
+} from '../dados/instituicional';
+
+const ano = new Date().getFullYear();
+---
+
+<footer class="nao-imprimir mt-16 bg-azul-escuro text-papel">
+  <div class="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-3">
+    <div>
+      <img
+        src="/brasao.png"
+        alt={`Brasão da ${MUNICIPIO.nomeCompleto}`}
+        width="225"
+        height="102"
+        class="h-14 w-auto"
+        loading="lazy"
+      />
+      <p class="mt-3 text-sm text-white/80">
+        Portal oficial da {MUNICIPIO.nomeCompleto}, {MUNICIPIO.uf}.
+      </p>
+      {CNPJ && <p class="mt-2 text-sm text-white/80">CNPJ: {CNPJ}</p>}
+    </div>
+
+    {
+      TEM_CONTATO && (
+        <div>
+          <h2 class="text-lg font-bold">Atendimento</h2>
+          <address class="mt-3 space-y-1 text-sm not-italic text-white/80">
+            {ENDERECO && (
+              <p>
+                {ENDERECO.logradouro}, {ENDERECO.numero} — {ENDERECO.bairro}
+                <br />
+                {ENDERECO.cidade}/{ENDERECO.uf} — CEP {ENDERECO.cep}
+              </p>
+            )}
+            {TELEFONES.map((t) => (
+              <p>
+                {t.rotulo}: <a href={`tel:${t.numero.replace(/\D/g, '')}`} class="underline">{t.numero}</a>
+              </p>
+            ))}
+            {EMAIL_CONTATO && (
+              <p>
+                <a href={`mailto:${EMAIL_CONTATO}`} class="underline">{EMAIL_CONTATO}</a>
+              </p>
+            )}
+            {HORARIO_ATENDIMENTO && <p>{HORARIO_ATENDIMENTO}</p>}
+          </address>
+        </div>
+      )
+    }
+
+    <div>
+      <h2 class="text-lg font-bold">Acesso rápido</h2>
+      <ul class="mt-3 space-y-1 text-sm text-white/90">
+        <li><a href="/transparencia" class="underline">Portal da Transparência</a></li>
+        <li><a href="/documentos" class="underline">Documentos oficiais</a></li>
+        <li><a href="/servicos" class="underline">Serviços ao cidadão</a></li>
+        <li><a href="/secretarias" class="underline">Secretarias</a></li>
+        <li><a href="/acessibilidade" class="underline">Acessibilidade</a></li>
+      </ul>
+
+      {
+        REDES_SOCIAIS.length > 0 && (
+          <ul class="mt-4 flex gap-3 text-sm">
+            {REDES_SOCIAIS.map((rede) => (
+              <li>
+                <a href={rede.url} rel="noopener noreferrer" target="_blank" class="underline">
+                  {rede.nome}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
+  </div>
+
+  <div class="border-t border-white/20">
+    <p class="mx-auto max-w-6xl px-4 py-4 text-sm text-white/70">
+      © {ano} {MUNICIPIO.nomeCompleto}. Todos os direitos reservados.
+    </p>
+  </div>
+</footer>

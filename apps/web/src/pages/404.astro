@@ -1,0 +1,22 @@
+---
+import Base from '../layouts/Base.astro';
+
+// Em SSR o status não vem de graça: sem esta linha o Astro devolveria 200 e o
+// buscador indexaria a página de erro como se fosse conteúdo.
+Astro.response.status = 404;
+---
+
+<Base titulo="Página não encontrada" semIndexacao>
+  <div class="mx-auto max-w-6xl px-4 py-20 text-center">
+    <p class="text-6xl font-bold text-prata">404</p>
+    <h1 class="mt-4 text-3xl font-bold text-azul-escuro">Página não encontrada</h1>
+    <p class="mx-auto mt-3 max-w-(--container-leitura) text-grafite">
+      O endereço acessado não existe ou o conteúdo saiu do ar. Você pode voltar ao início
+      ou usar a busca para encontrar o que procura.
+    </p>
+    <p class="mt-8 flex flex-wrap justify-center gap-3">
+      <a href="/" class="rounded-md bg-azul px-4 py-2 font-semibold text-papel">Ir para o início</a>
+      <a href="/busca" class="rounded-md border border-azul px-4 py-2 font-semibold text-azul">Buscar no portal</a>
+    </p>
+  </div>
+</Base>

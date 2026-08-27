@@ -1,0 +1,64 @@
+---
+import Base from '../../layouts/Base.astro';
+import { secretariaPorSlug } from '../../lib/conteudo';
+
+const { slug } = Astro.params;
+const { dado: secretaria } = await secretariaPorSlug(slug ?? '');
+
+if (!secretaria) {
+  return Astro.rewrite('/404');
+}
+
+const contatos: Array<{ rotulo: string; valor: string; href?: string }> = [];
+if (secretaria.responsavel) {
+  contatos.push({ rotulo: secretaria.cargo_responsavel ?? 'Responsável', valor: secretaria.responsavel });
+}
+if (secretaria.endereco) contatos.push({ rotulo: 'Endereço', valor: secretaria.endereco });
+if (secretaria.telefone) {
+  contatos.push({ rotulo: 'Telefone', valor: secretaria.telefone, href: `tel:${secretaria.telefone.replace(/\D/g, '')}` });
+}
+if (secretaria.email) contatos.push({ rotulo: 'E-mail', valor: secretaria.email, href: `mailto:${secretaria.email}` });
+if (secretaria.horario_atendimento) contatos.push({ rotulo: 'Atendimento', valor: secretaria.horario_atendimento });
+---
+
+<Base titulo={secretaria.nome} descricao={secretaria.descricao ?? undefined}>
+  <div class="mx-auto max-w-6xl px-4 py-10">
+    <nav aria-label="Você está aqui" class="nao-imprimir text-sm text-grafite">
+      <a href="/" class="underline">Início</a> ›
+      <a href="/secretarias" class="underline">Secretarias</a>
+    </nav>
+
+    <h1 class="mt-4 text-3xl font-bold text-azul-escuro sm:text-4xl">{secretaria.nome}</h1>
+    {secretaria.sigla && <p class="mt-1 text-grafite">{secretaria.sigla}</p>}
+
+    {secretaria.descricao && <div class="conteudo-rico mt-6" set:html={secretaria.descricao} />}
+
+    {
+      contatos.length > 0 && (
+        <section class="mt-10">
+          <h2 class="text-2xl font-bold text-azul-escuro">Contato</h2>
+          <dl class="mt-4 grid gap-3 sm:grid-cols-2">
+            {contatos.map((item) => (
+              <div class="rounded-lg border border-prata p-4">
+                <dt class="text-sm font-semibold text-grafite">{item.rotulo}</dt>
+                <dd class="mt-1">
+                  {item.href ? (
+                    <a href={item.href} class="text-azul underline">
+                      {item.valor}
+                    </a>
+                  ) : (
+                    item.valor
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )
+    }
+
+    <p class="nao-imprimir mt-10">
+      <a href="/secretarias" class="font-semibold text-azul underline">← Voltar para as secretarias</a>
+    </p>
+  </div>
+</Base>

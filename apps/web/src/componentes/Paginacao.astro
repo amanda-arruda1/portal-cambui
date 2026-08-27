@@ -1,0 +1,39 @@
+---
+interface Props {
+  pagina: number;
+  totalPaginas: number;
+  base: string;
+}
+const { pagina, totalPaginas, base } = Astro.props;
+
+// `base` pode já carregar filtro (ex.: /documentos?tipo=edital). Colar um '?'
+// fixo geraria '?tipo=edital?pagina=2' e o filtro se perderia na volta.
+const separador = base.includes('?') ? '&' : '?';
+const anterior = pagina > 1 ? `${base}${separador}pagina=${pagina - 1}` : null;
+const proxima = pagina < totalPaginas ? `${base}${separador}pagina=${pagina + 1}` : null;
+---
+{
+  totalPaginas > 1 && (
+    <nav aria-label="Paginação" class="mt-8 flex items-center justify-between gap-4">
+      {anterior ? (
+        <a href={anterior} rel="prev" class="rounded-md border border-azul px-4 py-2 font-semibold text-azul">
+          ← Anteriores
+        </a>
+      ) : (
+        <span />
+      )}
+
+      <p aria-live="polite" class="text-grafite">
+        Página {pagina} de {totalPaginas}
+      </p>
+
+      {proxima ? (
+        <a href={proxima} rel="next" class="rounded-md border border-azul px-4 py-2 font-semibold text-azul">
+          Próximas →
+        </a>
+      ) : (
+        <span />
+      )}
+    </nav>
+  )
+}

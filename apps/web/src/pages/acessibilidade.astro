@@ -1,0 +1,47 @@
+---
+import Base from '../layouts/Base.astro';
+import TituloPagina from '../componentes/TituloPagina.astro';
+---
+
+<Base
+  titulo="Acessibilidade"
+  descricao="Recursos de acessibilidade do portal da Prefeitura Municipal de Cambuí."
+>
+  <TituloPagina titulo="Acessibilidade" />
+
+  <div class="mx-auto max-w-6xl px-4 py-10">
+    <div class="conteudo-rico">
+      <p>
+        Este portal é desenvolvido seguindo as diretrizes de acessibilidade da WCAG 2.1
+        nível AA e o Modelo de Acessibilidade em Governo Eletrônico (eMAG), em atendimento
+        à Lei nº 13.146/2015 (Estatuto da Pessoa com Deficiência).
+      </p>
+
+      <h2>Recursos disponíveis</h2>
+      <ul>
+        <li>Navegação completa por teclado, com indicador de foco sempre visível.</li>
+        <li>Link “Pular para o conteúdo principal” como primeiro item de cada página.</li>
+        <li>Estrutura de títulos hierárquica e marcos de página para leitores de tela.</li>
+        <li>Textos alternativos nas imagens informativas.</li>
+        <li>Contraste mínimo de 4,5:1 entre texto e fundo.</li>
+        <li>Menu que funciona mesmo com o JavaScript desativado.</li>
+        <li>Respeito à preferência de “reduzir movimento” do sistema operacional.</li>
+      </ul>
+
+      <h2>Atalhos do navegador</h2>
+      <p>
+        O aumento e a redução de fonte são feitos pelos atalhos do próprio navegador:
+        <kbd>Ctrl</kbd> + <kbd>+</kbd> para aumentar, <kbd>Ctrl</kbd> + <kbd>−</kbd> para
+        reduzir e <kbd>Ctrl</kbd> + <kbd>0</kbd> para voltar ao tamanho original. Em
+        computadores Apple, use <kbd>Cmd</kbd> no lugar do <kbd>Ctrl</kbd>.
+      </p>
+
+      <h2>Encontrou uma barreira?</h2>
+      <p>
+        Se alguma página deste portal impediu você de obter uma informação, queremos saber.
+        O relato pode ser feito pelos canais de <a href="/contato">contato</a> da prefeitura,
+        e a correção é tratada como manutenção do portal.
+      </p>
+    </div>
+  </div>
+</Base>

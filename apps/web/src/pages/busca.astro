@@ -1,0 +1,63 @@
+---
+import Base from '../layouts/Base.astro';
+import CartaoNoticia from '../componentes/CartaoNoticia.astro';
+import TituloPagina from '../componentes/TituloPagina.astro';
+import { buscar } from '../lib/conteudo';
+
+const bruto = (Astro.url.searchParams.get('q') ?? '').trim();
+// Limite defensivo: o termo vai para o CMS e daí para o Postgres. Uma consulta
+// de 10 mil caracteres não é busca, é tentativa de derrubar o banco.
+const termo = bruto.slice(0, 120);
+
+const resultados = termo.length >= 2 ? await buscar(termo) : null;
+---
+
+<Base titulo={termo ? `Busca: ${termo}` : 'Busca'} semIndexacao>
+  <TituloPagina titulo="Busca no portal" />
+
+  <div class="mx-auto max-w-6xl px-4 py-10">
+    <form action="/busca" method="get" role="search" class="flex max-w-xl gap-2">
+      <label for="busca" class="sr-only">Buscar no portal</label>
+      <input
+        id="busca"
+        type="search"
+        name="q"
+        value={termo}
+        placeholder="Digite o que procura"
+        class="w-full rounded-md border border-prata px-3 py-2"
+      />
+      <button type="submit" class="rounded-md bg-azul px-4 py-2 font-semibold text-papel">Buscar</button>
+    </form>
+
+    {
+      termo.length > 0 && termo.length < 2 && (
+        <p class="mt-6 text-grafite">Digite ao menos duas letras para buscar.</p>
+      )
+    }
+
+    {
+      resultados && (
+        <section class="mt-8" aria-live="polite">
+          <h2 class="text-xl font-bold text-azul-escuro">
+            {resultados.dados.length === 0
+              ? `Nenhum resultado para “${termo}”`
+              : `${resultados.dados.length} resultado(s) para “${termo}”`}
+          </h2>
+
+          {resultados.dados.length === 0 ? (
+            <p class="mt-3 max-w-(--container-leitura) text-grafite">
+              Verifique a grafia ou tente palavras mais gerais. A busca cobre as notícias
+              publicadas no portal.
+            </p>
+          ) : (
+            <div class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {resultados.dados.map((noticia) => (
+                <CartaoNoticia noticia={noticia} />
+              ))}
+            </div>
+          )}
+        </section>
+      )
+    }
+  </div>
+</Base>

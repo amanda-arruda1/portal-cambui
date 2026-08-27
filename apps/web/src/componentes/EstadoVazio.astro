@@ -1,0 +1,30 @@
+---
+/**
+ * Mostrado quando uma listagem não tem nada a exibir.
+ *
+ * Distingue dois casos que parecem iguais na tela mas não são:
+ *  - `indisponivel`: o CMS não respondeu ou a coleção ainda não existe. É um
+ *    problema nosso, não do cidadão — não prometemos conteúdo que não temos.
+ *  - vazio de verdade: a seção existe e ainda não tem publicação.
+ *
+ * Em nenhum dos dois casos aparece mensagem técnica (stack, host, porta):
+ * essa informação vai para o log do servidor, não para a tela pública.
+ */
+interface Props {
+  indisponivel?: boolean;
+  assunto: string;
+}
+const { indisponivel = false, assunto } = Astro.props;
+---
+<div class="rounded-lg border border-prata bg-papel-suave p-8 text-center">
+  <p class="text-lg font-semibold text-azul-escuro">
+    {indisponivel ? 'Conteúdo temporariamente indisponível' : `Ainda não há ${assunto} publicados`}
+  </p>
+  <p class="mt-2 text-grafite">
+    {
+      indisponivel
+        ? 'Estamos com uma instabilidade nesta seção. Tente novamente em alguns minutos.'
+        : 'Assim que houver publicações, elas aparecerão aqui.'
+    }
+  </p>
+</div>

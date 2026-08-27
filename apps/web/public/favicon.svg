@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Prefeitura de Cambuí">
+  <!-- Provisório: marca-d'água em azul institucional até a prefeitura entregar
+       o brasão em vetor. Substituir por /assets/marca/brasao.svg quando chegar. -->
+  <rect width="64" height="64" rx="10" fill="#234A8E"/>
+  <path d="M44 22a15 15 0 1 0 0 20" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/>
+</svg>
