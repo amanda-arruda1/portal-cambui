@@ -8,6 +8,7 @@
  */
 import '../estilos/global.css';
 import type { Sessao } from '../lib/painel/sessao.ts';
+import { emDemonstracao } from '../lib/demonstracao.ts';
 
 interface Props {
   titulo: string;
@@ -28,6 +29,15 @@ const { titulo, sessao } = Astro.props;
   </head>
 
   <body class="flex min-h-screen flex-col bg-papel-suave">
+    {
+      emDemonstracao() && (
+        <div role="alert" class="bg-vermelho px-4 py-2 text-center text-sm font-semibold text-papel">
+          Há conteúdo de demonstração no sistema. Remova-o antes da virada:
+          <code class="ml-1">node infra/directus/popular-demonstracao.mjs --remover</code>
+        </div>
+      )
+    }
+
     <a
       href="#conteudo"
       class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-azul focus:px-4 focus:py-2 focus:text-papel"

@@ -11,6 +11,7 @@ import '../estilos/global.css';
 import Cabecalho from '../componentes/Cabecalho.astro';
 import Rodape from '../componentes/Rodape.astro';
 import { SITE } from '../dados/instituicional';
+import { emDemonstracao } from '../lib/demonstracao';
 
 interface Props {
   titulo: string;
@@ -50,6 +51,19 @@ const canonica = new URL(Astro.url.pathname, SITE.urlPublica).href;
   </head>
 
   <body class="flex min-h-screen flex-col">
+    {
+      /* Enquanto houver conteúdo de demonstração no banco, todo visitante
+         precisa saber — inclusive quem chegar por engano ao endereço de
+         homologação, que é público. */
+      emDemonstracao() && (
+        <div role="alert" class="bg-vermelho px-4 py-2 text-center text-sm font-semibold text-papel">
+          Versão de demonstração — o conteúdo desta página é ilustrativo e
+          <strong> não tem valor oficial</strong>. O portal do município continua sendo
+          <a href="https://www.prefeituradecambui.mg.gov.br" class="underline"> prefeituradecambui.mg.gov.br</a>.
+        </div>
+      )
+    }
+
     <!-- Primeiro elemento focável da página: quem navega por teclado não
          precisa percorrer o menu inteiro a cada página. -->
     <a

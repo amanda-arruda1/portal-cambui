@@ -1,0 +1,123 @@
+{
+  "_comentario": [
+    "Conteúdo ILUSTRATIVO, para ver como o portal fica antes de existir conteúdo",
+    "real. NÃO tem valor oficial e não pode sobreviver à virada.",
+    "",
+    "Regras que este arquivo respeita, e que quem editá-lo precisa manter:",
+    "  - nenhum nome de pessoa. Cargo e responsável ficam vazios: inventar um",
+    "    servidor público é o tipo de dado que causa dano de verdade;",
+    "  - nenhum telefone, e-mail ou endereço que possa ser discado ou visitado;",
+    "  - todo resumo/descrição termina dizendo que é demonstração, para o caso",
+    "    de alguém ver o texto fora da página (busca interna, compartilhamento);",
+    "  - as secretarias são as que qualquer município tem, sem afirmar que são",
+    "    exatamente as de Cambuí.",
+    "",
+    "Aplicado e removido por popular-demonstracao.mjs. Enquanto existir, o site",
+    "inteiro mostra uma faixa vermelha avisando — em qualquer domínio."
+  ],
+
+  "secretarias": [
+    { "nome": "Secretaria de Administração e Finanças", "slug": "administracao-e-financas", "sigla": "SAF", "ordem": 1,
+      "descricao": "<p>Cuida do orçamento, das compras públicas, dos contratos e da gestão de pessoal do município.</p><p><em>Conteúdo de demonstração.</em></p>",
+      "horario_atendimento": "Segunda a sexta, das 8h às 17h" },
+    { "nome": "Secretaria de Educação", "slug": "educacao", "sigla": "SME", "ordem": 2,
+      "descricao": "<p>Responsável pela rede municipal de ensino, pela educação infantil e pelo transporte escolar.</p><p><em>Conteúdo de demonstração.</em></p>",
+      "horario_atendimento": "Segunda a sexta, das 8h às 17h" },
+    { "nome": "Secretaria de Saúde", "slug": "saude", "sigla": "SMS", "ordem": 3,
+      "descricao": "<p>Coordena as unidades básicas de saúde, a vigilância sanitária e os programas de atenção à família.</p><p><em>Conteúdo de demonstração.</em></p>",
+      "horario_atendimento": "Segunda a sexta, das 7h às 17h" },
+    { "nome": "Secretaria de Obras e Serviços Urbanos", "slug": "obras-e-servicos-urbanos", "sigla": "SOSU", "ordem": 4,
+      "descricao": "<p>Executa e fiscaliza obras públicas, pavimentação, iluminação e limpeza urbana.</p><p><em>Conteúdo de demonstração.</em></p>",
+      "horario_atendimento": "Segunda a sexta, das 7h às 16h" },
+    { "nome": "Secretaria de Assistência Social", "slug": "assistencia-social", "sigla": "SMAS", "ordem": 5,
+      "descricao": "<p>Atende famílias em situação de vulnerabilidade e coordena os programas sociais do município.</p><p><em>Conteúdo de demonstração.</em></p>",
+      "horario_atendimento": "Segunda a sexta, das 8h às 17h" },
+    { "nome": "Secretaria de Meio Ambiente e Agricultura", "slug": "meio-ambiente-e-agricultura", "sigla": "SMAA", "ordem": 6,
+      "descricao": "<p>Licenciamento ambiental, arborização urbana e apoio ao produtor rural.</p><p><em>Conteúdo de demonstração.</em></p>",
+      "horario_atendimento": "Segunda a sexta, das 8h às 17h" },
+    { "nome": "Secretaria de Cultura, Esporte e Turismo", "slug": "cultura-esporte-e-turismo", "sigla": "SCET", "ordem": 7,
+      "descricao": "<p>Promove eventos culturais, mantém os equipamentos esportivos e divulga os atrativos do município.</p><p><em>Conteúdo de demonstração.</em></p>",
+      "horario_atendimento": "Segunda a sexta, das 8h às 17h" }
+  ],
+
+  "noticias": [
+    { "titulo": "Prefeitura abre inscrições para o programa de capacitação de servidores", "slug": "capacitacao-de-servidores",
+      "resumo": "As aulas acontecem no contraturno e a certificação é reconhecida pela administração municipal. Conteúdo de demonstração.",
+      "secretaria": "administracao-e-financas", "destaque": true, "dias_atras": 1, "imagem": "capacitacao",
+      "conteudo": "<p>A administração municipal abriu as inscrições para o programa de capacitação continuada dos servidores. A formação é dividida em módulos e acontece no contraturno do expediente.</p><h2>Como participar</h2><p>A inscrição é feita junto à chefia imediata, que encaminha a lista à Secretaria de Administração. Não há custo para o servidor.</p><h2>Certificação</h2><p>Ao concluir todos os módulos, o participante recebe certificado registrado na pasta funcional.</p><p><em>Este texto é ilustrativo e não corresponde a um programa real.</em></p>" },
+
+    { "titulo": "Mutirão de limpeza urbana passa por todos os bairros neste mês", "slug": "mutirao-de-limpeza-urbana",
+      "resumo": "Equipes recolhem entulho e material inservível em roteiro divulgado por bairro. Conteúdo de demonstração.",
+      "secretaria": "obras-e-servicos-urbanos", "destaque": true, "dias_atras": 3, "imagem": "limpeza",
+      "conteudo": "<p>As equipes de limpeza urbana iniciaram o mutirão que percorre os bairros do município recolhendo entulho, móveis velhos e material inservível.</p><h2>O que pode ser deixado na calçada</h2><ul><li>Restos de poda e capina</li><li>Móveis e colchões inutilizados</li><li>Pequenos volumes de entulho de obra</li></ul><h2>O que não é recolhido</h2><p>Resíduo hospitalar, pneus em grande quantidade e material tóxico têm destinação própria.</p><p><em>Este texto é ilustrativo e não corresponde a uma ação real.</em></p>" },
+
+    { "titulo": "Unidades de saúde ampliam horário de vacinação", "slug": "ampliacao-do-horario-de-vacinacao",
+      "resumo": "O atendimento passa a incluir o período da tarde nas unidades centrais. Conteúdo de demonstração.",
+      "secretaria": "saude", "destaque": true, "dias_atras": 6, "imagem": "saude",
+      "conteudo": "<p>As unidades básicas de saúde passaram a oferecer vacinação também no período da tarde, ampliando o acesso de quem trabalha em horário comercial.</p><h2>O que levar</h2><p>Documento de identificação e a caderneta de vacinação. Quem perdeu a caderneta pode solicitar a segunda via na própria unidade.</p><p><em>Este texto é ilustrativo e não corresponde a uma mudança real de horário.</em></p>" },
+
+    { "titulo": "Escolas municipais recebem novos equipamentos de informática", "slug": "equipamentos-de-informatica-nas-escolas",
+      "resumo": "Laboratórios foram atualizados para as atividades do ensino fundamental. Conteúdo de demonstração.",
+      "secretaria": "educacao", "destaque": false, "dias_atras": 9, "imagem": "educacao",
+      "conteudo": "<p>Os laboratórios de informática da rede municipal receberam equipamentos novos, substituindo máquinas que já não atendiam às atividades pedagógicas.</p><h2>Uso pelos alunos</h2><p>Os laboratórios ficam disponíveis durante as aulas e, no contraturno, para pesquisa acompanhada por um responsável.</p><p><em>Este texto é ilustrativo e não corresponde a uma entrega real.</em></p>" },
+
+    { "titulo": "Cadastro único é atualizado em atendimento itinerante", "slug": "cadastro-unico-itinerante",
+      "resumo": "Equipe da assistência social atende nos bairros em calendário divulgado mensalmente. Conteúdo de demonstração.",
+      "secretaria": "assistencia-social", "destaque": false, "dias_atras": 14,
+      "conteudo": "<p>A equipe da assistência social realiza atendimento itinerante para atualização do cadastro único, principal porta de entrada dos programas sociais.</p><h2>Documentos necessários</h2><ul><li>Documento de identificação de todos os moradores</li><li>Comprovante de residência</li><li>Comprovante de renda, quando houver</li></ul><p><em>Este texto é ilustrativo e não corresponde a um atendimento real.</em></p>" },
+
+    { "titulo": "Programa de arborização distribui mudas nativas", "slug": "programa-de-arborizacao",
+      "resumo": "Mudas de espécies nativas são entregues mediante cadastro na secretaria. Conteúdo de demonstração.",
+      "secretaria": "meio-ambiente-e-agricultura", "destaque": false, "dias_atras": 20,
+      "conteudo": "<p>O programa de arborização urbana distribui mudas de espécies nativas para plantio em calçadas e quintais, com orientação técnica sobre o local adequado.</p><h2>Onde plantar</h2><p>A escolha da espécie depende da largura da calçada e da presença de rede elétrica. A equipe orienta caso a caso.</p><p><em>Este texto é ilustrativo e não corresponde a um programa real.</em></p>" }
+  ],
+
+  "servicos": [
+    { "nome": "Emissão de certidão negativa de débitos", "slug": "certidao-negativa-de-debitos", "categoria": "Tributos", "publico_alvo": "Munícipes e empresas", "secretaria": "administracao-e-financas",
+      "descricao": "Documento que comprova a inexistência de débitos com o município. Conteúdo de demonstração.",
+      "como_solicitar": "<p>A certidão pode ser emitida presencialmente no setor de tributos ou pelo sistema de atendimento online, quando disponível.</p><p><em>Serviço ilustrativo.</em></p>" },
+    { "nome": "Matrícula na rede municipal de ensino", "slug": "matricula-na-rede-municipal", "categoria": "Educação", "publico_alvo": "Responsáveis por crianças e adolescentes", "secretaria": "educacao",
+      "descricao": "Inscrição e transferência de alunos nas escolas municipais. Conteúdo de demonstração.",
+      "como_solicitar": "<p>A matrícula é feita na escola mais próxima da residência, mediante apresentação de documento do aluno e comprovante de endereço.</p><p><em>Serviço ilustrativo.</em></p>" },
+    { "nome": "Agendamento de consulta na unidade básica", "slug": "agendamento-de-consulta", "categoria": "Saúde", "publico_alvo": "Munícipes", "secretaria": "saude",
+      "descricao": "Marcação de consulta com clínico geral nas unidades básicas de saúde. Conteúdo de demonstração.",
+      "como_solicitar": "<p>O agendamento é feito na unidade de referência do bairro, presencialmente ou por telefone.</p><p><em>Serviço ilustrativo.</em></p>" },
+    { "nome": "Solicitação de poda de árvore", "slug": "solicitacao-de-poda", "categoria": "Meio ambiente", "publico_alvo": "Munícipes", "secretaria": "meio-ambiente-e-agricultura",
+      "descricao": "Pedido de avaliação técnica para poda ou remoção de árvore em via pública. Conteúdo de demonstração.",
+      "como_solicitar": "<p>O pedido é registrado na secretaria e passa por vistoria antes da autorização.</p><p><em>Serviço ilustrativo.</em></p>" },
+    { "nome": "Alvará de funcionamento", "slug": "alvara-de-funcionamento", "categoria": "Empresas", "publico_alvo": "Empresas e autônomos", "secretaria": "administracao-e-financas",
+      "descricao": "Licença necessária para o funcionamento de estabelecimentos no município. Conteúdo de demonstração.",
+      "como_solicitar": "<p>A solicitação exige consulta prévia de viabilidade e, conforme a atividade, laudos de vigilância sanitária e do corpo de bombeiros.</p><p><em>Serviço ilustrativo.</em></p>" },
+    { "nome": "Coleta de entulho e material inservível", "slug": "coleta-de-entulho", "categoria": "Serviços urbanos", "publico_alvo": "Munícipes", "secretaria": "obras-e-servicos-urbanos",
+      "descricao": "Retirada de pequenos volumes de entulho mediante agendamento. Conteúdo de demonstração.",
+      "como_solicitar": "<p>O agendamento segue o roteiro de coleta do bairro, definido mensalmente.</p><p><em>Serviço ilustrativo.</em></p>" }
+  ],
+
+  "documentos": [
+    { "titulo": "Edital de chamamento público para credenciamento", "tipo": "edital", "numero": "001/2026-DEMO", "dias_atras": 4, "secretaria": "administracao-e-financas",
+      "descricao": "Documento de demonstração, sem valor oficial. Usado apenas para visualizar o layout da página de documentos." },
+    { "titulo": "Aviso de licitação — pregão eletrônico", "tipo": "licitacao", "numero": "014/2026-DEMO", "dias_atras": 8, "secretaria": "administracao-e-financas",
+      "descricao": "Documento de demonstração, sem valor oficial." },
+    { "titulo": "Decreto de regulamentação do calendário escolar", "tipo": "decreto", "numero": "045/2026-DEMO", "dias_atras": 15, "secretaria": "educacao",
+      "descricao": "Documento de demonstração, sem valor oficial." },
+    { "titulo": "Portaria de designação de comissão", "tipo": "portaria", "numero": "022/2026-DEMO", "dias_atras": 22, "secretaria": "administracao-e-financas",
+      "descricao": "Documento de demonstração, sem valor oficial." },
+    { "titulo": "Diário Oficial do Município — edição de demonstração", "tipo": "diario_oficial", "numero": "DEMO", "dias_atras": 2,
+      "descricao": "Documento de demonstração, sem valor oficial." }
+  ],
+
+  "paginas": [
+    { "titulo": "A cidade", "slug": "a-cidade",
+      "conteudo": "<p>Cambuí fica no sul de Minas Gerais, na divisa com São Paulo, em região de clima ameno e relevo montanhoso.</p><h2>Economia</h2><p>A atividade econômica combina agricultura, comércio e turismo.</p><p><em>Texto de demonstração — o conteúdo definitivo será redigido pela prefeitura.</em></p>" },
+    { "titulo": "Ouvidoria e e-SIC", "slug": "ouvidoria",
+      "conteudo": "<p>A ouvidoria recebe reclamações, sugestões e elogios sobre os serviços públicos municipais. O e-SIC atende aos pedidos de acesso à informação previstos na Lei de Acesso à Informação.</p><p><em>Texto de demonstração — os canais oficiais serão informados pela prefeitura.</em></p>" }
+  ],
+
+  "links_uteis": [
+    { "nome": "Portal da Transparência", "url": "https://www.gov.br/transparencia", "grupo": "Transparência", "ordem": 1, "descricao": "Link de demonstração — será substituído pelo sistema contábil do município." },
+    { "nome": "Diário Oficial dos Municípios Mineiros", "url": "https://www.diariomunicipal.com.br/amm-mg/", "grupo": "Transparência", "ordem": 2, "descricao": "Link de demonstração." },
+    { "nome": "Tribunal de Contas do Estado de Minas Gerais", "url": "https://www.tce.mg.gov.br/", "grupo": "Controle externo", "ordem": 3, "descricao": "Link de demonstração." },
+    { "nome": "Governo do Estado de Minas Gerais", "url": "https://www.mg.gov.br/", "grupo": "Outros órgãos", "ordem": 4, "descricao": "Link de demonstração." },
+    { "nome": "Gov.br — serviços do governo federal", "url": "https://www.gov.br/pt-br", "grupo": "Outros órgãos", "ordem": 5, "descricao": "Link de demonstração." }
+  ]
+}

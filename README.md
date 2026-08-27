@@ -8,8 +8,11 @@ Operação e engenharia: **TRUSTIT — Confiança e Tecnologia Ltda.**
 > lugar. O portal e o painel podem ser usados em
 > **https://portal.cambui.mg.gov.br** (endereço de homologação, fora dos
 > buscadores); o painel fica em `/painel`. O domínio oficial ainda é servido
-> pelo **portal antigo** (ASP.NET, outra máquina) — a virada não foi feita, e
-> não há conteúdo cadastrado. Ver [O que falta](#o-que-falta).
+> pelo **portal antigo** (ASP.NET, outra máquina) — a virada não foi feita.
+> O portal está com **conteúdo de demonstração** para visualização; enquanto ele
+> existir, o site inteiro exibe uma faixa vermelha de aviso. Ver
+> [Conteúdo de demonstração](#conteúdo-de-demonstração) e
+> [O que falta](#o-que-falta).
 
 ## Stack
 
@@ -168,6 +171,34 @@ Fluxo editorial `rascunho → em_revisao → aprovado → publicado → arquivad
 separação de funções (revisor aprova mas não publica), **2FA obrigatório para
 publicar** e ninguém aprovando o próprio texto. As permissões são uma matriz
 explícita em `infra/directus/papeis.json`.
+
+## Conteúdo de demonstração
+
+O portal pode ser populado com conteúdo **ilustrativo**, para ver como fica
+antes de existir conteúdo real:
+
+```bash
+cd /opt/portal-cambui
+DIRECTUS_EMAIL=<admin> DIRECTUS_SENHA=<...> node infra/directus/popular-demonstracao.mjs --aplicar
+node infra/directus/popular-demonstracao.mjs --simular   # só mostra o que faria
+DIRECTUS_EMAIL=<admin> DIRECTUS_SENHA=<...> node infra/directus/popular-demonstracao.mjs --remover
+```
+
+**Precisa sair antes da virada.** Três coisas seguram esse compromisso:
+
+1. **Reversível por construção.** Cada item criado tem o id anotado em
+   `data/demonstracao.json`, e o `--remover` apaga exatamente esses ids. Conteúdo
+   que a prefeitura tenha escrito no meio não é tocado — foi verificado.
+2. **Aviso amarrado ao dado, não ao domínio.** Enquanto o arquivo de marcação
+   existir, TODA página do portal e do painel exibe uma faixa vermelha dizendo
+   que o conteúdo é ilustrativo e não tem valor oficial. Esquecer de remover
+   antes da virada faz o alarme aparecer no site oficial, em vez de o conteúdo
+   falso passar batido.
+3. **Nada que possa causar dano isolado do aviso.** Nenhum nome de pessoa,
+   telefone, e-mail ou endereço; números de documento com sufixo `-DEMO`; e cada
+   resumo diz que é demonstração, para o caso de o texto ser visto fora da
+   página. As imagens são gradientes gerados pelo próprio script — fotografia
+   daria ao conteúdo falso aparência de reportagem real.
 
 ## Verificações
 
