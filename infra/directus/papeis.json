@@ -1,0 +1,172 @@
+{
+  "_comentario": [
+    "Papéis, políticas e permissões do CMS — o controle de acesso do módulo de",
+    "contribuição das secretarias (Fase 3).",
+    "",
+    "Fica FORA do esquema.json de propósito: coleção e campo são estrutura, e",
+    "recriá-los é barato; permissão é segurança, e a errada vaza rascunho de ato",
+    "oficial. Separando os dois arquivos, aplicar o esquema nunca mexe em quem",
+    "pode ver o quê.",
+    "",
+    "MODELO DO DIRECTUS 11 (mudou em relação ao 10): a permissão pertence a uma",
+    "POLÍTICA; o papel apenas carrega políticas; o usuário recebe papel e/ou",
+    "política direta. O acesso público é a política que o Directus cria na",
+    "instalação com o nome '$t:public_label' — conferido no banco desta",
+    "instalação, não presumido.",
+    "",
+    "A matriz abaixo é explícita de propósito: nada é derivado, nada é herdado.",
+    "Quem auditar precisa ler uma tabela, não deduzir uma regra.",
+    "",
+    "Aplicado por aplicar-papeis.mjs. Rodar com --simular antes."
+  ],
+
+  "campo_secretaria_no_usuario": {
+    "_comentario": [
+      "Sem isto, 'redator' só poderia ser dono dos próprios itens. A prefeitura",
+      "trabalha por pasta: quem entra de férias precisa que a colega da mesma",
+      "secretaria continue o texto. Este campo em directus_users liga a pessoa à",
+      "secretaria, e é o que os filtros de escopo comparam."
+    ],
+    "campo": "secretaria",
+    "colecao_destino": "secretarias",
+    "nota": "Secretaria a que a pessoa pertence. Define o que ela enxerga e edita no painel."
+  },
+
+  "_escopos": {
+    "tudo": "Sem filtro de linha.",
+    "secretaria": "Só itens cujo campo 'secretaria' é a secretaria da pessoa.",
+    "propria_secretaria": "Na coleção 'secretarias': só a linha da própria secretaria.",
+    "nenhum": "A coleção não aparece para esta política."
+  },
+
+  "politicas": [
+    {
+      "nome": "Portal — Redator de secretaria",
+      "icone": "edit_note",
+      "descricao": "Escreve e corrige o conteúdo da própria secretaria. Não aprova nem publica.",
+      "app_access": true,
+      "admin_access": false,
+      "enforce_tfa": false,
+      "_comentario_tfa": [
+        "Sem 2FA obrigatório: rascunho não é ato público, e exigir aplicativo",
+        "autenticador de toda a ponta afastaria as secretarias menores do",
+        "sistema — o resultado prático seria voltarem a mandar texto por e-mail."
+      ],
+      "_comentario_apagar": [
+        "Nenhuma política de conteúdo tem 'delete'. Conteúdo de órgão público tem",
+        "valor de registro; o que sai de cena vira 'arquivado', e só o publicador",
+        "arquiva. Apagar de verdade é operação de administrador, com intenção."
+      ],
+      "colecoes": {
+        "noticias":    { "acoes": ["create", "read", "update"], "escopo": "secretaria", "situacao_ao_criar": "rascunho", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao"], "situacoes_destino": ["rascunho", "em_revisao"] },
+        "servicos":    { "acoes": ["create", "read", "update"], "escopo": "secretaria", "situacao_ao_criar": "rascunho", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao"], "situacoes_destino": ["rascunho", "em_revisao"] },
+        "documentos":  { "acoes": ["create", "read", "update"], "escopo": "secretaria", "situacao_ao_criar": "rascunho", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao"], "situacoes_destino": ["rascunho", "em_revisao"] },
+        "secretarias": { "acoes": ["read", "update"], "escopo": "propria_secretaria", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao"], "situacoes_destino": ["rascunho", "em_revisao"] },
+        "paginas":     { "acoes": ["read"], "escopo": "tudo", "situacoes_visiveis": ["publicado"] },
+        "links_uteis": { "acoes": ["read"], "escopo": "tudo", "situacoes_visiveis": ["publicado"] }
+      },
+      "_comentario_paginas": [
+        "'paginas' e 'links_uteis' são conteúdo institucional do município, não",
+        "de uma pasta: quem escreve são revisor e publicador. Redator só lê."
+      ]
+    },
+
+    {
+      "nome": "Portal — Revisor",
+      "icone": "fact_check",
+      "descricao": "Confere o que as secretarias enviaram, corrige, e aprova ou devolve.",
+      "app_access": true,
+      "admin_access": false,
+      "enforce_tfa": false,
+      "_comentario_publicar": [
+        "Aprova, mas NÃO publica: 'aprovado' não vira 'publicado' pelas mãos de",
+        "quem revisou. É a separação de funções que a prefeitura pediu, e está",
+        "escrita como permissão de linha — não como regra de tela, que se",
+        "contorna chamando a API."
+      ],
+      "colecoes": {
+        "noticias":    { "acoes": ["create", "read", "update"], "escopo": "tudo", "situacao_ao_criar": "rascunho", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao", "aprovado"], "situacoes_destino": ["rascunho", "em_revisao", "aprovado"] },
+        "servicos":    { "acoes": ["create", "read", "update"], "escopo": "tudo", "situacao_ao_criar": "rascunho", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao", "aprovado"], "situacoes_destino": ["rascunho", "em_revisao", "aprovado"] },
+        "documentos":  { "acoes": ["create", "read", "update"], "escopo": "tudo", "situacao_ao_criar": "rascunho", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao", "aprovado"], "situacoes_destino": ["rascunho", "em_revisao", "aprovado"] },
+        "secretarias": { "acoes": ["create", "read", "update"], "escopo": "tudo", "situacao_ao_criar": "rascunho", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao", "aprovado"], "situacoes_destino": ["rascunho", "em_revisao", "aprovado"] },
+        "paginas":     { "acoes": ["create", "read", "update"], "escopo": "tudo", "situacao_ao_criar": "rascunho", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao", "aprovado"], "situacoes_destino": ["rascunho", "em_revisao", "aprovado"] },
+        "links_uteis": { "acoes": ["create", "read", "update"], "escopo": "tudo", "situacao_ao_criar": "rascunho", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["rascunho", "em_revisao", "aprovado"], "situacoes_destino": ["rascunho", "em_revisao", "aprovado"] }
+      }
+    },
+
+    {
+      "nome": "Portal — Publicador",
+      "icone": "publish",
+      "descricao": "Coloca no ar o que já foi aprovado e arquiva o que saiu de vigência.",
+      "app_access": true,
+      "admin_access": false,
+      "enforce_tfa": true,
+      "_comentario_tfa": [
+        "2FA OBRIGATÓRIO, e é aqui que ele é obrigatório de verdade: o Directus",
+        "recusa a sessão de quem não tiver o segundo fator configurado. Este é o",
+        "papel que faz conteúdo aparecer no domínio oficial do município — conta",
+        "comprometida aqui publica em nome da prefeitura.",
+        "CONSEQUÊNCIA OPERACIONAL: cadastrar alguém como publicador SEM que a",
+        "pessoa configure o autenticador deixa a conta inutilizável. O passo a",
+        "passo está em docs/fase-3."
+      ],
+      "colecoes": {
+        "noticias":    { "acoes": ["read", "update"], "escopo": "tudo", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["aprovado", "publicado", "arquivado"], "situacoes_destino": ["aprovado", "publicado", "arquivado"] },
+        "servicos":    { "acoes": ["read", "update"], "escopo": "tudo", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["aprovado", "publicado", "arquivado"], "situacoes_destino": ["aprovado", "publicado", "arquivado"] },
+        "documentos":  { "acoes": ["read", "update"], "escopo": "tudo", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["aprovado", "publicado", "arquivado"], "situacoes_destino": ["aprovado", "publicado", "arquivado"] },
+        "secretarias": { "acoes": ["read", "update"], "escopo": "tudo", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["aprovado", "publicado", "arquivado"], "situacoes_destino": ["aprovado", "publicado", "arquivado"] },
+        "paginas":     { "acoes": ["read", "update"], "escopo": "tudo", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["aprovado", "publicado", "arquivado"], "situacoes_destino": ["aprovado", "publicado", "arquivado"] },
+        "links_uteis": { "acoes": ["read", "update"], "escopo": "tudo", "situacoes_visiveis": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"], "situacoes_editaveis": ["aprovado", "publicado", "arquivado"], "situacoes_destino": ["aprovado", "publicado", "arquivado"] }
+      }
+    }
+  ],
+
+  "papeis": [
+    { "nome": "Redator de secretaria", "icone": "edit_note", "descricao": "Ponta das secretarias: escreve e envia para revisão.", "politicas": ["Portal — Redator de secretaria"] },
+    { "nome": "Revisor", "icone": "fact_check", "descricao": "Confere e aprova o que as secretarias enviaram.", "politicas": ["Portal — Revisor"] },
+    { "nome": "Publicador", "icone": "publish", "descricao": "Publica o aprovado. Exige segundo fator.", "politicas": ["Portal — Revisor", "Portal — Publicador"] }
+  ],
+  "_comentario_papeis": [
+    "O publicador acumula a política de revisor porque, na prática, quem publica",
+    "precisa enxergar a fila inteira e corrigir uma vírgula antes de subir. O que",
+    "acumular NÃO dá é o direito de aprovar o próprio texto: isso é regra de",
+    "fluxo do painel (docs/fase-3), porque depende de quem escreveu o item, e o",
+    "Directus não expressa 'diferente do autor' em permissão de linha."
+  ],
+
+  "publico": {
+    "_comentario": [
+      "A política pública é a única que a internet inteira usa. Duas travas:",
+      "  1. filtro status = 'publicado' em TODA coleção — sem isto, rascunho de",
+      "     edital fica legível por quem chamar /items/documentos direto;",
+      "  2. lista explícita de campos — sem isto, 'user_created' e 'date_updated'",
+      "     saem na resposta e expõem a rotina interna da prefeitura.",
+      "A lista de campos abaixo é exatamente a de apps/web/src/lib/tipos.ts.",
+      "Só campo de topo: o 'fields' de uma permissão do Directus não aceita",
+      "caminho relacional. Ler 'secretaria.nome' numa notícia depende de haver",
+      "permissão de leitura na coleção secretarias — e há, logo acima.",
+      "Campo novo no esquema que o portal precise ler tem de ser somado aqui,",
+      "senão a página simplesmente não recebe o dado."
+    ],
+    "somente_leitura": true,
+    "filtro_situacao": "publicado",
+    "colecoes": {
+      "secretarias": ["id", "nome", "slug", "sigla", "descricao", "responsavel", "cargo_responsavel", "endereco", "telefone", "email", "horario_atendimento", "ordem"],
+      "noticias": ["id", "titulo", "slug", "resumo", "conteudo", "imagem", "imagem_descricao", "data_publicacao", "destaque", "secretaria"],
+      "servicos": ["id", "nome", "slug", "descricao", "categoria", "publico_alvo", "como_solicitar", "url_externa", "secretaria"],
+      "documentos": ["id", "titulo", "tipo", "numero", "data_documento", "descricao", "arquivo", "url_externa", "secretaria"],
+      "paginas": ["id", "titulo", "slug", "conteudo", "atualizado_em"],
+      "links_uteis": ["id", "nome", "url", "descricao", "grupo", "ordem"]
+    },
+    "arquivos": {
+      "_comentario": [
+        "O portal serve imagem de notícia e PDF de edital por /assets/. Sem esta",
+        "permissão as páginas publicam ícone quebrado e link morto. O filtro",
+        "amarra o arquivo à pasta pública: o que a secretaria subiu e ainda não",
+        "foi publicado fica fora do alcance de quem adivinhar o UUID."
+      ],
+      "pasta_publica": "publicos",
+      "campos": ["id", "title", "type", "filesize", "width", "height", "description"]
+    }
+  }
+}

@@ -7,100 +7,306 @@
     "do Directus — ou seja, do e-mail institucional que ainda não foi definido.",
     "Até lá o portal roda com as coleções ausentes e degrada cada seção."
   ],
-
-  "situacoes": ["rascunho", "em_revisao", "aprovado", "publicado", "arquivado"],
-
+  "situacoes": [
+    "rascunho",
+    "em_revisao",
+    "aprovado",
+    "publicado",
+    "arquivado"
+  ],
   "colecoes": [
     {
       "nome": "secretarias",
-      "rotulo": { "singular": "Secretaria", "plural": "Secretarias" },
+      "rotulo": {
+        "singular": "Secretaria",
+        "plural": "Secretarias"
+      },
       "icone": "account_balance",
       "nota": "Estrutura administrativa do município.",
       "campos": [
-        { "campo": "nome", "tipo": "string", "obrigatorio": true },
-        { "campo": "slug", "tipo": "string", "obrigatorio": true, "unico": true, "nota": "Usado na URL: /secretarias/<slug>" },
-        { "campo": "sigla", "tipo": "string" },
-        { "campo": "descricao", "tipo": "text", "interface": "input-rich-text-html" },
-        { "campo": "responsavel", "tipo": "string" },
-        { "campo": "cargo_responsavel", "tipo": "string" },
-        { "campo": "endereco", "tipo": "string" },
-        { "campo": "telefone", "tipo": "string" },
-        { "campo": "email", "tipo": "string" },
-        { "campo": "horario_atendimento", "tipo": "string" },
-        { "campo": "ordem", "tipo": "integer", "nota": "Ordem de exibição na listagem." }
+        {
+          "campo": "nome",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "slug",
+          "tipo": "string",
+          "obrigatorio": true,
+          "unico": true,
+          "nota": "Usado na URL: /secretarias/<slug>"
+        },
+        {
+          "campo": "sigla",
+          "tipo": "string"
+        },
+        {
+          "campo": "descricao",
+          "tipo": "text",
+          "interface": "input-rich-text-html"
+        },
+        {
+          "campo": "responsavel",
+          "tipo": "string"
+        },
+        {
+          "campo": "cargo_responsavel",
+          "tipo": "string"
+        },
+        {
+          "campo": "endereco",
+          "tipo": "string"
+        },
+        {
+          "campo": "telefone",
+          "tipo": "string"
+        },
+        {
+          "campo": "email",
+          "tipo": "string"
+        },
+        {
+          "campo": "horario_atendimento",
+          "tipo": "string"
+        },
+        {
+          "campo": "ordem",
+          "tipo": "integer",
+          "nota": "Ordem de exibição na listagem."
+        }
       ]
     },
     {
       "nome": "noticias",
-      "rotulo": { "singular": "Notícia", "plural": "Notícias" },
+      "rotulo": {
+        "singular": "Notícia",
+        "plural": "Notícias"
+      },
       "icone": "article",
       "nota": "Notícias e comunicados oficiais.",
       "campos": [
-        { "campo": "titulo", "tipo": "string", "obrigatorio": true },
-        { "campo": "slug", "tipo": "string", "obrigatorio": true, "unico": true },
-        { "campo": "resumo", "tipo": "text", "nota": "Chamada da listagem e meta description. Até ~200 caracteres." },
-        { "campo": "conteudo", "tipo": "text", "interface": "input-rich-text-html" },
-        { "campo": "imagem", "tipo": "uuid", "interface": "file-image", "arquivo": true },
-        { "campo": "imagem_descricao", "tipo": "string", "nota": "Texto alternativo da imagem. Vazio = imagem decorativa." },
-        { "campo": "data_publicacao", "tipo": "timestamp", "obrigatorio": true },
-        { "campo": "destaque", "tipo": "boolean", "padrao": false, "nota": "Aparece no topo da home." },
-        { "campo": "secretaria", "tipo": "relacao", "para": "secretarias" }
+        {
+          "campo": "titulo",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "slug",
+          "tipo": "string",
+          "obrigatorio": true,
+          "unico": true
+        },
+        {
+          "campo": "resumo",
+          "tipo": "text",
+          "nota": "Chamada da listagem e meta description. Até ~200 caracteres."
+        },
+        {
+          "campo": "conteudo",
+          "tipo": "text",
+          "interface": "input-rich-text-html"
+        },
+        {
+          "campo": "imagem",
+          "tipo": "uuid",
+          "interface": "file-image",
+          "arquivo": true
+        },
+        {
+          "campo": "imagem_descricao",
+          "tipo": "string",
+          "nota": "Texto alternativo da imagem. Vazio = imagem decorativa."
+        },
+        {
+          "campo": "data_publicacao",
+          "tipo": "timestamp",
+          "obrigatorio": true
+        },
+        {
+          "campo": "destaque",
+          "tipo": "boolean",
+          "padrao": false,
+          "nota": "Aparece no topo da home."
+        },
+        {
+          "campo": "secretaria",
+          "tipo": "relacao",
+          "para": "secretarias"
+        }
       ]
     },
     {
       "nome": "servicos",
-      "rotulo": { "singular": "Serviço", "plural": "Serviços" },
+      "rotulo": {
+        "singular": "Serviço",
+        "plural": "Serviços"
+      },
       "icone": "support_agent",
       "nota": "Serviços oferecidos ao cidadão.",
       "campos": [
-        { "campo": "nome", "tipo": "string", "obrigatorio": true },
-        { "campo": "slug", "tipo": "string", "obrigatorio": true, "unico": true },
-        { "campo": "descricao", "tipo": "text" },
-        { "campo": "categoria", "tipo": "string", "nota": "Agrupa a listagem. Ex.: Tributos, Saúde, Educação." },
-        { "campo": "publico_alvo", "tipo": "string" },
-        { "campo": "como_solicitar", "tipo": "text", "interface": "input-rich-text-html" },
-        { "campo": "url_externa", "tipo": "string", "nota": "Serviço que vive em sistema de terceiro." },
-        { "campo": "secretaria", "tipo": "relacao", "para": "secretarias" }
+        {
+          "campo": "nome",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "slug",
+          "tipo": "string",
+          "obrigatorio": true,
+          "unico": true
+        },
+        {
+          "campo": "descricao",
+          "tipo": "text"
+        },
+        {
+          "campo": "categoria",
+          "tipo": "string",
+          "nota": "Agrupa a listagem. Ex.: Tributos, Saúde, Educação."
+        },
+        {
+          "campo": "publico_alvo",
+          "tipo": "string"
+        },
+        {
+          "campo": "como_solicitar",
+          "tipo": "text",
+          "interface": "input-rich-text-html"
+        },
+        {
+          "campo": "url_externa",
+          "tipo": "string",
+          "nota": "Serviço que vive em sistema de terceiro."
+        },
+        {
+          "campo": "secretaria",
+          "tipo": "relacao",
+          "para": "secretarias"
+        }
       ]
     },
     {
       "nome": "documentos",
-      "rotulo": { "singular": "Documento", "plural": "Documentos" },
+      "rotulo": {
+        "singular": "Documento",
+        "plural": "Documentos"
+      },
       "icone": "gavel",
       "nota": "Editais, licitações, leis, decretos, portarias e Diário Oficial.",
       "campos": [
-        { "campo": "titulo", "tipo": "string", "obrigatorio": true },
-        { "campo": "tipo", "tipo": "string", "obrigatorio": true, "opcoes": ["edital", "licitacao", "diario_oficial", "lei", "decreto", "portaria", "outro"] },
-        { "campo": "numero", "tipo": "string" },
-        { "campo": "data_documento", "tipo": "date", "obrigatorio": true },
-        { "campo": "descricao", "tipo": "text" },
-        { "campo": "arquivo", "tipo": "uuid", "interface": "file", "arquivo": true },
-        { "campo": "url_externa", "tipo": "string", "nota": "Quando o documento vive no sistema da Transparência." }
+        {
+          "campo": "titulo",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "tipo",
+          "tipo": "string",
+          "obrigatorio": true,
+          "opcoes": [
+            "edital",
+            "licitacao",
+            "diario_oficial",
+            "lei",
+            "decreto",
+            "portaria",
+            "outro"
+          ]
+        },
+        {
+          "campo": "numero",
+          "tipo": "string"
+        },
+        {
+          "campo": "data_documento",
+          "tipo": "date",
+          "obrigatorio": true
+        },
+        {
+          "campo": "descricao",
+          "tipo": "text"
+        },
+        {
+          "campo": "arquivo",
+          "tipo": "uuid",
+          "interface": "file",
+          "arquivo": true
+        },
+        {
+          "campo": "url_externa",
+          "tipo": "string",
+          "nota": "Quando o documento vive no sistema da Transparência."
+        },
+        {
+          "campo": "secretaria",
+          "tipo": "relacao",
+          "para": "secretarias",
+          "nota": "Secretaria responsável pelo documento. Define quem pode editá-lo no painel de contribuição."
+        }
       ]
     },
     {
       "nome": "paginas",
-      "rotulo": { "singular": "Página", "plural": "Páginas" },
+      "rotulo": {
+        "singular": "Página",
+        "plural": "Páginas"
+      },
       "icone": "description",
       "nota": "Páginas de conteúdo fixo.",
       "campos": [
-        { "campo": "titulo", "tipo": "string", "obrigatorio": true },
-        { "campo": "slug", "tipo": "string", "obrigatorio": true, "unico": true },
-        { "campo": "conteudo", "tipo": "text", "interface": "input-rich-text-html" },
-        { "campo": "atualizado_em", "tipo": "timestamp" }
+        {
+          "campo": "titulo",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "slug",
+          "tipo": "string",
+          "obrigatorio": true,
+          "unico": true
+        },
+        {
+          "campo": "conteudo",
+          "tipo": "text",
+          "interface": "input-rich-text-html"
+        },
+        {
+          "campo": "atualizado_em",
+          "tipo": "timestamp"
+        }
       ]
     },
     {
       "nome": "links_uteis",
-      "rotulo": { "singular": "Link útil", "plural": "Links úteis" },
+      "rotulo": {
+        "singular": "Link útil",
+        "plural": "Links úteis"
+      },
       "icone": "link",
       "nota": "Sistemas externos: Transparência, Diário Oficial, e-SIC. O portal NÃO reimplementa esses sistemas — só aponta para eles.",
       "campos": [
-        { "campo": "nome", "tipo": "string", "obrigatorio": true },
-        { "campo": "url", "tipo": "string", "obrigatorio": true },
-        { "campo": "descricao", "tipo": "text" },
-        { "campo": "grupo", "tipo": "string" },
-        { "campo": "ordem", "tipo": "integer" }
+        {
+          "campo": "nome",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "url",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "descricao",
+          "tipo": "text"
+        },
+        {
+          "campo": "grupo",
+          "tipo": "string"
+        },
+        {
+          "campo": "ordem",
+          "tipo": "integer"
+        }
       ]
     }
   ]

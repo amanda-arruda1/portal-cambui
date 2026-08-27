@@ -67,6 +67,7 @@ export interface Documento {
   arquivo: string | null;
   /** Documento hospedado em sistema externo (ex.: portal da transparência). */
   url_externa: string | null;
+  secretaria: { nome: string; slug: string } | null;
 }
 
 export interface Pagina {
