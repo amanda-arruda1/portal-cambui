@@ -106,6 +106,14 @@ firewall-cmd --reload
 echo "  regras agora:"
 firewall-cmd --list-rich-rules --zone=public | sed 's/^/    /'
 
+echo "==> removendo o PID residual da instalação"
+# O RPM do nginx.org deixa /run/nginx.pid criado por processo unconfined, com
+# rótulo var_run_t. O Nginx roda como httpd_t e NÃO pode escrever nesse rótulo:
+# em enforcing o master morre com "open() /var/run/nginx.pid failed (13)" e o
+# systemd fica 90s no timeout. Apagado, o próprio Nginx recria o arquivo e a
+# transição de tipo o rotula httpd_var_run_t (a política já mapeia esse caminho).
+rm -f /run/nginx.pid
+
 echo "==> habilitando e subindo o Nginx"
 systemctl enable --now nginx
 systemctl is-active nginx
