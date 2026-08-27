@@ -1,0 +1,115 @@
+---
+/**
+ * Pessoas com acesso ao painel.
+ *
+ * Tela da TI, não das secretarias. O Directus recusaria a consulta de quem não
+ * administra, mas a checagem daqui evita mostrar uma tela que só daria erro.
+ */
+import Painel from '../../../layouts/Painel.astro';
+import { listarPessoas, PAPEL_ADMIN, SITUACOES } from '../../../lib/painel/usuarios.ts';
+import { dataHora } from '../../../lib/formato.ts';
+
+const sessao = Astro.locals.sessao!;
+if (sessao.usuario.papel !== PAPEL_ADMIN) return Astro.rewrite('/404');
+
+const resultado = await listarPessoas(sessao);
+const pessoas = resultado.ok ? resultado.dados : [];
+const erro = resultado.ok ? null : resultado.motivo;
+
+const rotuloSituacao = (v: string) => SITUACOES.find((s) => s.valor === v)?.rotulo ?? v;
+
+// Conta que publica sem segundo fator configurado não consegue entrar: a
+// política do Publicador exige 2FA e o Directus recusa a sessão. Vale avisar
+// na lista, senão a pessoa só descobre no dia em que tentar usar.
+const publicadoresSemFator = pessoas.filter((p) => p.papel === 'Publicador' && !p.temSegundoFator);
+---
+
+<Painel titulo="Pessoas" sessao={sessao}>
+  <nav class="text-sm text-grafite">
+    <a href="/painel" class="text-azul underline">Fila</a> <span aria-hidden="true">›</span> Pessoas
+  </nav>
+
+  <div class="mt-2 flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-bold text-azul-escuro">Pessoas com acesso</h1>
+    <a
+      href="/painel/usuarios/novo"
+      class="rounded-md bg-azul px-4 py-2 font-semibold text-papel hover:bg-azul-escuro"
+    >
+      Cadastrar pessoa
+    </a>
+  </div>
+
+  {
+    erro && (
+      <div role="alert" class="mt-4 rounded-md border-l-4 border-vermelho bg-papel p-4 text-vermelho">
+        {erro}
+      </div>
+    )
+  }
+
+  {
+    publicadoresSemFator.length > 0 && (
+      <div role="status" class="mt-4 rounded-md border-l-4 border-trigo bg-papel p-4 text-grafite">
+        <p class="font-semibold text-azul-escuro">
+          {publicadoresSemFator.length === 1 ? 'Uma conta de Publicador está' : `${publicadoresSemFator.length} contas de Publicador estão`}{' '}
+          sem verificação em duas etapas.
+        </p>
+        <p class="mt-1">
+          A função Publicador exige o segundo fator, então essas contas não conseguem entrar:{' '}
+          {publicadoresSemFator.map((p) => p.email).join(', ')}. Coloque a pessoa como Revisor até
+          que o segundo fator esteja configurado.
+        </p>
+      </div>
+    )
+  }
+
+  <div class="mt-6 overflow-x-auto rounded-lg border border-prata bg-papel">
+    <table class="w-full min-w-3xl border-collapse text-left">
+      <thead>
+        <tr class="border-b-2 border-prata text-azul-escuro">
+          <th scope="col" class="px-4 py-3 font-semibold">Pessoa</th>
+          <th scope="col" class="px-4 py-3 font-semibold">Função</th>
+          <th scope="col" class="px-4 py-3 font-semibold">Secretaria</th>
+          <th scope="col" class="px-4 py-3 font-semibold">2 etapas</th>
+          <th scope="col" class="px-4 py-3 font-semibold">Situação</th>
+          <th scope="col" class="px-4 py-3 font-semibold">Último acesso</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          pessoas.map((p) => (
+            <tr class="border-b border-prata last:border-0">
+              <td class="px-4 py-3">
+                <a href={`/painel/usuarios/${p.id}`} class="font-semibold text-azul underline">
+                  {p.nome}
+                </a>
+                <span class="block text-sm text-grafite">{p.email}</span>
+              </td>
+              <td class="px-4 py-3">{p.papel ?? <span class="text-vermelho">sem função</span>}</td>
+              <td class="px-4 py-3 text-grafite">{p.secretariaNome ?? '—'}</td>
+              <td class="px-4 py-3">
+                {p.temSegundoFator ? (
+                  <span class="text-verde-texto">configurada</span>
+                ) : p.papel === 'Publicador' ? (
+                  <span class="font-semibold text-vermelho">faltando</span>
+                ) : (
+                  <span class="text-grafite">—</span>
+                )}
+              </td>
+              <td class="px-4 py-3 text-grafite">{rotuloSituacao(p.situacao)}</td>
+              <td class="px-4 py-3 text-grafite">
+                {p.ultimoAcesso ? dataHora(p.ultimoAcesso) : 'nunca entrou'}
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+
+  {
+    pessoas.length === 0 && !erro && (
+      <p class="mt-4 text-grafite">Nenhuma pessoa cadastrada além de você.</p>
+    )
+  }
+</Painel>

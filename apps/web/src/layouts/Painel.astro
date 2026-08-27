@@ -42,6 +42,11 @@ const { titulo, sessao } = Astro.props;
         {
           sessao && (
             <div class="flex items-center gap-4 text-sm">
+              {sessao.usuario.papel === 'Administrator' && (
+                <a href="/painel/usuarios" class="underline underline-offset-4 hover:text-azul-claro">
+                  Pessoas
+                </a>
+              )}
               <span>
                 {sessao.usuario.nome}
                 <span class="text-azul-claro">

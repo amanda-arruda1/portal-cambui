@@ -1,0 +1,227 @@
+---
+/**
+ * Cadastrar uma pessoa.
+ *
+ * A senha é gerada aqui e mostrada UMA vez, depois de gravar. Não existe envio
+ * por e-mail porque o SMTP do município ainda não foi configurado — quando
+ * existir, o caminho certo é o convite do Directus, e esta tela passa a
+ * oferecer as duas opções.
+ */
+import Painel from '../../../layouts/Painel.astro';
+import { listarSecretarias } from '../../../lib/painel/cms.ts';
+import {
+  criarPessoa,
+  gerarSenha,
+  listarPapeis,
+  PAPEIS_DO_FLUXO,
+  PAPEL_ADMIN,
+  SITUACOES,
+} from '../../../lib/painel/usuarios.ts';
+
+const sessao = Astro.locals.sessao!;
+if (sessao.usuario.papel !== PAPEL_ADMIN) return Astro.rewrite('/404');
+
+const [papeisResp, secretariasResp] = await Promise.all([listarPapeis(sessao), listarSecretarias(sessao)]);
+const papeis = papeisResp.ok ? papeisResp.dados : [];
+const secretarias = secretariasResp.ok ? secretariasResp.dados : [];
+
+let erros: Record<string, string> = {};
+let digitado: Record<string, string> = { situacao: 'active' };
+let criada: { email: string; senha: string; papel: string } | null = null;
+
+if (Astro.request.method === 'POST') {
+  const f = await Astro.request.formData();
+  const pega = (n: string) => String(f.get(n) ?? '').trim();
+
+  const dados = {
+    email: pega('email'),
+    nome: pega('nome'),
+    sobrenome: pega('sobrenome'),
+    papelId: pega('papel') || null,
+    secretaria: pega('secretaria') || null,
+    situacao: pega('situacao') || 'active',
+  };
+  // Só os campos de texto voltam para a tela; 'papelId' é null-ável e o mapa
+  // de repovoamento é sempre string.
+  digitado = {
+    email: dados.email,
+    nome: dados.nome,
+    sobrenome: dados.sobrenome,
+    situacao: dados.situacao,
+    papel: dados.papelId ?? '',
+    secretaria: dados.secretaria ?? '',
+  };
+
+  if (!dados.email) erros.email = 'Informe o e-mail.';
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(dados.email)) {
+    erros.email = 'Esse endereço não parece completo. O Directus recusa e-mail malformado.';
+  }
+  if (!dados.papelId) erros.papel = 'Escolha a função.';
+
+  const nomeDoPapel = papeis.find((p) => p.id === dados.papelId)?.name ?? '';
+
+  // Redator sem secretaria enxerga uma fila vazia para sempre: o filtro da
+  // permissão compara com a secretaria da pessoa, e nulo não casa com nada.
+  if (nomeDoPapel === 'Redator de secretaria' && !dados.secretaria) {
+    erros.secretaria = 'Redator precisa de uma secretaria — é ela que define o que a pessoa enxerga e edita.';
+  }
+
+  if (Object.keys(erros).length === 0) {
+    const senha = gerarSenha();
+    const r = await criarPessoa(sessao, dados, senha);
+    if (r.ok) {
+      console.info(`[usuarios] ${sessao.usuario.email} cadastrou ${dados.email} como "${nomeDoPapel}"`);
+      criada = { email: dados.email, senha, papel: nomeDoPapel };
+    } else {
+      erros.__geral = r.motivo;
+    }
+  }
+}
+
+const campo = 'mt-1 w-full rounded-md border border-prata bg-papel px-3 py-2';
+---
+
+<Painel titulo="Cadastrar pessoa" sessao={sessao}>
+  <nav class="text-sm text-grafite">
+    <a href="/painel" class="text-azul underline">Fila</a> <span aria-hidden="true">›</span>
+    <a href="/painel/usuarios" class="text-azul underline">Pessoas</a>
+    <span aria-hidden="true">›</span> Cadastrar
+  </nav>
+
+  <h1 class="mt-2 text-2xl font-bold text-azul-escuro">Cadastrar pessoa</h1>
+
+  {
+    criada ? (
+      <div class="mt-6 rounded-lg border-l-4 border-verde bg-papel p-6">
+        <h2 class="text-lg font-bold text-verde-texto">Conta criada</h2>
+        <p class="mt-2 text-grafite">
+          Entregue estes dados à pessoa por um canal que você confie. A senha{' '}
+          <strong>não fica guardada em lugar nenhum</strong> e não aparece de novo.
+        </p>
+        <dl class="mt-4 space-y-2">
+          <div>
+            <dt class="text-sm text-grafite">Endereço do painel</dt>
+            <dd class="font-mono">https://portal.cambui.mg.gov.br/painel</dd>
+          </div>
+          <div>
+            <dt class="text-sm text-grafite">Usuário</dt>
+            <dd class="font-mono">{criada.email}</dd>
+          </div>
+          <div>
+            <dt class="text-sm text-grafite">Senha inicial</dt>
+            <dd class="font-mono text-lg font-bold select-all">{criada.senha}</dd>
+          </div>
+        </dl>
+
+        {criada.papel === 'Publicador' && (
+          <p class="mt-4 rounded-md border-l-4 border-vermelho bg-papel-suave p-3 text-vermelho">
+            <strong>Atenção:</strong> a função Publicador exige verificação em duas etapas, e ela
+            ainda não pode ser configurada pelo painel. Esta conta não vai conseguir entrar até que
+            o segundo fator exista. Enquanto isso, deixe a pessoa como Revisor.
+          </p>
+        )}
+
+        <div class="mt-6 flex flex-wrap gap-3">
+          <a href="/painel/usuarios" class="rounded-md bg-azul px-4 py-2 font-semibold text-papel hover:bg-azul-escuro">
+            Voltar à lista
+          </a>
+          <a href="/painel/usuarios/novo" class="rounded-md border border-prata px-4 py-2 font-semibold text-grafite hover:border-azul hover:text-azul">
+            Cadastrar outra
+          </a>
+        </div>
+      </div>
+    ) : (
+      <>
+        {erros.__geral && (
+          <div role="alert" class="mt-4 rounded-md border-l-4 border-vermelho bg-papel p-4 text-vermelho">
+            {erros.__geral}
+          </div>
+        )}
+
+        <form method="post" class="mt-6 grid gap-5 rounded-lg border border-prata bg-papel p-6 sm:grid-cols-2">
+          <div class="sm:col-span-2">
+            <label for="email" class="block font-semibold text-azul-escuro">
+              E-mail <span class="text-vermelho" aria-hidden="true">*</span>
+            </label>
+            <input id="email" name="email" type="email" value={digitado.email ?? ''} class={campo} />
+            {erros.email && <p class="mt-1 text-sm font-semibold text-vermelho">{erros.email}</p>}
+          </div>
+
+          <div>
+            <label for="nome" class="block font-semibold text-azul-escuro">Nome</label>
+            <input id="nome" name="nome" type="text" value={digitado.nome ?? ''} class={campo} />
+          </div>
+
+          <div>
+            <label for="sobrenome" class="block font-semibold text-azul-escuro">Sobrenome</label>
+            <input id="sobrenome" name="sobrenome" type="text" value={digitado.sobrenome ?? ''} class={campo} />
+          </div>
+
+          <div>
+            <label for="papel" class="block font-semibold text-azul-escuro">
+              Função <span class="text-vermelho" aria-hidden="true">*</span>
+            </label>
+            <select id="papel" name="papel" class={campo}>
+              <option value="">— escolha —</option>
+              {papeis
+                .filter((p) => (PAPEIS_DO_FLUXO as readonly string[]).includes(p.name))
+                .map((p) => (
+                  <option value={p.id} selected={digitado.papel === p.id}>
+                    {p.name}
+                  </option>
+                ))}
+            </select>
+            {erros.papel && <p class="mt-1 text-sm font-semibold text-vermelho">{erros.papel}</p>}
+            <p class="mt-1 text-sm text-grafite">
+              Redator escreve; Revisor aprova; Publicador põe no ar. A função de administrador não é
+              atribuída por aqui.
+            </p>
+          </div>
+
+          <div>
+            <label for="secretaria" class="block font-semibold text-azul-escuro">Secretaria</label>
+            <select id="secretaria" name="secretaria" class={campo}>
+              <option value="">— nenhuma —</option>
+              {secretarias.map((s) => (
+                <option value={s.id} selected={digitado.secretaria === s.id}>
+                  {s.nome}
+                </option>
+              ))}
+            </select>
+            {erros.secretaria && <p class="mt-1 text-sm font-semibold text-vermelho">{erros.secretaria}</p>}
+            {secretarias.length === 0 && (
+              <p class="mt-1 text-sm text-vermelho">
+                Nenhuma secretaria cadastrada ainda — cadastre-as antes de criar redatores.
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label for="situacao" class="block font-semibold text-azul-escuro">Situação</label>
+            <select id="situacao" name="situacao" class={campo}>
+              {SITUACOES.map((s) => (
+                <option value={s.valor} selected={(digitado.situacao ?? 'active') === s.valor}>
+                  {s.rotulo}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div class="sm:col-span-2 flex flex-wrap gap-3">
+            <button type="submit" class="rounded-md bg-azul px-5 py-2 font-semibold text-papel hover:bg-azul-escuro">
+              Criar conta
+            </button>
+            <a href="/painel/usuarios" class="rounded-md border border-prata px-5 py-2 font-semibold text-grafite hover:border-azul hover:text-azul">
+              Cancelar
+            </a>
+          </div>
+        </form>
+
+        <p class="mt-4 text-sm text-grafite">
+          A senha inicial é gerada pelo sistema e mostrada uma única vez depois de criar. Não há
+          envio por e-mail porque o SMTP do município ainda não foi configurado.
+        </p>
+      </>
+    )
+  }
+</Painel>
