@@ -13,7 +13,8 @@ import {
   criarPessoa,
   gerarSenha,
   listarPapeis,
-  PAPEIS_DO_FLUXO,
+  ordenarPapeis,
+  PAPEIS_ATRIBUIVEIS,
   PAPEL_ADMIN,
   SITUACOES,
 } from '../../../lib/painel/usuarios.ts';
@@ -24,6 +25,12 @@ if (sessao.usuario.papel !== PAPEL_ADMIN) return Astro.rewrite('/404');
 const [papeisResp, secretariasResp] = await Promise.all([listarPapeis(sessao), listarSecretarias(sessao)]);
 const papeis = papeisResp.ok ? papeisResp.dados : [];
 const secretarias = secretariasResp.ok ? secretariasResp.dados : [];
+const papeisOferecidos = ordenarPapeis(
+  papeis.filter((p) => (PAPEIS_ATRIBUIVEIS as readonly string[]).includes(p.name)),
+);
+/** Id do papel de administrador — o que a caixa de confirmação vigia. Pode ser
+ *  nulo se o CMS não respondeu; aí a opção simplesmente não aparece. */
+const adminId = papeis.find((p) => p.name === PAPEL_ADMIN)?.id ?? null;
 
 let erros: Record<string, string> = {};
 let digitado: Record<string, string> = { situacao: 'active' };
@@ -43,6 +50,7 @@ if (Astro.request.method === 'POST') {
   };
   // Só os campos de texto voltam para a tela; 'papelId' é null-ável e o mapa
   // de repovoamento é sempre string.
+  const confirmouAdmin = f.get('confirmo_admin') === 'sim';
   digitado = {
     email: dados.email,
     nome: dados.nome,
@@ -50,6 +58,7 @@ if (Astro.request.method === 'POST') {
     situacao: dados.situacao,
     papel: dados.papelId ?? '',
     secretaria: dados.secretaria ?? '',
+    confirmoAdmin: confirmouAdmin ? 'sim' : '',
   };
 
   if (!dados.email) erros.email = 'Informe o e-mail.';
@@ -59,6 +68,13 @@ if (Astro.request.method === 'POST') {
   if (!dados.papelId) erros.papel = 'Escolha a função.';
 
   const nomeDoPapel = papeis.find((p) => p.id === dados.papelId)?.name ?? '';
+
+  // Administrador ignora toda permissão do CMS. Um clique errado num select não
+  // pode bastar para criar um: a confirmação é um segundo gesto, deliberado.
+  if (nomeDoPapel === PAPEL_ADMIN && !confirmouAdmin) {
+    erros.papel =
+      'Para criar um administrador, marque a confirmação abaixo — essa conta terá acesso total ao portal.';
+  }
 
   // Redator sem secretaria enxerga uma fila vazia para sempre: o filtro da
   // permissão compara com a secretaria da pessoa, e nulo não casa com nada.
@@ -113,6 +129,14 @@ const campo = 'mt-1 w-full rounded-md border border-prata bg-papel px-3 py-2';
           </div>
         </dl>
 
+        {criada.papel === PAPEL_ADMIN && (
+          <p class="mt-4 rounded-md border-l-4 border-vermelho bg-papel-suave p-3 text-vermelho">
+            <strong>Conta de administrador.</strong> Ela entra só com esta senha — a função não exige
+            verificação em duas etapas. Peça à pessoa que abra <strong>Minha conta</strong> e cadastre
+            o autenticador no primeiro acesso.
+          </p>
+        )}
+
         {criada.papel === 'Publicador' && (
           <p class="mt-4 rounded-md border-l-4 border-vermelho bg-papel-suave p-3 text-vermelho">
             <strong>Atenção:</strong> a função Publicador exige verificação em duas etapas, e ela
@@ -161,21 +185,44 @@ const campo = 'mt-1 w-full rounded-md border border-prata bg-papel px-3 py-2';
             <label for="papel" class="block font-semibold text-azul-escuro">
               Função <span class="text-vermelho" aria-hidden="true">*</span>
             </label>
-            <select id="papel" name="papel" class={campo}>
+            <select id="papel" name="papel" class={campo} data-papel data-admin={adminId ?? ''}>
               <option value="">— escolha —</option>
-              {papeis
-                .filter((p) => (PAPEIS_DO_FLUXO as readonly string[]).includes(p.name))
-                .map((p) => (
-                  <option value={p.id} selected={digitado.papel === p.id}>
-                    {p.name}
-                  </option>
-                ))}
+              {papeisOferecidos.map((p) => (
+                <option value={p.id} selected={digitado.papel === p.id}>
+                  {p.name === PAPEL_ADMIN ? 'Administrador do portal (acesso total)' : p.name}
+                </option>
+              ))}
             </select>
             {erros.papel && <p class="mt-1 text-sm font-semibold text-vermelho">{erros.papel}</p>}
             <p class="mt-1 text-sm text-grafite">
-              Redator escreve; Revisor aprova; Publicador põe no ar. A função de administrador não é
-              atribuída por aqui.
+              Redator escreve; Revisor aprova; Publicador põe no ar. Administrador gerencia o portal
+              inteiro — use só para a TI.
             </p>
+          </div>
+
+          <div class="sm:col-span-2" data-caixa-admin hidden={digitado.papel !== adminId}>
+            <div class="rounded-md border-l-4 border-vermelho bg-papel-suave p-4">
+              <p class="font-semibold text-vermelho">Esta conta será administradora do portal.</p>
+              <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-grafite">
+                <li>Enxerga e altera <strong>tudo</strong> no CMS, sem passar pelo fluxo editorial.</li>
+                <li>Pode criar e remover outros administradores, inclusive rebaixar você.</li>
+                <li>
+                  Entra <strong>só com senha</strong>: a função de administrador não exige verificação
+                  em duas etapas. Peça à pessoa que cadastre o autenticador em
+                  <span class="font-mono"> Minha conta </span> assim que entrar.
+                </li>
+              </ul>
+              <label class="mt-3 flex items-start gap-2 font-semibold text-azul-escuro">
+                <input
+                  type="checkbox"
+                  name="confirmo_admin"
+                  value="sim"
+                  class="mt-1"
+                  checked={digitado.confirmoAdmin === 'sim'}
+                />
+                <span>Confirmo que quero criar um administrador.</span>
+              </label>
+            </div>
           </div>
 
           <div>
@@ -225,3 +272,25 @@ const campo = 'mt-1 w-full rounded-md border border-prata bg-papel px-3 py-2';
     )
   }
 </Painel>
+
+<script>
+  /* Mostra a confirmação só quando a função escolhida é a de administrador.
+   * Sem JavaScript a caixa fica escondida, mas o servidor recusa o envio e a
+   * devolve visível junto do erro — o caminho continua existindo. */
+  const select = document.querySelector<HTMLSelectElement>('select[data-papel]');
+  const caixa = document.querySelector<HTMLElement>('[data-caixa-admin]');
+  const marca = caixa?.querySelector<HTMLInputElement>('input[name="confirmo_admin"]');
+
+  if (select && caixa) {
+    const adminId = select.dataset.admin || '';
+    const rever = () => {
+      const ehAdmin = adminId !== '' && select.value === adminId;
+      caixa.hidden = !ehAdmin;
+      // Sair de administrador desmarca: quem volta atrás não deixa um "sim"
+      // pendurado para o próximo envio.
+      if (!ehAdmin && marca) marca.checked = false;
+    };
+    select.addEventListener('change', rever);
+    rever();
+  }
+</script>

@@ -16,11 +16,40 @@ import type { Sessao } from './sessao.ts';
 const BASE = (process.env.DIRECTUS_INTERNAL_URL || 'http://127.0.0.1:8055').replace(/\/+$/, '');
 const TEMPO_LIMITE_MS = 10_000;
 
-/** Papel que só o Directus cria e que ninguém cadastra por aqui. */
+/**
+ * Papel de administração do CMS.
+ *
+ * No Directus ele carrega `admin_access`: ignora TODA permissão de coleção, lê e
+ * escreve qualquer registro e mexe em papéis — inclusive para criar outros
+ * administradores. Não é "um degrau acima de Publicador", é o dono do CMS.
+ *
+ * Por isso ele é atribuível por aqui, mas nunca por um clique só: as duas telas
+ * exigem uma confirmação marcada à parte do select.
+ */
 export const PAPEL_ADMIN = 'Administrator';
 
 /** Papéis do fluxo editorial, na ordem em que fazem sentido para quem cadastra. */
 export const PAPEIS_DO_FLUXO = ['Redator de secretaria', 'Revisor', 'Publicador'] as const;
+
+/**
+ * O que a tela de pessoas oferece: o fluxo editorial e o administrador, nesta
+ * ordem — o administrador por último porque é a exceção, não o padrão.
+ *
+ * ARMADILHA: a política do Administrator NÃO tem `enforce_tfa` (a do Publicador
+ * tem). Uma conta de administrador entra só com senha, e é a conta mais poderosa
+ * do portal. Quem criar uma precisa mandar a pessoa cadastrar o autenticador em
+ * /painel/conta — as telas avisam isso, o Directus não avisa.
+ */
+export const PAPEIS_ATRIBUIVEIS = [...PAPEIS_DO_FLUXO, PAPEL_ADMIN] as const;
+
+/** Ordena os papéis oferecidos como em PAPEIS_ATRIBUIVEIS; desconhecido vai ao fim. */
+export function ordenarPapeis<T extends { name: string }>(lista: T[]): T[] {
+  const pos = (n: string) => {
+    const i = (PAPEIS_ATRIBUIVEIS as readonly string[]).indexOf(n);
+    return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+  };
+  return [...lista].sort((a, b) => pos(a.name) - pos(b.name));
+}
 
 export interface Papel {
   id: string;

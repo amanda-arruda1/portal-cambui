@@ -13,7 +13,8 @@ import {
   gerarSenha,
   listarPapeis,
   obterPessoa,
-  PAPEIS_DO_FLUXO,
+  ordenarPapeis,
+  PAPEIS_ATRIBUIVEIS,
   PAPEL_ADMIN,
   SITUACOES,
 } from '../../../lib/painel/usuarios.ts';
@@ -32,6 +33,13 @@ let erros: Record<string, string> = {};
 const [papeisResp, secretariasResp] = await Promise.all([listarPapeis(sessao), listarSecretarias(sessao)]);
 const papeis = papeisResp.ok ? papeisResp.dados : [];
 const secretarias = secretariasResp.ok ? secretariasResp.dados : [];
+const adminId = papeis.find((p) => p.name === PAPEL_ADMIN)?.id ?? null;
+
+// Quem já era administrador não precisa reconfirmar a cada gravação — a
+// confirmação existe para a PROMOÇÃO, não para salvar um telefone. Por isso o
+// estado anterior vem do servidor, e só quando há envio.
+const antes = Astro.request.method === 'POST' ? await obterPessoa(sessao, id) : null;
+const eraAdmin = antes?.ok ? antes.dados.papel === PAPEL_ADMIN : false;
 
 if (Astro.request.method === 'POST') {
   const f = await Astro.request.formData();
@@ -61,6 +69,12 @@ if (Astro.request.method === 'POST') {
     }
     if (ehVoceMesmo && situacao !== 'active') {
       erros.situacao = 'Você não pode desativar a própria conta.';
+    }
+    // Promover a administrador dá acesso total ao CMS, inclusive o de rebaixar
+    // quem promoveu. Mesmo gesto deliberado exigido no cadastro.
+    if (nomeDoPapel === PAPEL_ADMIN && !eraAdmin && f.get('confirmo_admin') !== 'sim') {
+      erros.papel =
+        'Para tornar esta pessoa administradora, marque a confirmação — ela passa a ter acesso total ao portal.';
     }
     if (nomeDoPapel === 'Redator de secretaria' && !secretaria) {
       erros.secretaria = 'Redator precisa de uma secretaria — sem ela a fila fica vazia para sempre.';
@@ -151,21 +165,56 @@ const resto = partes.slice(1).join(' ');
 
     <div>
       <label for="papel" class="block font-semibold text-azul-escuro">Função</label>
-      <select id="papel" name="papel" class={campo} disabled={ehVoceMesmo}>
+      <select
+        id="papel"
+        name="papel"
+        class={campo}
+        disabled={ehVoceMesmo}
+        data-papel
+        data-admin={adminId ?? ''}
+      >
         <option value="">— sem função —</option>
         {
-          papeis
-            .filter((p) => (PAPEIS_DO_FLUXO as readonly string[]).includes(p.name) || p.id === pessoa.papelId)
-            .map((p) => (
-              <option value={p.id} selected={pessoa.papelId === p.id}>
-                {p.name}
-              </option>
-            ))
+          ordenarPapeis(
+            papeis.filter(
+              (p) => (PAPEIS_ATRIBUIVEIS as readonly string[]).includes(p.name) || p.id === pessoa.papelId,
+            ),
+          ).map((p) => (
+            <option value={p.id} selected={pessoa.papelId === p.id}>
+              {p.name === PAPEL_ADMIN ? 'Administrador do portal (acesso total)' : p.name}
+            </option>
+          ))
         }
       </select>
       {ehVoceMesmo && <input type="hidden" name="papel" value={pessoa.papelId ?? ''} />}
       {erros.papel && <p class="mt-1 text-sm font-semibold text-vermelho">{erros.papel}</p>}
+      {ehVoceMesmo && (
+        <p class="mt-1 text-sm text-grafite">
+          A própria função não se altera aqui — é a trava que impede o portal de ficar sem
+          administrador.
+        </p>
+      )}
     </div>
+
+    {!ehVoceMesmo && pessoa.papel !== PAPEL_ADMIN && (
+      <div class="sm:col-span-2" data-caixa-admin hidden={!erros.papel}>
+        <div class="rounded-md border-l-4 border-vermelho bg-papel-suave p-4">
+          <p class="font-semibold text-vermelho">Promover a administrador do portal.</p>
+          <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-grafite">
+            <li>Passa a enxergar e alterar tudo no CMS, sem passar pelo fluxo editorial.</li>
+            <li>Pode criar e remover administradores — inclusive retirar a sua função.</li>
+            <li>
+              A função de administrador não exige verificação em duas etapas: peça à pessoa que
+              cadastre o autenticador em <strong>Minha conta</strong>.
+            </li>
+          </ul>
+          <label class="mt-3 flex items-start gap-2 font-semibold text-azul-escuro">
+            <input type="checkbox" name="confirmo_admin" value="sim" class="mt-1" />
+            <span>Confirmo a promoção.</span>
+          </label>
+        </div>
+      </div>
+    )}
 
     <div>
       <label for="secretaria" class="block font-semibold text-azul-escuro">Secretaria</label>
@@ -222,4 +271,22 @@ const resto = partes.slice(1).join(' ');
       if (pergunta && !window.confirm(pergunta)) evento.preventDefault();
     });
   });
+
+  /* A caixa de promoção a administrador só aparece quando a função escolhida é
+   * a dele. Sem JavaScript ela vem escondida, mas o servidor recusa o envio e a
+   * devolve visível com o erro — o caminho não depende disto. */
+  const select = document.querySelector<HTMLSelectElement>('select[data-papel]');
+  const caixa = document.querySelector<HTMLElement>('[data-caixa-admin]');
+  const marca = caixa?.querySelector<HTMLInputElement>('input[name="confirmo_admin"]');
+
+  if (select && caixa) {
+    const adminId = select.dataset.admin || '';
+    const rever = () => {
+      const ehAdmin = adminId !== '' && select.value === adminId;
+      caixa.hidden = !ehAdmin;
+      if (!ehAdmin && marca) marca.checked = false;
+    };
+    select.addEventListener('change', rever);
+    rever();
+  }
 </script>
