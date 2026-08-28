@@ -166,6 +166,22 @@ AUTH LOGIN/PLAIN, MIME multipart com assunto em RFC 2047. São 150 linhas de um
 protocolo que não muda desde 1998 — uma dependência a menos para alguém
 atualizar num servidor de prefeitura daqui a cinco anos.
 
+**Por onde sai, e por que não pelo servidor do município.** O envio usa o
+relay transacional **SMTP2GO** (`mail.smtp2go.com:2525`), não o servidor de
+caixa postal da prefeitura — que exige a senha de uma caixa e recusa relay de
+terceiros (`530 5.7.0 Authentication required`, conferido). Relay transacional é
+o certo para envio automático: reputação de IP separada da correspondência
+humana, e rastreamento por mensagem.
+
+**O remetente NÃO é `@prefeituradecambui.mg.gov.br`, e isso é uma restrição de
+DNS, não uma escolha.** O SPF do município é `v=spf1 include:spf.m9.network
+-all`, e `spf.m9.network` é uma lista fixa de IPs que não inclui o SMTP2GO:
+sair como o domínio da prefeitura por este relay falharia o SPF de forma rígida
+e a mensagem seria descartada no destino. `mailprotect.com.br`, ao contrário,
+tem `include:spf.smtp2go.com`. Para usar o domínio do município, é preciso
+acrescentar esse include ao SPF dele e configurar DKIM — mudança de DNS, do
+cliente. O nome de exibição já é "Prefeitura Municipal de Cambuí".
+
 **Detalhes que decidem se o e-mail chega:** `List-Unsubscribe` com
 `One-Click`, que é o que faz o botão nativo de cancelar inscrição aparecer no
 Gmail e no Outlook — sem ele, quem quer sair marca como spam e a reputação do
@@ -186,7 +202,7 @@ assinante.
 
 | Onde | O que falta |
 |---|---|
-| `.env` | **Credencial SMTP** — `SMTP_USER`, `SMTP_PASSWORD` e `AVISOS_REMETENTE`. O host e a porta já estão descobertos e preenchidos. É o único item que falta para os avisos saírem. |
+| DNS | **`include:spf.smtp2go.com` no SPF de `prefeituradecambui.mg.gov.br`** e DKIM no painel do SMTP2GO. Sem isso o "De:" precisa continuar sendo `@mailprotect.com.br` — funciona, mas o cidadão vê um domínio que não é o da prefeitura. |
 | `aplicar-esquema.mjs` | Job de sincronização periódica com o PNCP (comparar o publicado lá com o daqui). A importação sob demanda está pronta; o job é trabalho de infraestrutura. |
 | Dados | CNPJ do Município, para montar a URL canônica do PNCP sem depender do que o servidor digitar. |
 | Seed | Os 40 registros são de demonstração e saem com `--reset`. **Precisam sair antes da virada.** |

@@ -92,8 +92,12 @@ export async function enviar(cfg, msg) {
     await conversar(socket, `RCPT TO:<${msg.para}>`, [250, 251], tempoLimite);
     await conversar(socket, 'DATA', [354], tempoLimite);
     socket.write(montarMensagem(msg));
-    await conversar(socket, '.', [250], tempoLimite);
+    /* A resposta ao ponto final carrega o identificador que o relay deu à
+       mensagem. É por ele que se rastreia a entrega no painel do provedor —
+       sem guardar isso, "o fornecedor diz que não recebeu" não tem resposta. */
+    const aceite = await conversar(socket, '.', [250], tempoLimite);
     await conversar(socket, 'QUIT', [221], tempoLimite).catch(() => {});
+    return aceite.texto.split('\r\n').pop().trim();
   } finally {
     socket.destroy();
   }

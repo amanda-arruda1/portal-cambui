@@ -194,7 +194,7 @@ async function entregarFila() {
   for (const m of fila) {
     if (SIMULAR) { console.log(`  [simulação] ${m.tipo} → ${m.destinatario}`); enviados++; continue; }
     try {
-      await enviar(cfgSmtp, {
+      const aceite = await enviar(cfgSmtp, {
         de: REMETENTE,
         deNome: 'Prefeitura Municipal de Cambuí',
         para: m.destinatario,
@@ -209,8 +209,9 @@ async function entregarFila() {
       }) });
       enviados++;
       // Nunca registrar o endereço no journal: base de assinante é dado
-      // pessoal, e log de servidor não é lugar para ela.
-      console.log(`  enviado (${m.tipo})`);
+      // pessoal, e log de servidor não é lugar para ela. O identificador do
+      // relay, sim: é o que permite rastrear a entrega no painel do provedor.
+      console.log(`  enviado (${m.tipo}) — ${aceite}`);
     } catch (erro) {
       const tentativas = (m.tentativas ?? 0) + 1;
       const desistiu = tentativas >= MAX_TENTATIVAS;

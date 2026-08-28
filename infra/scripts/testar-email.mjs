@@ -80,7 +80,7 @@ if (SO_PREVIA) process.exit(0);
 const temCredencial = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD);
 
 if (temCredencial) {
-  await enviar(
+  const aceite = await enviar(
     { host: process.env.SMTP_HOST, port: process.env.SMTP_PORT || 587,
       usuario: process.env.SMTP_USER, senha: process.env.SMTP_PASSWORD, nome: 'portal.cambui.mg.gov.br' },
     { de: process.env.AVISOS_REMETENTE || process.env.SMTP_USER,
@@ -89,6 +89,8 @@ if (temCredencial) {
       responderPara: process.env.AVISOS_RESPONDER_PARA || undefined },
   );
   console.log(`  ENVIADO para ${destino}`);
+  console.log(`  identificador do relay: ${aceite}`);
+  console.log('  (guarde-o: é por ele que se rastreia a entrega no painel do provedor)');
   process.exit(0);
 }
 
