@@ -13,6 +13,7 @@ import {
   impedimentos, confirmacoes, sugerirSlug, pode, registrarAuditoria,
 } from '../../../../lib/painel/diario';
 import { limparComRelato } from '../../../../lib/sanitizar';
+import { emDemonstracao } from '../../../../lib/demonstracao';
 import { rotuloTipoAto } from '../../../../lib/diario/vocabulario';
 
 export const prerender = false;
@@ -71,6 +72,11 @@ if (Astro.request.method === 'POST') {
   if (impede.length === 0 && (confirma.length === 0 || confirmou)) {
     const r = await criarMateria(sessao, {
       ...valores,
+      /* Conteúdo criado enquanto o ambiente é de demonstração nasce MARCADO.
+       * Sem isto, o que se cria testando o painel vira registro imutável que
+       * o `--reset` não alcança — e alguém descobre isso já em produção, com
+       * uma edição de teste que não sai mais do acervo. */
+      demonstracao: emDemonstracao(),
       status: 'rascunho',
       situacao: enviar ? 'enviada' : 'rascunho',
       slug: sugerirSlug(valores as any),

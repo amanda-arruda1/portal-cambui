@@ -3,6 +3,7 @@
 import Painel from '../../../../layouts/Painel.astro';
 import { listarEdicoes, criarEdicao, veiculo, pode, registrarAuditoria } from '../../../../lib/painel/diario';
 import { publicacaoLegal, dataBr, ehDiaUtil, nomeFeriado } from '../../../../lib/diario/dominio.mjs';
+import { emDemonstracao } from '../../../../lib/demonstracao';
 import { TIPOS_EDICAO } from '../../../../lib/diario/vocabulario';
 
 export const prerender = false;
@@ -36,6 +37,9 @@ if (Astro.request.method === 'POST') {
   } else {
     const legal = publicacaoLegal(valores.data, regra);
     const r = await criarEdicao(sessao, {
+      /* Ver a nota em materias/nova.astro: o que nasce em ambiente de
+       * demonstração precisa poder ser removido depois. */
+      demonstracao: emDemonstracao(),
       status: 'rascunho', numero: proximoNumero,
       ano: dia.getUTCFullYear(),
       volume: v.ok && v.dados?.inicio_circulacao

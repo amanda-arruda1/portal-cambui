@@ -311,6 +311,31 @@ Quem escreve não publica; quem publica não assina.
 
 Criados por `npm run esquema`. Atribuir em `/painel/usuarios`.
 
+### Contas de demonstração
+
+```bash
+sudo bash infra/scripts/12-usuarios-demo.sh            # cria as quatro
+sudo bash infra/scripts/12-usuarios-demo.sh --remover  # ANTES DA VIRADA
+```
+
+Senha das quatro: **`DemoDiario2026!`**
+
+| Entrar como | Para ver |
+|---|---|
+| `redator@demonstracao.prefeituradecambui.mg.gov.br` | escrever e enviar; **não há** botão de publicar |
+| `editor@demonstracao.prefeituradecambui.mg.gov.br` | revisar, devolver, montar pauta, fechar; **não** publica |
+| `signataria@demonstracao.prefeituradecambui.mg.gov.br` | publicar; **não** redige |
+| `adminDiario@demonstracao.prefeituradecambui.mg.gov.br` | configurar e auditar |
+
+> **Antes da virada**, remova as contas e reative `enforce_tfa` nas políticas do
+> Diário. Conta com senha publicada em repositório é porta aberta, e o script de
+> criação a desliga a exigência de 2FA para a demonstração funcionar sem
+> aplicativo autenticador.
+
+Conteúdo criado pelo painel enquanto o marcador de demonstração existir nasce
+marcado como demonstração — senão viraria registro **imutável** que o
+`--reset` não alcança.
+
 ### O serviço de assinatura
 
 A chave privada que assina como o Município **não fica no processo web** — ele

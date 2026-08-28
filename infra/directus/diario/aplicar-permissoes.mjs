@@ -75,10 +75,41 @@ function permissoesPublicas() {
   ];
 }
 
+/* ─────────────────────── ler o próprio perfil ──────────────────────────── */
+
+/**
+ * TODA política de painel precisa disto, e a falta é invisível até alguém tentar
+ * entrar.
+ *
+ * O portal lê o perfil com
+ *   /users/me?fields=id,first_name,last_name,email,tfa_secret,role.name,secretaria.id,secretaria.nome
+ * e `secretaria` é um campo CUSTOMIZADO em directus_users. Quando a política não
+ * enxerga um campo relacional pedido, o Directus não devolve erro: ele
+ * **descarta a projeção inteira** e responde só `{id}`. O portal então conclui
+ * "conta sem função definida" e recusa a entrada — com uma mensagem que manda a
+ * pessoa procurar a TI por um problema que não é dela.
+ *
+ * Descoberto ao criar os usuários de demonstração: nenhum papel não-administrador
+ * conseguia entrar. Ver também infra/directus/corrigir-perfil-painel.mjs, que
+ * aplica a mesma correção às políticas anteriores a este módulo.
+ */
+function permissaoDePerfil() {
+  return [
+    { collection: 'directus_users', action: 'read',
+      /* Só o próprio registro. Ninguém lista os colegas por esta permissão. */
+      permissions: { id: { _eq: '$CURRENT_USER' } },
+      validation: null, presets: null,
+      fields: 'id,first_name,last_name,email,tfa_secret,role,secretaria,status' },
+    /* `secretaria.nome` exige ler a coleção de secretarias. */
+    { collection: 'secretarias', action: 'read', permissions: {}, validation: null, presets: null,
+      fields: 'id,nome,slug' },
+  ];
+}
+
 /* ───────────────────────────── papéis internos ─────────────────────────── */
 
 const CAMPOS_REDATOR = [
-  'id', 'status', 'caderno', 'secretaria', 'orgao_texto', 'tipo_ato', 'numero_ato', 'ano_ato',
+  'id', 'status', 'demonstracao', 'caderno', 'secretaria', 'orgao_texto', 'tipo_ato', 'numero_ato', 'ano_ato',
   'ementa', 'corpo', 'slug', 'situacao', 'processo_administrativo', 'licitacao',
   'data_alvo', 'vigencia_inicio', 'retifica', 'republica', 'revoga', 'motivo_republicacao',
 ].join(',');
@@ -146,12 +177,16 @@ function permissoesSignataria() {
     { collection: 'diario_edicoes', action: 'read', permissions: {}, validation: null, presets: null, fields: '*' },
     { collection: 'diario_edicoes', action: 'update',
       permissions: { situacao: { _in: ['fechada', 'aguardando_assinatura'] } }, validation: null, presets: null,
-      fields: 'situacao,arquivo_pdf,sha256,total_paginas,assinatura_signatario,assinatura_documento,assinatura_emissor,assinatura_em,assinatura_algoritmo,assinatura_carimbo,assinatura_valida_ate,publicada_em' },
+      /* `status` entra porque é ele que torna a edição visível ao público: sem
+       * o campo na lista, a publicação volta 403 e a edição fica presa em
+       * "aguardando assinatura" para sempre. Descoberto percorrendo o rito
+       * inteiro pela interface — a leitura do código não revelava. */
+      fields: 'status,situacao,arquivo_pdf,sha256,total_paginas,assinatura_signatario,assinatura_documento,assinatura_emissor,assinatura_em,assinatura_algoritmo,assinatura_carimbo,assinatura_valida_ate,publicada_em' },
     /* Publicar a edição implica marcar as matérias como publicadas. */
     { collection: 'diario_materias', action: 'read', permissions: {}, validation: null, presets: null, fields: '*' },
     { collection: 'diario_materias', action: 'update',
       permissions: { situacao: { _eq: 'pautada' } }, validation: null, presets: null,
-      fields: 'situacao,pagina_inicial,pagina_final' },
+      fields: 'status,situacao,pagina_inicial,pagina_final' },
     { collection: 'diario_auditoria', action: 'create', permissions: {}, validation: null, presets: null, fields: '*' },
     { collection: 'diario_auditoria', action: 'read', permissions: {}, validation: null, presets: null, fields: '*' },
     { collection: 'diario_cadernos', action: 'read', permissions: {}, validation: null, presets: null, fields: '*' },
@@ -199,13 +234,17 @@ function permissoesServico() {
 
 const POLITICAS = [
   { nome: 'Diário — Redator setorial', icone: 'edit_note', app_access: true, admin_access: false, enforce_tfa: false,
-    descricao: 'A secretaria escreve e envia matéria para o Diário. Não publica.', permissoes: permissoesRedator() },
+    descricao: 'A secretaria escreve e envia matéria para o Diário. Não publica.',
+    permissoes: [...permissoesRedator(), ...permissaoDePerfil()] },
   { nome: 'Diário — Editor', icone: 'fact_check', app_access: true, admin_access: false, enforce_tfa: true,
-    descricao: 'Revisa, devolve, monta a pauta e fecha a edição. Não assina.', permissoes: permissoesEditor() },
+    descricao: 'Revisa, devolve, monta a pauta e fecha a edição. Não assina.',
+    permissoes: [...permissoesEditor(), ...permissaoDePerfil()] },
   { nome: 'Diário — Autoridade signatária', icone: 'draw', app_access: true, admin_access: false, enforce_tfa: true,
-    descricao: 'Assina e publica a edição. Não redige nem altera texto.', permissoes: permissoesSignataria() },
+    descricao: 'Assina e publica a edição. Não redige nem altera texto.',
+    permissoes: [...permissoesSignataria(), ...permissaoDePerfil()] },
   { nome: 'Diário — Administrador', icone: 'settings', app_access: true, admin_access: false, enforce_tfa: true,
-    descricao: 'Configura o veículo oficial e audita. Não apaga nada.', permissoes: permissoesAdministrador() },
+    descricao: 'Configura o veículo oficial e audita. Não apaga nada.',
+    permissoes: [...permissoesAdministrador(), ...permissaoDePerfil()] },
   { nome: 'Diário — Serviço de assinatura', icone: 'key', app_access: false, admin_access: false, enforce_tfa: false,
     descricao: 'Conta do serviço que gera e assina os PDFs. Detém a chave; o processo web não.', permissoes: permissoesServico() },
 ];

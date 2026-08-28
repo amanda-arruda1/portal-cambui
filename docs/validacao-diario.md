@@ -114,7 +114,22 @@ tela não prova nada.
 
 ## Parte 4 — O painel, de ponta a ponta (4 min)
 
+Quatro contas de demonstração, senha **`DemoDiario2026!`** — criadas por
+`sudo bash infra/scripts/12-usuarios-demo.sh`:
+
+| Entrar como | Papel |
+|---|---|
+| `redator@demonstracao.prefeituradecambui.mg.gov.br` | Redator setorial |
+| `editor@demonstracao.prefeituradecambui.mg.gov.br` | Editor do Diário |
+| `signataria@demonstracao.prefeituradecambui.mg.gov.br` | Autoridade signatária |
+| `adminDiario@demonstracao.prefeituradecambui.mg.gov.br` | Administrador |
+
 Entre em `SITE/painel` e vá a **Diário Oficial**.
+
+**Repare, antes de tudo, no que cada papel NÃO vê:** o redator não tem botão de
+abrir edição; o editor não tem botão de publicar; a signatária não tem botão de
+redigir. Não é interface escondendo — as permissões são do CMS, e a tentativa
+pelo caminho direto também é recusada.
 
 **17. Envio** → *Nova matéria*. Escolha "Portaria", clique em
 **Usar um modelo pronto** → *Aplicar modelo*: ementa e texto vêm estruturados.

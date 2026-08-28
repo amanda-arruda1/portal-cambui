@@ -379,6 +379,29 @@ Nada nesta seção é estimativa.
 | Detecção de adulteração | 1 bit trocado → recusado; conteúdo anexado depois → recusado | idem |
 | Paginação do sumário | conferida contra o texto extraído do PDF | `npm run testar:paginacao` |
 
+### Três defeitos que só apareceram percorrendo o rito, e não lendo o código
+
+**1. Nenhum usuário não-administrador conseguia entrar no painel.** O portal lê
+o perfil pedindo `secretaria.id` — um campo customizado em `directus_users`.
+Quando a política não enxerga um campo relacional pedido, o Directus **não
+devolve erro**: descarta a projeção inteira e responde só `{id}`. O portal
+concluía "conta sem função definida" e mandava a pessoa procurar a TI por um
+problema que não era dela. Vale também para as políticas anteriores a este
+módulo — ver `infra/directus/corrigir-perfil-painel.mjs`.
+
+**2. A autoridade signatária não conseguia publicar.** A política dela não
+listava o campo `status`, que é o que torna a edição visível ao público. O PATCH
+voltava 403 e a edição ficava presa em "aguardando assinatura" — sem mensagem
+clara.
+
+**3. Conteúdo criado pelo painel em ambiente de demonstração não nascia
+marcado.** Viraria registro imutável que o `--reset` não alcança: alguém
+descobriria em produção, com uma edição de teste presa no acervo para sempre.
+
+Os três eram invisíveis na leitura do código e no `astro check`. Só apareceram
+ao entrar como cada papel e percorrer envio → revisão → pauta → fechamento →
+assinatura → publicação.
+
 ### O defeito que os testes acharam
 
 Durante a validação, o teste de paginação encontrou **9 de 9 matérias com o
@@ -412,3 +435,4 @@ cancelava. O teste que vale confere pela identidade do texto.
 | Painel | Tela de **importação de acervo retroativo** (o seed importa; falta a interface) | Implantação |
 | Operação | Agendar `npm run verificar` e incluir `data/diario` no backup externo | Implantação |
 | Ambos | Remover o acervo de demonstração: `npm run seed -- --reset` | Antes da virada |
+| Ambos | Remover as contas de demonstração e **reativar `enforce_tfa`**: `sudo bash infra/scripts/12-usuarios-demo.sh --remover` | Antes da virada |
