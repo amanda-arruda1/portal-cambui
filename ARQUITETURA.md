@@ -137,11 +137,56 @@ Responsividade medida com o navegador: 7 páginas × 4 larguras (360, 768, 1280,
 Causa: `display: grid` sem `minmax(0, 1fr)` — item de grid nasce com
 `min-width: auto` e se recusa a encolher abaixo do conteúdo. Corrigido.
 
+## Avisos por e-mail — como funciona
+
+**O portal não envia e-mail. Ele enfileira.**
+
+```
+formulário ──► licitacao_envios ──► serviço portal-avisos ──► SMTP do município
+ (portal-web,      (a fila)          (timer, 5 em 5 min)
+  sem saída
+  para a rede)
+```
+
+A separação existe porque o `portal-web` roda com `IPAddressDeny=any`: dar
+saída para a internet ao único processo exposto ao cidadão, só para mandar
+mensagem, aumentaria a superfície de ataque sem necessidade. Enfileirar também
+dá, de graça: repetição com espera crescente (2, 4, 8… até 60 min, desistindo
+na 5ª), limite de vazão, e servidor de e-mail fora do ar **não trava o cadastro
+de ninguém** — a fila é durável e sai na execução seguinte.
+
+**Duas credenciais, dois lugares.** O token em `.env.web` (processo web) só
+*escreve* na fila e não consegue lê-la; o token em `.env` (serviço de entrega)
+lê e atualiza a fila mas não cadastra ninguém. A propriedade que isso compra: a
+fila carrega corpo de e-mail e token de descadastro de cada assinante — se o
+token exposto à internet vazar, o atacante não lê a fila.
+
+**Cliente SMTP escrito à mão** (`infra/scripts/smtp.mjs`): EHLO, STARTTLS,
+AUTH LOGIN/PLAIN, MIME multipart com assunto em RFC 2047. São 150 linhas de um
+protocolo que não muda desde 1998 — uma dependência a menos para alguém
+atualizar num servidor de prefeitura daqui a cinco anos.
+
+**Detalhes que decidem se o e-mail chega:** `List-Unsubscribe` com
+`One-Click`, que é o que faz o botão nativo de cancelar inscrição aparecer no
+Gmail e no Outlook — sem ele, quem quer sair marca como spam e a reputação do
+domínio da prefeitura paga; `Auto-Submitted: auto-generated`, para que resposta
+automática de férias não volte para a fila; e corpo em texto **e** HTML, porque
+cliente de e-mail de prefeitura ainda é Outlook antigo.
+
+**LGPD na prática:** o journal do servidor **nunca** registra o endereço de
+quem se cadastrou; o descadastro **apaga** o registro em vez de marcá-lo como
+inativo; e o e-mail repetido devolve a mesma resposta de sucesso, para o
+formulário não virar um verificador de quem está inscrito.
+
+**A primeira execução não dispara aviso retroativo:** ela só grava o marco. Sem
+isso, ligar o serviço mandaria 40 e-mails de licitações antigas para cada
+assinante.
+
 ## O que ficou como `TODO`
 
 | Onde | O que falta |
 |---|---|
-| `licitacoes/avisos` | **Envio de e-mail**: o SMTP do município não existe. A tela registra o interesse e **diz que ainda não envia**, em vez de prometer um e-mail que não chega. Confirmação e descadastro por token já estão modelados. |
+| `.env` | **Credencial SMTP** — `SMTP_USER`, `SMTP_PASSWORD` e `AVISOS_REMETENTE`. O host e a porta já estão descobertos e preenchidos. É o único item que falta para os avisos saírem. |
 | `aplicar-esquema.mjs` | Job de sincronização periódica com o PNCP (comparar o publicado lá com o daqui). A importação sob demanda está pronta; o job é trabalho de infraestrutura. |
 | Dados | CNPJ do Município, para montar a URL canônica do PNCP sem depender do que o servidor digitar. |
 | Seed | Os 40 registros são de demonstração e saem com `--reset`. **Precisam sair antes da virada.** |

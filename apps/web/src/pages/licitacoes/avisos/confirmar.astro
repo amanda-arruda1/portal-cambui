@@ -1,0 +1,65 @@
+---
+/**
+ * Confirmação do cadastro — a segunda etapa do duplo opt-in.
+ *
+ * Só o token vale como prova: quem clica aqui demonstrou ter acesso à caixa
+ * postal. Não há campo de e-mail nesta tela justamente por isso.
+ */
+import Base from '../../../layouts/Base.astro';
+import TituloPagina from '../../../componentes/TituloPagina.astro';
+import { confirmar } from '../../../lib/avisos';
+
+const token = Astro.url.searchParams.get('t') ?? '';
+const r = await confirmar(token);
+---
+
+<Base titulo="Cadastro confirmado" semIndexacao>
+  <TituloPagina
+    rotulo="Avisos de licitação"
+    titulo={r.estado === 'invalido' ? 'Não foi possível confirmar' : 'Cadastro confirmado'}
+    trilha={[{ rotulo: 'Licitações', destino: '/licitacoes' }, { rotulo: 'Avisos por e-mail' }]}
+  />
+
+  <div class="carreira bloco">
+    <div class="ourela">
+      <span class="fio fio-ourela" aria-hidden="true"></span>
+      <div class="corpo texto">
+        {
+          r.estado === 'invalido' ? (
+            <>
+              <p>
+                Este link de confirmação não vale mais. Isso acontece quando ele já foi usado, quando
+                o cadastro foi removido, ou quando o endereço foi copiado pela metade.
+              </p>
+              <p><a href="/licitacoes/avisos" class="botao">Cadastrar de novo</a></p>
+            </>
+          ) : (
+            <>
+              <p>
+                Pronto{r.email && <> — <strong>{r.email}</strong></>}. A partir de agora você recebe
+                aviso quando o município publicar licitação que combine com o que você escolheu.
+              </p>
+              {r.estado === 'ja_confirmado' && <p class="t-micro">(Este cadastro já estava confirmado.)</p>}
+              <p class="t-micro">
+                Todo aviso traz um link de saída em um clique. Você também pode sair agora, se
+                preferir — o link está no e-mail de confirmação que recebeu.
+              </p>
+              <p><a href="/licitacoes" class="botao">Ver as licitações abertas</a></p>
+            </>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .bloco { padding-bottom: clamp(3rem, 7vw, 5rem); }
+  .fio { min-height: 4rem; }
+  .texto { max-width: var(--container-leitura); display: grid; gap: 1rem; }
+  .botao { display: inline-flex; align-items: center; min-height: 3rem; padding: 0.8rem 1.5rem;
+    border-radius: 4px; font-weight: 600; text-decoration: none;
+    background: var(--color-serra); color: var(--color-papel); border: 2px solid var(--color-serra); }
+  .botao:hover { background: var(--color-serra-noite); border-color: var(--color-serra-noite); }
+  .t-micro { color: var(--color-musgo); }
+</style>

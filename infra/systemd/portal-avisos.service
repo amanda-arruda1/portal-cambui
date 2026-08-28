@@ -1,0 +1,65 @@
+# Portal Cambuí — entrega dos avisos de licitação por e-mail.
+#
+# Serviço SEPARADO do portal-web de propósito. O processo web roda com
+# IPAddressDeny=any e não alcança a internet; dar saída a ele só para mandar
+# e-mail aumentaria a superfície de ataque do único processo exposto ao
+# cidadão. O portal escreve na fila; este serviço a drena.
+#
+# Disparado pelo timer portal-avisos.timer. Não fica residente.
+
+[Unit]
+Description=Portal Cambui - entrega dos avisos de licitacao
+Documentation=file:///opt/portal-cambui/ARQUITETURA.md
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=portal-web
+Group=portal-web
+WorkingDirectory=/opt/portal-cambui
+
+# Carrega SMTP_*, AVISOS_* e PUBLIC_SITE_URL. O arquivo é 600 root; o systemd
+# o lê antes de baixar privilégio, então o processo nunca precisa abri-lo.
+EnvironmentFile=/opt/portal-cambui/.env
+Environment=NODE_ENV=production
+Environment=DIRECTUS_INTERNAL_URL=http://127.0.0.1:8055
+
+ExecStart=/usr/bin/node /opt/portal-cambui/infra/scripts/enviar-avisos.mjs
+
+# --- Confinamento ---
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+# O V8 compila em tempo de execução — mesma exceção do portal-web.
+MemoryDenyWriteExecute=false
+RemoveIPC=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+
+# Precisa gravar o marco da última execução.
+ReadWritePaths=/opt/portal-cambui/data
+
+# ESTE serviço PODE sair para a internet — é a diferença deliberada em relação
+# ao portal-web. Sem restrição de IP: o servidor de e-mail do município pode
+# mudar de endereço, e uma lista fixa aqui viraria falha silenciosa no dia da
+# mudança.
+
+[Install]
+WantedBy=multi-user.target

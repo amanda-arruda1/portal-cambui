@@ -22,10 +22,11 @@ import NotaLegal from '../../../componentes/licitacoes/NotaLegal.astro';
 import { MODALIDADES } from '../../../lib/licitacoes';
 import { EMAIL_CONTATO } from '../../../dados/instituicional';
 
-const BASE_CMS = (process.env.DIRECTUS_INTERNAL_URL || 'http://127.0.0.1:8055').replace(/\/+$/, '');
-/** TODO(cliente): quando o SMTP do município for configurado, trocar para true
- *  e ligar o envio da confirmação em infra/ (fora do escopo desta entrega). */
-const SMTP_CONFIGURADO = false;
+import { AVISOS_LIGADOS, cadastrar } from '../../../lib/avisos';
+
+/* O envio está LIGADO quando o token de serviço existe. Se ele faltar, a tela
+   continua honesta em vez de prometer um e-mail que não sai. */
+const ENVIO_ATIVO = AVISOS_LIGADOS;
 
 let resultado: { tipo: 'ok' | 'erro'; texto: string } | null = null;
 let digitado = { email: '', palavras_chave: '' };
@@ -43,31 +44,16 @@ if (Astro.request.method === 'POST') {
   } else if (f.get('consentimento') === null) {
     resultado = { tipo: 'erro', texto: 'Para receber os avisos é preciso concordar com o uso do seu e-mail para essa finalidade.' };
   } else {
-    try {
-      const r = await fetch(`${BASE_CMS}/items/licitacao_assinantes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          modalidades: marcadas.join(','),
-          palavras_chave: palavras,
-          criado_em: new Date().toISOString(),
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
-
-      if (r.ok) {
-        // O token é gerado e guardado pelo servidor, nunca pelo formulário.
-        console.info(`[avisos] novo cadastro para aviso de licitações (aguardando confirmação)`);
-        resultado = { tipo: 'ok', texto: 'cadastrado' };
-      } else {
-        const c = await r.json().catch(() => ({}) as any);
-        resultado = c?.errors?.[0]?.extensions?.code === 'RECORD_NOT_UNIQUE'
-          ? { tipo: 'ok', texto: 'cadastrado' }  // não revela se o e-mail já existe
-          : { tipo: 'erro', texto: 'Não foi possível registrar agora. Tente novamente em alguns minutos.' };
-      }
-    } catch {
-      resultado = { tipo: 'erro', texto: 'O sistema não respondeu. Tente novamente em alguns minutos.' };
+    const base = new URL('/', Astro.url).origin;
+    const r = await cadastrar(base, { email, modalidades: marcadas, palavras });
+    if (r.ok) {
+      // O log NÃO registra o e-mail: base de assinante é dado pessoal, e
+      // journal de servidor não é lugar para ela.
+      console.info('[avisos] novo cadastro enfileirado para confirmação');
+      resultado = { tipo: 'ok', texto: 'cadastrado' };
+    } else {
+      console.error(`[avisos] falha no cadastro: ${r.motivo}`);
+      resultado = { tipo: 'erro', texto: 'Não foi possível registrar agora. Tente novamente em alguns minutos.' };
     }
   }
 }
@@ -93,18 +79,17 @@ if (Astro.request.method === 'POST') {
           resultado?.texto === 'cadastrado' ? (
             <div class="sucesso" role="status">
               <h2 class="t-secao">Pedido registrado</h2>
-              {SMTP_CONFIGURADO ? (
+              {ENVIO_ATIVO ? (
                 <p>
-                  Enviamos um e-mail para <strong>{digitado.email}</strong> com um link de confirmação.
-                  <strong> Você só entra na lista depois de clicar nele</strong> — nenhuma mensagem é
-                  enviada antes disso.
+                  Enviamos um e-mail para <strong>{digitado.email}</strong> com um link de confirmação —
+                  ele costuma chegar em poucos minutos.
+                  <strong> Você só entra na lista depois de clicar nele</strong>; nenhuma mensagem é
+                  enviada antes disso. Se não achar, confira a caixa de spam.
                 </p>
               ) : (
                 <p>
-                  Seu pedido ficou guardado. <strong>O envio de avisos ainda não está ativo</strong>:
-                  o serviço de e-mail do município está sendo configurado. Quando entrar no ar, você
-                  receberá <em>primeiro</em> um pedido de confirmação — e nada será enviado sem que
-                  você confirme.
+                  Seu pedido ficou guardado. <strong>O envio ainda não está ativo</strong> neste
+                  ambiente — nada será enviado sem que você confirme.
                 </p>
               )}
               <p class="t-micro">

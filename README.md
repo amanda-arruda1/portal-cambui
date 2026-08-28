@@ -283,6 +283,25 @@ Endereços do módulo:
 | `/api/licitacoes` | JSON público, com os mesmos filtros |
 | `/licitacoes/exportar.csv` | Exportação da busca |
 | `/licitacoes/avisos` | Cadastro de aviso por e-mail |
+| `/licitacoes/avisos/confirmar?t=…` | Confirmação (duplo opt-in) |
+| `/licitacoes/avisos/sair?t=…` | Descadastro em um clique |
+
+**Avisos por e-mail.** O portal enfileira; quem envia é o serviço
+`portal-avisos`, disparado de 5 em 5 minutos. Para ligar, falta só a credencial:
+
+```bash
+# em /opt/portal-cambui/.env  (host e porta já descobertos)
+SMTP_USER=<caixa postal do município>
+SMTP_PASSWORD=<senha>
+AVISOS_REMETENTE=<endereço que aparece no "De:">
+
+systemctl start portal-avisos.service     # entrega imediata
+journalctl -u portal-avisos -f            # acompanhar
+node infra/scripts/enviar-avisos.mjs --simular   # ver o que faria
+```
+
+Sem a credencial o serviço roda e não envia nada — a fila é durável e sai
+inteira assim que ela for preenchida.
 
 ## Verificações
 

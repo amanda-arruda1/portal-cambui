@@ -54,6 +54,11 @@ echo "==> diretório de sessões"
 # dependa de o processo conseguir criar o diretório sozinho.
 install -d -o "$USUARIO" -g "$USUARIO" -m 700 /var/lib/portal-cambui/sessoes
 
+# Marco da última entrega de avisos de licitação. Diretório próprio porque o
+# resto de data/ pertence ao root (volumes do Docker) e o serviço de avisos
+# roda como o usuário do portal.
+install -d -o "$USUARIO" -g "$USUARIO" -m 750 /opt/portal-cambui/data/avisos
+
 echo "==> variáveis de ambiente"
 if [[ ! -f "$REPO/.env.web" ]]; then
   cp "$REPO/.env.web.example" "$REPO/.env.web"

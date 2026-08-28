@@ -1,0 +1,68 @@
+---
+/**
+ * Descadastro em UM clique.
+ *
+ * Sem formulário, sem "tem certeza?", sem pedir o e-mail de novo: o link do
+ * rodapé de qualquer aviso já remove. Fricção para sair é o que transforma
+ * lista de avisos em spam.
+ *
+ * O registro é APAGADO, não marcado como inativo — guardar o e-mail de quem
+ * pediu para sair é o contrário do que a LGPD espera.
+ */
+import Base from '../../../layouts/Base.astro';
+import TituloPagina from '../../../componentes/TituloPagina.astro';
+import { descadastrar } from '../../../lib/avisos';
+
+const token = Astro.url.searchParams.get('t') ?? '';
+const r = await descadastrar(token);
+---
+
+<Base titulo="Cadastro removido" semIndexacao>
+  <TituloPagina
+    rotulo="Avisos de licitação"
+    titulo={r.estado === 'removido' ? 'Você saiu da lista' : 'Este link não vale mais'}
+    trilha={[{ rotulo: 'Licitações', destino: '/licitacoes' }, { rotulo: 'Avisos por e-mail' }]}
+  />
+
+  <div class="carreira bloco">
+    <div class="ourela">
+      <span class="fio fio-ourela" aria-hidden="true"></span>
+      <div class="corpo texto">
+        {
+          r.estado === 'removido' ? (
+            <>
+              <p>
+                O endereço{r.email && <> <strong>{r.email}</strong></>} foi <strong>apagado</strong> da
+                lista de avisos. Não guardamos registro de que você esteve inscrito.
+              </p>
+              <p class="t-micro">
+                As licitações continuam públicas e sem cadastro nenhum: pelo{' '}
+                <a href="/licitacoes">portal</a>, pelo <a href="/licitacoes/feed.xml">feed RSS</a> ou
+                pelo <a href="/api/licitacoes">endereço em JSON</a>.
+              </p>
+            </>
+          ) : (
+            <>
+              <p>
+                Este link já foi usado ou o cadastro não existe mais. De um jeito ou de outro,
+                <strong> o endereço não está na lista</strong>.
+              </p>
+              <p><a href="/licitacoes/avisos" class="botao">Cadastrar novamente</a></p>
+            </>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .bloco { padding-bottom: clamp(3rem, 7vw, 5rem); }
+  .fio { min-height: 4rem; }
+  .texto { max-width: var(--container-leitura); display: grid; gap: 1rem; }
+  .texto a { color: var(--color-serra); font-weight: 600; }
+  .botao { display: inline-flex; align-items: center; min-height: 3rem; padding: 0.8rem 1.5rem;
+    border-radius: 4px; text-decoration: none; background: var(--color-serra);
+    color: var(--color-papel); border: 2px solid var(--color-serra); }
+  .t-micro { color: var(--color-musgo); }
+</style>
