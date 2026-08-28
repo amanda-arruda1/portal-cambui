@@ -1,0 +1,63 @@
+---
+/**
+ * Navegação em etapas do formulário de licitação.
+ *
+ * Cinco etapas em vez de um paredão de quarenta campos. Sem JavaScript, todas
+ * as seções aparecem empilhadas e o formulário continua inteiro e enviável —
+ * a divisão é conforto, não requisito de funcionamento.
+ */
+interface Props { etapas: Array<{ id: string; rotulo: string }> }
+const { etapas } = Astro.props;
+---
+
+<nav class="etapas" aria-label="Etapas do formulário" data-etapas>
+  <ol>
+    {etapas.map((e, i) => (
+      <li>
+        <a href={`#${e.id}`} data-ir={e.id} class:list={[i === 0 && 'atual']}>
+          <span class="n" aria-hidden="true">{i + 1}</span>
+          <span>{e.rotulo}</span>
+        </a>
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<style>
+  .etapas { margin-top: 1.5rem; border-bottom: 2px solid var(--color-prata); }
+  .etapas ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.25rem; }
+  .etapas a {
+    display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1rem; min-height: 2.9rem;
+    text-decoration: none; color: var(--color-grafite); font-weight: 600; font-size: 0.9375rem;
+    border-bottom: 3px solid transparent; margin-bottom: -2px;
+  }
+  .etapas a:hover { color: var(--color-azul); }
+  .etapas a.atual { color: var(--color-azul-escuro); border-bottom-color: var(--color-vermelho); }
+  .n {
+    display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%;
+    background: var(--color-papel-suave); font-size: 0.8125rem;
+  }
+  .atual .n { background: var(--color-vermelho); color: var(--color-papel); }
+</style>
+
+<script>
+  /* Melhoria progressiva: mostra uma seção por vez e marca a etapa atual.
+     Sem script, todas as seções ficam visíveis e o formulário funciona igual. */
+  const nav = document.querySelector<HTMLElement>('[data-etapas]');
+  const secoes = Array.from(document.querySelectorAll<HTMLElement>('[data-etapa]'));
+  if (nav && secoes.length > 1) {
+    const links = Array.from(nav.querySelectorAll<HTMLAnchorElement>('[data-ir]'));
+    const mostrar = (id: string) => {
+      secoes.forEach((s) => { s.hidden = s.dataset.etapa !== id; });
+      links.forEach((a) => a.classList.toggle('atual', a.dataset.ir === id));
+      const alvo = secoes.find((s) => s.dataset.etapa === id);
+      alvo?.querySelector<HTMLElement>('input, select, textarea, button')?.focus({ preventScroll: true });
+      history.replaceState(null, '', `#${id}`);
+    };
+    links.forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); mostrar(a.dataset.ir!); }));
+    document.querySelectorAll<HTMLButtonElement>('[data-etapa-ir]').forEach((b) =>
+      b.addEventListener('click', () => mostrar(b.dataset.etapaIr!)));
+    const inicial = location.hash.slice(1);
+    mostrar(secoes.some((s) => s.dataset.etapa === inicial) ? inicial : secoes[0].dataset.etapa!);
+  }
+</script>

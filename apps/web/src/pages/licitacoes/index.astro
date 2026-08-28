@@ -1,0 +1,21 @@
+---
+/**
+ * /licitacoes — a listagem completa, sem recorte prévio.
+ */
+import Base from '../../layouts/Base.astro';
+import TituloPagina from '../../componentes/TituloPagina.astro';
+import Listagem from '../../componentes/licitacoes/Listagem.astro';
+---
+
+<Base
+  titulo="Licitações"
+  descricao="Editais, avisos e resultados das licitações e contratações diretas da Prefeitura Municipal de Cambuí. Busque por objeto, modalidade e prazo."
+>
+  <TituloPagina
+    rotulo="Licitações e contratações"
+    titulo="Tem licitação para o que você vende?"
+    chamada="Busque pelo que você fornece, veja quanto tempo falta para a sessão e baixe o edital. Tudo em uma página."
+    trilha={[{ rotulo: 'Licitações' }]}
+  />
+  <Listagem />
+</Base>

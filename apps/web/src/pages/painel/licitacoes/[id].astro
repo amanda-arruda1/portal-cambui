@@ -1,0 +1,486 @@
+---
+/**
+ * Editor de licitação — cinco etapas, rascunho automático e publicação
+ * validada.
+ *
+ * Quem usa esta tela publica sob prazo legal e não é técnico. Três decisões
+ * saem daí:
+ *   · o rascunho já existe no banco antes do primeiro campo ser digitado;
+ *   · a validação separa ERRO (impede) de ALERTA (deixa passar com
+ *     justificativa registrada) — porque o prazo do art. 55 admite exceções
+ *     que o sistema não tem como julgar, mas que precisam ficar escritas;
+ *   · a revisão mostra a licitação como o cidadão vai vê-la, antes de publicar.
+ */
+import Painel from '../../../layouts/Painel.astro';
+import Etapas from '../../../componentes/painel/licitacoes/Etapas.astro';
+import { listarSecretarias } from '../../../lib/painel/cms.ts';
+import {
+  anexosDaLicitacao, atualizar, gerarSlug, obter, registrarEvento, temErro, validar,
+  type DadosLicitacao,
+} from '../../../lib/painel/licitacoes.ts';
+import { CRITERIOS, MODALIDADES, MODOS_DISPUTA, SITUACOES, TIPOS_ANEXO, moeda, rotuloModalidade } from '../../../lib/licitacoes';
+import { dataHora } from '../../../lib/formato';
+
+const sessao = Astro.locals.sessao!;
+const id = Astro.params.id ?? '';
+
+let aviso: { tipo: 'ok' | 'erro'; texto: string } | null = null;
+/* Problemas do envio que acabou de falhar. Variável de página, não
+   Astro.locals: locals é contrato do middleware e não deve virar depósito de
+   estado de uma tela só. */
+let problemasDoEnvio: ReturnType<typeof validar> | null = null;
+if (Astro.url.searchParams.get('novo') === '1') {
+  aviso = { tipo: 'ok', texto: 'Rascunho criado e já sendo salvo automaticamente. Ele não aparece no portal enquanto você não publicar.' };
+}
+
+/* ── ações ── */
+if (Astro.request.method === 'POST') {
+  const f = await Astro.request.formData();
+  const acao = String(f.get('acao') ?? '');
+  const t = (n: string) => { const v = f.get(n); return typeof v === 'string' ? v.trim() : ''; };
+  const dataOuNulo = (n: string) => (t(n) ? new Date(`${t(n)}:00-03:00`).toISOString() : null);
+
+  if (acao === 'suspender') {
+    const r = await atualizar(sessao, id, { situacao: 'suspensa', motivo_situacao: t('motivo') || 'Licitação suspensa. Nova data será divulgada neste portal e no PNCP.' });
+    if (r.ok) {
+      await registrarEvento(sessao, id, 'suspensao', t('motivo') || 'Licitação suspensa.');
+      aviso = { tipo: 'ok', texto: 'Licitação suspensa. O aviso já aparece em destaque no portal.' };
+    } else aviso = { tipo: 'erro', texto: r.motivo };
+  } else {
+    const dados: DadosLicitacao = {
+      numero_processo: t('numero_processo'),
+      numero: Number(t('numero')) || null,
+      ano: Number(t('ano')) || null,
+      modalidade: t('modalidade'),
+      forma: t('forma'),
+      justificativa_presencial: t('justificativa_presencial') || null,
+      criterio_julgamento: t('criterio_julgamento'),
+      modo_disputa: t('modo_disputa'),
+      registro_precos: f.get('registro_precos') !== null,
+      secretaria: t('secretaria') || null,
+      objeto_resumo: t('objeto_resumo'),
+      objeto: t('objeto') || null,
+      valor_estimado: t('valor_estimado') ? Number(t('valor_estimado').replace(/\./g, '').replace(',', '.')) : null,
+      orcamento_sigiloso: f.get('orcamento_sigiloso') !== null,
+      data_publicacao: dataOuNulo('data_publicacao'),
+      data_abertura_propostas: dataOuNulo('data_abertura_propostas'),
+      data_sessao: dataOuNulo('data_sessao'),
+      prazo_impugnacao: dataOuNulo('prazo_impugnacao'),
+      prazo_esclarecimentos: dataOuNulo('prazo_esclarecimentos'),
+      sistema_sessao_url: t('sistema_sessao_url') || null,
+      pncp_id: t('pncp_id') || null,
+      pncp_url: t('pncp_url') || null,
+    };
+
+    const anexosAgora = await anexosDaLicitacao(sessao, id);
+    const temEdital = anexosAgora.ok && anexosAgora.dados.some((a: any) => a.tipo === 'edital' && !a.superado);
+    const publicando = acao === 'publicar';
+    const problemas = validar(dados, { publicando, temEdital });
+    const alertas = problemas.filter((x) => x.nivel === 'alerta');
+    const justificativa = t('justificativa_prazo');
+
+    if (publicando && temErro(problemas)) {
+      aviso = { tipo: 'erro', texto: 'A publicação foi bloqueada. Corrija os pontos apontados abaixo.' };
+      problemasDoEnvio = problemas;
+    } else if (publicando && alertas.length > 0 && !justificativa) {
+      aviso = { tipo: 'erro', texto: 'Há um alerta que exige justificativa registrada antes de publicar.' };
+      problemasDoEnvio = problemas;
+    } else {
+      if (publicando) {
+        dados.status = 'publicado';
+        dados.slug = gerarSlug(dados.modalidade!, dados.numero!);
+      }
+      const r = await atualizar(sessao, id, dados);
+      if (r.ok) {
+        if (publicando) {
+          await registrarEvento(sessao, id, 'publicacao',
+            justificativa
+              ? `Edital publicado no portal. Justificativa registrada para o prazo reduzido: ${justificativa}`
+              : 'Edital publicado no portal e no PNCP.');
+          console.info(`[licitacoes] ${sessao.usuario.email} PUBLICOU ${id}${justificativa ? ' (com justificativa de prazo)' : ''}`);
+        }
+        aviso = { tipo: 'ok', texto: publicando ? 'Licitação publicada. Já está visível no portal.' : 'Alterações salvas.' };
+      } else aviso = { tipo: 'erro', texto: r.motivo };
+    }
+  }
+}
+
+/* ── carga ── */
+const r = await obter(sessao, id);
+if (!r.ok) return Astro.rewrite('/painel/licitacoes');
+const l = r.dados;
+
+const [anexosResp, secretariasResp] = await Promise.all([anexosDaLicitacao(sessao, id), listarSecretarias(sessao)]);
+const anexos = anexosResp.ok ? anexosResp.dados : [];
+const secretarias = secretariasResp.ok ? secretariasResp.dados : [];
+const temEdital = anexos.some((a: any) => a.tipo === 'edital' && !a.superado);
+
+const problemas = problemasDoEnvio ?? validar(l, { publicando: true, temEdital });
+const erros = problemas.filter((p) => p.nivel === 'erro');
+const alertas = problemas.filter((p) => p.nivel === 'alerta');
+const problemaDe = (campo: string) => problemas.find((p) => p.campo === campo);
+/* Acessores que já lidam com a ausência: sem eles, cada uso no template
+   precisaria de '!' e o TypeScript deixaria de proteger de verdade. */
+const textoDe = (campo: string) => problemaDe(campo)?.texto ?? '';
+const alertaEm = (campo: string) => problemaDe(campo)?.nivel === 'alerta';
+
+/** ISO → valor de <input type="datetime-local"> no fuso de Brasília. */
+const paraInput = (iso: string | null) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : new Date(d.getTime() - 3 * 3600000).toISOString().slice(0, 16);
+};
+
+const ETAPAS = [
+  { id: 'identificacao', rotulo: 'Identificação' },
+  { id: 'objeto', rotulo: 'Objeto e valores' },
+  { id: 'datas', rotulo: 'Datas' },
+  { id: 'anexos', rotulo: 'Anexos' },
+  { id: 'revisao', rotulo: 'Revisão e publicação' },
+];
+---
+
+<Painel titulo={`Licitação ${l.numero}/${l.ano}`} sessao={sessao}>
+  <nav class="t-micro">
+    <a href="/painel" class="lk">Fila</a> <span aria-hidden="true">›</span>
+    <a href="/painel/licitacoes" class="lk">Licitações</a> <span aria-hidden="true">›</span> Editar
+  </nav>
+
+  <div class="cabeca">
+    <div>
+      <h1 class="t-pagina">{rotuloModalidade(l.modalidade)} nº {String(l.numero).padStart(3, '0')}/{l.ano}</h1>
+      <p class="estado">
+        {l.status === 'publicado'
+          ? <><strong class="pub">Publicada no portal</strong> · situação: {SITUACOES.find((s) => s.valor === l.situacao)?.rotulo}</>
+          : <><strong class="rasc">Rascunho</strong> — invisível para o cidadão até você publicar</>}
+        <span class="salvo" data-salvo aria-live="polite"></span>
+      </p>
+    </div>
+    {l.status === 'publicado' && (
+      <a href={`/licitacoes/${l.ano}/${l.slug}`} target="_blank" rel="noopener noreferrer" class="botao vazado">
+        Ver no portal<span class="sr-only"> — abre em nova aba</span>
+      </a>
+    )}
+  </div>
+
+  {aviso && (
+    <div role={aviso.tipo === 'erro' ? 'alert' : 'status'} class:list={['recado', aviso.tipo]}>{aviso.texto}</div>
+  )}
+
+  <Etapas etapas={ETAPAS} />
+
+  <form method="post" data-form data-id={id} class="form">
+    <!-- ETAPA 1 -->
+    <section data-etapa="identificacao" class="etapa">
+      <h2 class="t-secao">Identificação</h2>
+
+      <div class="pncp">
+        <h3 class="t-sub">Importar do PNCP</h3>
+        <p class="t-micro">
+          Cole a URL da contratação no PNCP ou o número de controle. Os campos vêm preenchidos para
+          você conferir — nada é gravado sem a sua confirmação. Isso elimina a digitação dupla, que
+          é a maior fonte de divergência entre o portal e o registro oficial.
+        </p>
+        <div class="linha-pncp">
+          <input type="text" data-pncp-ref placeholder="https://pncp.gov.br/app/editais/… ou 00000000000000-1-000032/2026" />
+          <button type="button" data-pncp-buscar class="botao pequeno">Buscar no PNCP</button>
+        </div>
+        <p class="t-micro" data-pncp-estado role="status"></p>
+      </div>
+
+      <div class="campos">
+        <label>Número do processo administrativo <span class="obr">*</span>
+          <input name="numero_processo" value={l.numero_processo ?? ''} required aria-invalid={problemaDe('numero_processo') ? 'true' : undefined} />
+          {problemaDe('numero_processo') && <span class="erro-campo">{textoDe('numero_processo')}</span>}
+        </label>
+        <label>Número da licitação <span class="obr">*</span>
+          <input name="numero" type="number" min="1" value={l.numero ?? ''} required />
+        </label>
+        <label>Ano <span class="obr">*</span>
+          <input name="ano" type="number" min="2020" max="2100" value={l.ano ?? ''} required />
+        </label>
+        <label>Modalidade <span class="obr">*</span>
+          <select name="modalidade" required>
+            {MODALIDADES.map((m) => <option value={m.valor} selected={l.modalidade === m.valor}>{m.rotulo}</option>)}
+          </select>
+        </label>
+        <label>Forma
+          <select name="forma" data-forma>
+            <option value="eletronica" selected={l.forma === 'eletronica'}>Eletrônica</option>
+            <option value="presencial" selected={l.forma === 'presencial'}>Presencial</option>
+          </select>
+        </label>
+        <label>Critério de julgamento <span class="obr">*</span>
+          <select name="criterio_julgamento" required>
+            {Object.entries(CRITERIOS).map(([v, r2]) => <option value={v} selected={l.criterio_julgamento === v}>{r2}</option>)}
+          </select>
+        </label>
+        <label>Modo de disputa
+          <select name="modo_disputa">
+            {Object.entries(MODOS_DISPUTA).map(([v, r2]) => <option value={v} selected={l.modo_disputa === v}>{r2}</option>)}
+          </select>
+        </label>
+        <label>Órgão demandante
+          <select name="secretaria">
+            <option value="">— não informado —</option>
+            {secretarias.map((s) => <option value={s.id} selected={l.secretaria?.id === s.id}>{s.nome}</option>)}
+          </select>
+        </label>
+        <label class="caixa">
+          <input type="checkbox" name="registro_precos" checked={l.registro_precos} />
+          Sistema de Registro de Preços
+        </label>
+      </div>
+
+      <label class="inteiro" data-so-presencial hidden={l.forma !== 'presencial'}>
+        Justificativa da forma presencial <span class="obr">*</span>
+        <textarea name="justificativa_presencial" rows="3" aria-invalid={problemaDe('justificativa_presencial') ? 'true' : undefined}>{l.justificativa_presencial ?? ''}</textarea>
+        <span class="ajuda">Exigida pelo art. 17, §2º, da Lei 14.133/2021. Sem ela, a licitação fica vulnerável a impugnação.</span>
+        {problemaDe('justificativa_presencial') && <span class="erro-campo">{textoDe('justificativa_presencial')}</span>}
+      </label>
+
+      <div class="navegar"><button type="button" data-etapa-ir="objeto" class="botao">Avançar para Objeto</button></div>
+    </section>
+
+    <!-- ETAPA 2 -->
+    <section data-etapa="objeto" class="etapa" hidden>
+      <h2 class="t-secao">Objeto e valores</h2>
+      <label class="inteiro">Objeto — resumo de uma linha <span class="obr">*</span>
+        <textarea name="objeto_resumo" rows="2" required aria-invalid={problemaDe('objeto_resumo') ? 'true' : undefined}>{l.objeto_resumo ?? ''}</textarea>
+        <span class="ajuda">É o que aparece na listagem e o que a busca encontra. Escreva como o fornecedor procuraria.</span>
+        {problemaDe('objeto_resumo') && <span class="erro-campo">{textoDe('objeto_resumo')}</span>}
+      </label>
+      <label class="inteiro">Descrição completa
+        <textarea name="objeto" rows="8" data-editor-rico>{l.objeto ?? ''}</textarea>
+      </label>
+      <div class="campos">
+        <label>Valor estimado (R$)
+          <input name="valor_estimado" inputmode="decimal" value={l.valor_estimado ?? ''} placeholder="0,00" />
+        </label>
+        <label class="caixa">
+          <input type="checkbox" name="orcamento_sigiloso" checked={l.orcamento_sigiloso} />
+          Orçamento sigiloso
+          <span class="ajuda">Oculta o valor no portal sem apagar o dado (art. 24 da Lei 14.133/2021).</span>
+        </label>
+      </div>
+      <div class="navegar">
+        <button type="button" data-etapa-ir="identificacao" class="botao vazado">Voltar</button>
+        <button type="button" data-etapa-ir="datas" class="botao">Avançar para Datas</button>
+      </div>
+    </section>
+
+    <!-- ETAPA 3 -->
+    <section data-etapa="datas" class="etapa" hidden>
+      <h2 class="t-secao">Datas</h2>
+      <p class="t-micro nota">Todos os horários são de Brasília (America/Sao_Paulo) — é o que o portal exibe ao fornecedor.</p>
+      <div class="campos">
+        <label>Publicação do edital <span class="obr">*</span>
+          <input name="data_publicacao" type="datetime-local" value={paraInput(l.data_publicacao)} required />
+        </label>
+        <label>Abertura das propostas
+          <input name="data_abertura_propostas" type="datetime-local" value={paraInput(l.data_abertura_propostas)} />
+        </label>
+        <label>Sessão pública
+          <input name="data_sessao" type="datetime-local" value={paraInput(l.data_sessao)} data-sessao aria-invalid={problemaDe('data_sessao') ? 'true' : undefined} />
+          {problemaDe('data_sessao') && <span class:list={['erro-campo', alertaEm('data_sessao') && 'alerta']}>{textoDe('data_sessao')}</span>}
+        </label>
+        <label>Prazo para impugnação
+          <input name="prazo_impugnacao" type="datetime-local" value={paraInput(l.prazo_impugnacao)} />
+        </label>
+        <label>Prazo para esclarecimentos
+          <input name="prazo_esclarecimentos" type="datetime-local" value={paraInput(l.prazo_esclarecimentos)} />
+        </label>
+        <label>Endereço do sistema da sessão
+          <input name="sistema_sessao_url" type="url" value={l.sistema_sessao_url ?? ''} placeholder="https://www.gov.br/compras/pt-br" />
+        </label>
+        <label>Identificador PNCP
+          <input name="pncp_id" value={l.pncp_id ?? ''} placeholder="00000000000000-1-000032/2026" />
+        </label>
+        <label>URL no PNCP
+          <input name="pncp_url" type="url" value={l.pncp_url ?? ''} />
+        </label>
+      </div>
+      <div class="navegar">
+        <button type="button" data-etapa-ir="objeto" class="botao vazado">Voltar</button>
+        <button type="button" data-etapa-ir="anexos" class="botao">Avançar para Anexos</button>
+      </div>
+    </section>
+
+    <!-- ETAPA 4 -->
+    <section data-etapa="anexos" id="anexos" class="etapa" hidden>
+      <h2 class="t-secao">Anexos</h2>
+      <p class="t-micro nota">
+        Arraste os arquivos para a área abaixo ou clique para escolher. Cada arquivo é verificado
+        (formato, conteúdo e antivírus) antes de ser guardado.
+      </p>
+
+      <div class="solta" data-solta tabindex="0" role="button" aria-label="Adicionar documentos: clique ou arraste arquivos para cá">
+        <p><strong>Arraste os documentos aqui</strong></p>
+        <p class="t-micro">ou clique para escolher — PDF, planilha ou documento, até 25 MB</p>
+        <input type="file" data-arquivos multiple hidden accept=".pdf,.docx,.xlsx,.odt,.ods,.csv,.png,.jpg,.jpeg" />
+      </div>
+      <ul class="fila-envio" data-fila></ul>
+
+      <h3 class="t-sub sub">Documentos já anexados</h3>
+      {anexos.length === 0 ? (
+        <p class="t-micro nota">Nenhum documento anexado. <strong>Publicar sem edital é bloqueado.</strong></p>
+      ) : (
+        <ul class="anexos">
+          {anexos.map((a: any) => (
+            <li class:list={[a.superado && 'superado']}>
+              <span>
+                <strong>{a.titulo}</strong>
+                <span class="t-micro"> — {TIPOS_ANEXO.find((t) => t.valor === a.tipo)?.rotulo ?? a.tipo}
+                  {a.versao > 1 && ` · versão ${a.versao}`}
+                  {a.superado && ' · SUPERADO (mantido como histórico)'}
+                </span>
+              </span>
+              <span class="t-micro">{dataHora(a.data_publicacao)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div class="navegar">
+        <button type="button" data-etapa-ir="datas" class="botao vazado">Voltar</button>
+        <button type="button" data-etapa-ir="revisao" class="botao">Avançar para Revisão</button>
+      </div>
+    </section>
+
+    <!-- ETAPA 5 -->
+    <section data-etapa="revisao" id="revisao" class="etapa" hidden>
+      <h2 class="t-secao">Revisão e publicação</h2>
+
+      {erros.length > 0 && (
+        <div class="bloqueio" role="alert">
+          <p class="t-sub">Não dá para publicar ainda</p>
+          <ul>{erros.map((p) => <li>{p.texto}</li>)}</ul>
+        </div>
+      )}
+
+      {alertas.length > 0 && (
+        <div class="atencao" role="alert">
+          <p class="t-sub">Atenção antes de publicar</p>
+          <ul>{alertas.map((p) => <li>{p.texto}</li>)}</ul>
+          <label class="inteiro">Justificativa (será registrada no andamento do processo)
+            <textarea name="justificativa_prazo" rows="3" placeholder="Ex.: prazo reduzido autorizado pela autoridade competente em razão de…"></textarea>
+          </label>
+        </div>
+      )}
+
+      <div class="previa">
+        <p class="t-rotulo">Assim o cidadão vai ver</p>
+        <div class="cartao-previa">
+          <p class="t-rotulo">{rotuloModalidade(l.modalidade)} nº {String(l.numero).padStart(3, '0')}/{l.ano}</p>
+          <p class="obj-previa">{l.objeto_resumo}</p>
+          <p class="t-micro">
+            {l.secretaria?.nome ?? 'Órgão não informado'} ·
+            {l.orcamento_sigiloso ? ' Orçamento sigiloso' : l.valor_estimado ? ` ${moeda(l.valor_estimado)}` : ' Valor não divulgado'}
+            {l.data_sessao && <> · sessão {dataHora(l.data_sessao)}</>}
+          </p>
+          <p class="t-micro">{temEdital ? 'Edital disponível para download' : 'SEM EDITAL ANEXADO'}</p>
+        </div>
+      </div>
+
+      <div class="publicar">
+        <button type="submit" name="acao" value="salvar" class="botao vazado">Salvar rascunho</button>
+        <button type="submit" name="acao" value="publicar" class="botao primario" disabled={erros.length > 0}>
+          {l.status === 'publicado' ? 'Salvar e republicar' : 'Publicar no portal'}
+        </button>
+      </div>
+      <p class="t-micro nota">
+        A divulgação oficial continua sendo no PNCP e no veículo oficial do Município. Este portal é complementar.
+      </p>
+    </section>
+  </form>
+
+  {l.status === 'publicado' && (
+    <form method="post" class="suspender">
+      <h2 class="t-sub">Suspender esta licitação</h2>
+      <p class="t-micro">Publica o aviso de suspensão em destaque no portal e registra no andamento.</p>
+      <input type="hidden" name="acao" value="suspender" />
+      <label class="inteiro">Motivo
+        <textarea name="motivo" rows="2" placeholder="Ex.: análise de impugnação apresentada tempestivamente."></textarea>
+      </label>
+      <button type="submit" class="botao perigo">Suspender</button>
+    </form>
+  )}
+</Painel>
+
+<style>
+  .lk { color: var(--color-azul); }
+  .cabeca { margin-top: 0.5rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1rem; }
+  .estado { margin-top: 0.35rem; color: var(--color-grafite); }
+  .pub { color: var(--color-verde-texto); }
+  .rasc { color: var(--color-trigo); }
+  .salvo { margin-left: 0.75rem; font-size: 0.875rem; }
+  .recado { margin-top: 1rem; padding: 1rem 1.2rem; border-left: 4px solid; border-radius: 0 4px 4px 0; background: var(--color-papel); }
+  .recado.ok { border-color: var(--color-verde); color: var(--color-verde-texto); }
+  .recado.erro { border-color: var(--color-vermelho); color: var(--color-vermelho); }
+
+  .form { margin-top: 1.5rem; }
+  .etapa { background: var(--color-papel); border: 1px solid var(--color-prata); border-radius: 6px; padding: 1.5rem; }
+  .campos { margin-top: 1.25rem; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+  label { display: block; font-weight: 600; font-size: 0.9375rem; }
+  .inteiro { margin-top: 1.25rem; }
+  .obr { color: var(--color-vermelho); }
+  input, select, textarea {
+    display: block; width: 100%; font: inherit; font-weight: 400; margin-top: 0.3rem;
+    min-height: 2.75rem; padding: 0.55rem 0.75rem; border: 1.5px solid var(--color-prata);
+    border-radius: 4px; background: var(--color-papel); color: var(--color-tinta);
+  }
+  textarea { min-height: 5rem; }
+  .caixa { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+  .caixa input { width: 1.15rem; height: 1.15rem; min-height: 0; margin: 0; flex: none; }
+  .ajuda { display: block; font-weight: 400; font-size: 0.8125rem; color: var(--color-grafite); margin-top: 0.3rem; }
+  .erro-campo { display: block; font-weight: 600; font-size: 0.8125rem; color: var(--color-vermelho); margin-top: 0.3rem; }
+  .erro-campo.alerta { color: var(--color-trigo); }
+  [aria-invalid='true'] { border-color: var(--color-vermelho); border-width: 2px; }
+  .nota { color: var(--color-grafite); margin-top: 0.35rem; }
+
+  .pncp { margin-top: 1.25rem; padding: 1rem 1.2rem; background: var(--color-papel-suave); border-radius: 6px; }
+  .linha-pncp { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem; }
+  .linha-pncp input { flex: 1; min-width: 16rem; margin: 0; }
+
+  .navegar { margin-top: 1.75rem; display: flex; flex-wrap: wrap; gap: 0.75rem; }
+  .botao { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem;
+    padding: 0.6rem 1.3rem; border-radius: 4px; font: inherit; font-weight: 600; cursor: pointer;
+    border: 2px solid var(--color-azul); background: var(--color-azul); color: var(--color-papel); text-decoration: none; }
+  .botao.vazado { background: var(--color-papel); color: var(--color-azul); }
+  .botao.pequeno { min-height: 2.5rem; padding: 0.45rem 1rem; font-size: 0.9375rem; }
+  .botao.primario { background: var(--color-verde); border-color: var(--color-verde); }
+  .botao.perigo { background: var(--color-vermelho); border-color: var(--color-vermelho); }
+  .botao:disabled { opacity: 0.45; cursor: not-allowed; }
+  .botao:not(:disabled):hover { filter: brightness(0.9); }
+
+  .solta { margin-top: 1rem; border: 2px dashed var(--color-prata); border-radius: 8px; padding: 2rem 1rem;
+    text-align: center; cursor: pointer; background: var(--color-papel-suave); }
+  .solta:hover, .solta.sobre { border-color: var(--color-azul); background: var(--color-azul-claro); }
+  .fila-envio { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
+  .fila-envio li { border: 1px solid var(--color-prata); border-radius: 4px; padding: 0.6rem 0.8rem; font-size: 0.9375rem; }
+  .barra { height: 6px; background: var(--color-prata); border-radius: 3px; margin-top: 0.4rem; overflow: hidden; }
+  .barra i { display: block; height: 100%; background: var(--color-azul); width: 0; transition: width 0.2s ease-out; }
+
+  .sub { margin-top: 2rem; }
+  .anexos { list-style: none; margin: 0.75rem 0 0; padding: 0; }
+  .anexos li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem 1rem;
+    padding: 0.6rem 0; border-top: 1px solid var(--color-prata); }
+  .anexos .superado strong { text-decoration: line-through; color: var(--color-grafite); }
+
+  .bloqueio, .atencao { margin-top: 1.25rem; padding: 1rem 1.2rem; border-left: 5px solid; border-radius: 0 4px 4px 0; }
+  .bloqueio { border-color: var(--color-vermelho); background: color-mix(in srgb, var(--color-vermelho) 8%, transparent); }
+  .atencao { border-color: var(--color-trigo); background: color-mix(in srgb, var(--color-trigo) 10%, transparent); }
+  .bloqueio ul, .atencao ul { margin: 0.5rem 0 0 1.2rem; }
+  .bloqueio li, .atencao li { margin-top: 0.35rem; }
+
+  .previa { margin-top: 1.75rem; }
+  .cartao-previa { margin-top: 0.5rem; border: 1.5px solid var(--color-prata); border-radius: 6px; padding: 1rem 1.2rem; background: var(--color-papel-suave); }
+  .obj-previa { font-weight: 600; font-size: 1.05rem; margin-top: 0.2rem; }
+  .publicar { margin-top: 1.75rem; display: flex; flex-wrap: wrap; gap: 0.75rem; }
+  .suspender { margin-top: 2rem; background: var(--color-papel); border: 1px solid var(--color-prata);
+    border-left: 4px solid var(--color-vermelho); border-radius: 6px; padding: 1.25rem 1.5rem; }
+</style>
+
+<script>
+  import '../../../scripts/painel-licitacoes.ts';
+</script>

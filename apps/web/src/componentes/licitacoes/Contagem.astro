@@ -1,0 +1,87 @@
+---
+/**
+ * Contagem regressiva para a sessão pública.
+ *
+ * FUNCIONA SEM JAVASCRIPT: o servidor já escreve a data absoluta com o fuso
+ * explícito e o texto "abre em N dias". O script só troca isso por um relógio
+ * que anda. Se o JavaScript falhar, a informação que importa continua na tela.
+ *
+ * O fuso é dito por extenso — "horário de Brasília" — porque fornecedor de
+ * fora do estado abre esta página e uma hora de diferença custa a proposta.
+ */
+import { prazoAte, situacaoDe } from '../../lib/licitacoes';
+import { dataHora } from '../../lib/formato';
+
+interface Props { quando: string | null; situacao: string }
+const { quando, situacao } = Astro.props;
+const s = situacaoDe(situacao);
+const prazo = prazoAte(quando);
+const futura = prazo?.aberta === true;
+const encerrado = !s.emAndamento;
+---
+
+{
+  quando ? (
+    <div class:list={['contagem', futura && !encerrado && 'ativa']}>
+      <p class="t-rotulo rotulo">{futura && !encerrado ? 'Sessão pública abre em' : 'Sessão pública'}</p>
+
+      {futura && !encerrado ? (
+        <p class="relogio" data-contagem={quando} aria-live="off">
+          <span class="fallback">{prazo?.texto}</span>
+        </p>
+      ) : (
+        <p class="relogio estatico">{prazo?.texto ?? '—'}</p>
+      )}
+
+      <p class="absoluta">
+        <time datetime={quando}>{dataHora(quando)}</time>
+        <span class="fuso"> (horário de Brasília)</span>
+      </p>
+    </div>
+  ) : (
+    <div class="contagem">
+      <p class="t-rotulo rotulo">Sessão pública</p>
+      <p class="relogio estatico">Data ainda não divulgada</p>
+    </div>
+  )
+}
+
+<style>
+  .contagem {
+    display: inline-block; padding: 1rem 1.4rem; border-radius: 6px;
+    background: color-mix(in srgb, var(--color-musgo) 8%, transparent);
+    border-left: 5px solid var(--color-musgo);
+  }
+  .ativa { border-left-color: var(--color-carmim); background: color-mix(in srgb, var(--color-carmim) 8%, transparent); }
+  .rotulo { color: var(--color-musgo); }
+  .relogio {
+    font-family: var(--font-display); font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; margin-top: 0.25rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .ativa .relogio { color: var(--color-carmim); }
+  .estatico { color: var(--color-musgo); font-size: clamp(1.2rem, 3vw, 1.6rem); }
+  .absoluta { margin-top: 0.4rem; color: var(--color-musgo); font-size: 0.9375rem; }
+  .fuso { white-space: nowrap; }
+</style>
+
+<script>
+  /* Relógio vivo. Atualiza de minuto em minuto abaixo de 24h e de hora em hora
+     acima — não há razão para repintar a cada segundo uma contagem de 12 dias,
+     e cada repintura custa bateria de celular. */
+  const alvo = document.querySelector<HTMLElement>('[data-contagem]');
+  if (alvo) {
+    const quando = new Date(alvo.dataset.contagem!).getTime();
+    const desenhar = () => {
+      const ms = quando - Date.now();
+      if (ms <= 0) { alvo.textContent = 'sessão iniciada'; return 0; }
+      const d = Math.floor(ms / 86400000);
+      const h = Math.floor((ms % 86400000) / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      alvo.textContent = d > 0 ? `${d}d ${h}h ${m}min` : h > 0 ? `${h}h ${m}min` : `${m}min`;
+      return d > 0 ? 60000 : 30000;
+    };
+    let intervalo = desenhar();
+    if (intervalo) setInterval(() => { intervalo = desenhar() || intervalo; }, intervalo);
+  }
+</script>

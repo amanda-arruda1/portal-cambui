@@ -1,0 +1,34 @@
+---
+/**
+ * /licitacoes/modalidade/<slug> — URL permanente por modalidade.
+ *
+ * A rota existe porque modalidade é DADO, não seção escrita à mão: a lista
+ * sai de MODALIDADES em lib/licitacoes.ts. Acrescentar uma modalidade nova
+ * cria a rota sozinha.
+ *
+ * É a URL que o fornecedor guarda nos favoritos ("só me interessa pregão") e a
+ * que o buscador indexa — por isso ela é um endereço de verdade, e não
+ * /licitacoes?modalidade=…
+ */
+import Base from '../../../layouts/Base.astro';
+import TituloPagina from '../../../componentes/TituloPagina.astro';
+import Listagem from '../../../componentes/licitacoes/Listagem.astro';
+import { MODALIDADES, deSlug, paraSlug } from '../../../lib/licitacoes';
+
+const slug = Astro.params.modalidade ?? '';
+const modalidade = MODALIDADES.find((m) => paraSlug(m.valor) === slug);
+if (!modalidade) return Astro.rewrite('/404');
+---
+
+<Base
+  titulo={`${modalidade.rotulo} — Licitações`}
+  descricao={`Licitações na modalidade ${modalidade.rotulo} da Prefeitura Municipal de Cambuí: editais, prazos e resultados.`}
+>
+  <TituloPagina
+    rotulo="Licitações e contratações"
+    titulo={modalidade.rotulo}
+    chamada={`Somente as contratações na modalidade ${modalidade.rotulo}. Use a busca e os filtros abaixo para estreitar ainda mais.`}
+    trilha={[{ rotulo: 'Licitações', destino: '/licitacoes' }, { rotulo: modalidade.rotulo }]}
+  />
+  <Listagem fixos={{ modalidade: deSlug(slug) }} />
+</Base>

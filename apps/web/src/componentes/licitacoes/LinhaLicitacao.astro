@@ -1,0 +1,75 @@
+---
+/**
+ * Uma licitação na listagem.
+ *
+ * Segue a linha de largura total do sistema (ver DESIGN.md): objeto nunca
+ * truncado, alvo de toque na linha inteira. A ordem da informação responde à
+ * pergunta real do fornecedor, nesta sequência: o que é → quando abre →
+ * quanto falta.
+ */
+import Etiqueta from './Etiqueta.astro';
+import { moeda, prazoAte, rotuloModalidade, type Licitacao } from '../../lib/licitacoes';
+import { dataHora } from '../../lib/formato';
+
+interface Props { licitacao: Licitacao; agora?: number }
+const { licitacao: l, agora = Date.now() } = Astro.props;
+const prazo = prazoAte(l.data_sessao, agora);
+const numero = `${String(l.numero).padStart(3, '0')}/${l.ano}`;
+---
+
+<a href={`/licitacoes/${l.ano}/${l.slug}`} class="linha">
+  <span class="cabeca">
+    <span class="t-rotulo identificacao">
+      {rotuloModalidade(l.modalidade)} nº {numero}
+      <span class="processo"> · processo {l.numero_processo}</span>
+    </span>
+    <Etiqueta situacao={l.situacao} />
+  </span>
+
+  <span class="objeto"><span class="fio-foco">{l.objeto_resumo}</span></span>
+
+  <span class="rodape">
+    {l.secretaria && <span class="orgao">{l.secretaria.nome}</span>}
+    <span class="valor">
+      {l.orcamento_sigiloso ? 'Orçamento sigiloso' : l.valor_estimado ? moeda(l.valor_estimado) : 'Valor não divulgado'}
+    </span>
+    {
+      l.data_sessao && (
+        <span class="sessao">
+          <time datetime={l.data_sessao}>{dataHora(l.data_sessao)}</time>
+          {prazo && <span class:list={['prazo', prazo.aberta && prazo.diasRestantes <= 7 && 'urgente']}>{prazo.texto}</span>}
+        </span>
+      )
+    }
+  </span>
+</a>
+
+<style>
+  .linha {
+    display: flex; flex-direction: column; gap: 0.5rem;
+    padding-block: 1.15rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-musgo) 26%, transparent);
+    text-decoration: none; color: inherit;
+  }
+  :global(li:last-child) > .linha { border-bottom: 1px solid color-mix(in srgb, var(--color-musgo) 26%, transparent); }
+
+  .cabeca { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; justify-content: space-between; }
+  .identificacao { color: var(--color-musgo); }
+  .processo { font-weight: 400; text-transform: none; letter-spacing: 0; }
+  @media (max-width: 30rem) { .processo { display: none; } }
+
+  .objeto {
+    font-family: var(--font-display); font-size: 1.15rem; font-weight: 600;
+    line-height: 1.3; letter-spacing: -0.01em;
+  }
+
+  .rodape {
+    display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem;
+    font-size: 0.9375rem; color: var(--color-musgo);
+  }
+  .valor { font-variant-numeric: tabular-nums; }
+  .sessao { display: inline-flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; }
+  .prazo { font-weight: 600; color: var(--color-serra); }
+  /* Menos de 7 dias muda de cor E de peso — nunca só de cor. */
+  .prazo.urgente { color: var(--color-carmim); }
+</style>

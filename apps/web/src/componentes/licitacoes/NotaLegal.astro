@@ -1,0 +1,35 @@
+---
+/**
+ * Nota de publicidade legal.
+ *
+ * Isto NÃO é rodapé decorativo: protege a Prefeitura. Sob a Lei 14.133/2021 a
+ * divulgação oficial se dá no PNCP; um portal municipal que sugira substituí-lo
+ * cria risco jurídico para o município. A nota aparece na listagem e em toda
+ * página de licitação, e diz o que prevalece em caso de divergência.
+ */
+---
+<aside class="nota" aria-label="Aviso sobre a publicidade oficial">
+  <p>
+    <strong>Este portal é complementar.</strong> A divulgação oficial das contratações do
+    município ocorre no <a href="https://pncp.gov.br" target="_blank" rel="noopener noreferrer">Portal
+    Nacional de Contratações Públicas (PNCP)</a> e no veículo oficial de imprensa do Município,
+    na forma da Lei nº 14.133/2021.
+  </p>
+  <p>
+    Em caso de divergência entre a informação exibida aqui e o edital publicado oficialmente,
+    <strong>prevalece o edital oficial</strong>.
+  </p>
+</aside>
+
+<style>
+  .nota {
+    margin-top: 3rem; padding: 1.25rem 1.4rem;
+    border-left: 4px solid var(--color-musgo);
+    background: color-mix(in srgb, var(--color-musgo) 7%, transparent);
+    border-radius: 0 4px 4px 0;
+    max-width: var(--container-leitura);
+    font-size: 0.9375rem; color: var(--color-musgo);
+  }
+  .nota p + p { margin-top: 0.6rem; }
+  .nota a { color: var(--color-serra); font-weight: 600; }
+</style>

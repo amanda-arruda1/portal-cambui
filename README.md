@@ -247,6 +247,43 @@ portal adota a carreira como unidade de composição.*
   serviço, que substitui o cartão), `Coleta` (o módulo local),
   `BarraAcessibilidade`, `AvisoCookies`.
 
+## Módulo de licitações
+
+Área pública em `/licitacoes`, painel do setor em `/painel/licitacoes`.
+Arquitetura, modelo de dados e decisões em **[ARQUITETURA.md](ARQUITETURA.md)**;
+roteiro de conferência em
+**[docs/validacao-licitacoes.md](docs/validacao-licitacoes.md)**.
+
+```bash
+# popular com 40 licitações de demonstração (PDFs de verdade, datas relativas)
+cd /opt/portal-cambui
+DIRECTUS_EMAIL=<admin> DIRECTUS_SENHA=<...> node infra/directus/licitacoes/seed.mjs
+node infra/directus/licitacoes/seed.mjs --reset          # desfaz
+node infra/directus/licitacoes/seed.mjs --reset --aplicar # recria
+
+# esquema e permissões (idempotentes, com --simular)
+node infra/directus/licitacoes/aplicar-esquema.mjs
+node infra/directus/licitacoes/aplicar-permissoes.mjs
+```
+
+**Acesso de demonstração ao painel:** as credenciais do administrador criado em
+27/08/2026 estão com a TI — a senha não é versionada. Para criar outro acesso:
+`sudo bash infra/scripts/10-primeiro-acesso.sh <e-mail>`.
+
+Endereços do módulo:
+
+| Rota | O que é |
+|---|---|
+| `/licitacoes` | Listagem com busca, filtros e contadores |
+| `/licitacoes/modalidade/<slug>` | URL permanente por modalidade |
+| `/licitacoes/<ano>/<slug>` | Página da licitação |
+| `/licitacoes/<ano>/<slug>/sessao.ics` | Convite de calendário da sessão |
+| `/licitacoes/feed.xml` | RSS (aceita os mesmos filtros) |
+| `/licitacoes/modalidade/<slug>/feed.xml` | RSS por modalidade |
+| `/api/licitacoes` | JSON público, com os mesmos filtros |
+| `/licitacoes/exportar.csv` | Exportação da busca |
+| `/licitacoes/avisos` | Cadastro de aviso por e-mail |
+
 ## Verificações
 
 Rodam agora, sem depender de nada pendente:

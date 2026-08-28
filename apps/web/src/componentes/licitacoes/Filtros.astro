@@ -1,0 +1,233 @@
+---
+/**
+ * Filtros da listagem.
+ *
+ * É um <form method="get">. Sem uma linha de JavaScript ele já funciona: o
+ * navegador monta a query string, o servidor lê e devolve o resultado. O
+ * estado mora na URL — compartilhável, indexável, e reproduzível numa aba
+ * anônima, que é o teste da definição de pronto.
+ *
+ * Cada opção mostra QUANTOS resultados ela daria com os demais filtros
+ * aplicados. Opção que levaria a zero aparece desabilitada com "(0)": filtro
+ * que leva a nada sem avisar é armadilha.
+ */
+import { MODALIDADES, SITUACOES, paraQuery, type Filtros } from '../../lib/licitacoes';
+
+interface Props {
+  filtros: Filtros;
+  contagens: {
+    modalidade: Map<string, number>; situacao: Map<string, number>;
+    ano: Map<string, number>; secretaria: Map<string, number>; tempo: Map<string, number>;
+  };
+  secretarias: Array<{ nome: string; slug: string }>;
+  total: number;
+}
+const { filtros, contagens, secretarias, total } = Astro.props;
+
+const ATALHOS = [
+  { valor: 'abertas', rotulo: 'Abertas agora' },
+  { valor: 'proximos-7', rotulo: 'Abrem em 7 dias' },
+  { valor: 'proximos-30', rotulo: 'Próximos 30 dias' },
+  { valor: 'encerradas', rotulo: 'Encerradas' },
+];
+
+const anos = [...contagens.ano.entries()].sort((a, b) => Number(b[0]) - Number(a[0]));
+
+/** Chips do que está filtrado agora, cada um com o link que o remove. */
+const ativos: Array<{ rotulo: string; remove: string }> = [];
+if (filtros.q) ativos.push({ rotulo: `busca: “${filtros.q}”`, remove: paraQuery({ q: '' }, filtros) });
+if (filtros.modalidade) ativos.push({ rotulo: MODALIDADES.find((m) => m.valor === filtros.modalidade)?.rotulo ?? filtros.modalidade, remove: paraQuery({ modalidade: '' }, filtros) });
+if (filtros.situacao) ativos.push({ rotulo: SITUACOES.find((s) => s.valor === filtros.situacao)?.rotulo ?? filtros.situacao, remove: paraQuery({ situacao: '' }, filtros) });
+if (filtros.tempo) ativos.push({ rotulo: ATALHOS.find((a) => a.valor === filtros.tempo)?.rotulo ?? filtros.tempo, remove: paraQuery({ tempo: '' }, filtros) });
+if (filtros.ano) ativos.push({ rotulo: `ano ${filtros.ano}`, remove: paraQuery({ ano: '' }, filtros) });
+if (filtros.secretaria) ativos.push({ rotulo: secretarias.find((s) => s.slug === filtros.secretaria)?.nome ?? filtros.secretaria, remove: paraQuery({ secretaria: '' }, filtros) });
+if (filtros.valorMin || filtros.valorMax) ativos.push({ rotulo: 'faixa de valor', remove: paraQuery({ valorMin: '', valorMax: '' }, filtros) });
+---
+
+<form method="get" action="/licitacoes" class="filtros" role="search" aria-label="Filtrar licitações">
+  <div class="busca">
+    <label for="q" class="t-rotulo etiqueta">Buscar por objeto, número ou órgão</label>
+    <div class="campo">
+      <input id="q" name="q" type="search" value={filtros.q} enterkeyhint="search"
+        placeholder="merenda, asfalto, remédio, 032/2026…" autocomplete="off" />
+      <button type="submit">Buscar</button>
+    </div>
+    <p class="t-micro dica">Entende sinônimos: buscar por <strong>merenda</strong> encontra “gêneros alimentícios”.</p>
+  </div>
+
+  <fieldset class="atalhos">
+    <legend class="t-rotulo">Quando abre</legend>
+    <div class="pilulas">
+      {
+        ATALHOS.map((a) => {
+          const n = contagens.tempo.get(a.valor) ?? 0;
+          const ativo = filtros.tempo === a.valor;
+          return (
+            <a
+              href={`/licitacoes${paraQuery({ tempo: ativo ? '' : (a.valor as Filtros['tempo']) }, filtros)}`}
+              class:list={['pilula', ativo && 'ativa', n === 0 && !ativo && 'vazia']}
+              aria-current={ativo ? 'true' : undefined}
+            >
+              {a.rotulo} <span class="conta">({n})</span>
+            </a>
+          );
+        })
+      }
+    </div>
+  </fieldset>
+
+  <div class="selecoes">
+    <div class="grupo">
+      <label for="modalidade" class="t-rotulo">Modalidade</label>
+      <select id="modalidade" name="modalidade">
+        <option value="">Todas ({total})</option>
+        {
+          MODALIDADES.map((m) => {
+            const n = contagens.modalidade.get(m.valor) ?? 0;
+            return <option value={m.valor} selected={filtros.modalidade === m.valor} disabled={n === 0 && filtros.modalidade !== m.valor}>{m.rotulo} ({n})</option>;
+          })
+        }
+      </select>
+    </div>
+
+    <div class="grupo">
+      <label for="situacao" class="t-rotulo">Situação</label>
+      <select id="situacao" name="situacao">
+        <option value="">Todas</option>
+        {
+          SITUACOES.map((s) => {
+            const n = contagens.situacao.get(s.valor) ?? 0;
+            return <option value={s.valor} selected={filtros.situacao === s.valor} disabled={n === 0 && filtros.situacao !== s.valor}>{s.rotulo} ({n})</option>;
+          })
+        }
+      </select>
+    </div>
+
+    <div class="grupo">
+      <label for="secretaria" class="t-rotulo">Órgão demandante</label>
+      <select id="secretaria" name="secretaria">
+        <option value="">Todos</option>
+        {
+          secretarias.map((s) => {
+            const n = contagens.secretaria.get(s.slug) ?? 0;
+            return <option value={s.slug} selected={filtros.secretaria === s.slug} disabled={n === 0 && filtros.secretaria !== s.slug}>{s.nome} ({n})</option>;
+          })
+        }
+      </select>
+    </div>
+
+    <div class="grupo">
+      <label for="ano" class="t-rotulo">Ano</label>
+      <select id="ano" name="ano">
+        <option value="">Todos</option>
+        {anos.map(([a, n]) => <option value={a} selected={filtros.ano === a}>{a} ({n})</option>)}
+      </select>
+    </div>
+
+    <div class="grupo">
+      <label for="valor_min" class="t-rotulo">Valor de (R$)</label>
+      <input id="valor_min" name="valor_min" type="number" inputmode="numeric" min="0" step="1000" value={filtros.valorMin} placeholder="0" />
+    </div>
+
+    <div class="grupo">
+      <label for="valor_max" class="t-rotulo">até (R$)</label>
+      <input id="valor_max" name="valor_max" type="number" inputmode="numeric" min="0" step="1000" value={filtros.valorMax} placeholder="sem limite" />
+    </div>
+
+    <div class="grupo">
+      <label for="ordem" class="t-rotulo">Ordenar por</label>
+      <select id="ordem" name="ordem">
+        <option value="">Proximidade da abertura</option>
+        <option value="publicacao" selected={filtros.ordem === 'publicacao'}>Publicação mais recente</option>
+        <option value="valor" selected={filtros.ordem === 'valor'}>Maior valor estimado</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="acoes">
+    <button type="submit" class="aplicar">Aplicar filtros</button>
+    {ativos.length > 0 && <a href="/licitacoes" class="limpar">Limpar tudo</a>}
+  </div>
+
+  {
+    ativos.length > 0 && (
+      <div class="ativos" role="status">
+        <span class="t-rotulo">Filtrando por</span>
+        <ul>
+          {ativos.map((a) => (
+            <li>
+              <a href={`/licitacoes${a.remove}`} class="chip">
+                {a.rotulo} <span aria-hidden="true">×</span>
+                <span class="sr-only"> — remover este filtro</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+</form>
+
+<style>
+  /* minmax(0, 1fr), não 1fr: item de grid nasce com min-width:auto e se
+     recusa a encolher abaixo do conteúdo. Sem isto, o campo de busca empurrava
+     a página para 455px numa tela de 360 — medido, não suposto. */
+  .filtros { margin-top: 1.5rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+  .filtros > * { min-width: 0; }
+  .etiqueta, legend { color: var(--color-musgo); display: block; margin-bottom: 0.4rem; }
+
+  .campo { display: flex; gap: 0.5rem; }
+  .campo input {
+    flex: 1; min-width: 0; font: inherit; font-size: 1.0625rem;
+    padding: 0.8rem 1rem; min-height: 3.1rem;
+    border: 2px solid var(--color-serra); border-radius: 4px;
+    background: var(--color-papel); color: var(--color-tinta);
+  }
+  .campo button {
+    font: inherit; font-weight: 600; padding: 0 1.35rem; min-height: 3.1rem;
+    border: 2px solid var(--color-serra); border-radius: 4px;
+    background: var(--color-serra); color: var(--color-papel); cursor: pointer;
+  }
+  .campo button:hover { background: var(--color-serra-noite); border-color: var(--color-serra-noite); }
+  .dica { margin-top: 0.4rem; color: var(--color-musgo); }
+
+  .atalhos { border: 0; padding: 0; margin: 0; }
+  .pilulas { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pilula {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    min-height: 2.75rem; padding: 0.5rem 1rem; border-radius: 999px;
+    border: 2px solid color-mix(in srgb, var(--color-serra) 30%, transparent);
+    color: var(--color-serra); text-decoration: none; font-weight: 600; font-size: 0.9375rem;
+  }
+  .pilula:hover { background: color-mix(in srgb, var(--color-serra) 10%, transparent); }
+  .pilula.ativa { background: var(--color-serra); color: var(--color-papel); border-color: var(--color-serra); }
+  .pilula.vazia { opacity: 0.5; }
+  .conta { font-variant-numeric: tabular-nums; font-weight: 400; }
+
+  .selecoes { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr)); }
+  .grupo label { display: block; }
+  .grupo select, .grupo input {
+    width: 100%; font: inherit; min-height: 2.9rem; padding: 0.55rem 0.75rem;
+    border: 1.5px solid color-mix(in srgb, var(--color-musgo) 45%, transparent);
+    border-radius: 4px; background: var(--color-papel); color: var(--color-tinta);
+  }
+  .grupo option:disabled { color: color-mix(in srgb, var(--color-musgo) 60%, transparent); }
+
+  .acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
+  .aplicar {
+    font: inherit; font-weight: 600; min-height: 2.9rem; padding: 0.7rem 1.4rem;
+    border: 2px solid var(--color-serra); border-radius: 4px;
+    background: var(--color-serra); color: var(--color-papel); cursor: pointer;
+  }
+  .limpar { color: var(--color-carmim); font-weight: 600; }
+
+  .ativos { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; }
+  .ativos ul { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; padding: 0; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 0.4rem; min-height: 2.25rem;
+    padding: 0.3rem 0.8rem; border-radius: 999px;
+    background: color-mix(in srgb, var(--color-carmim) 12%, transparent);
+    color: var(--color-carmim); text-decoration: none; font-weight: 600; font-size: 0.875rem;
+  }
+  .chip:hover { background: var(--color-carmim); color: var(--color-papel); }
+</style>

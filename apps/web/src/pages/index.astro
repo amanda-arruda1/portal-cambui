@@ -11,6 +11,7 @@ import Carreira from '../componentes/Carreira.astro';
 import LinhaTarefa from '../componentes/LinhaTarefa.astro';
 import SerraTecida from '../componentes/SerraTecida.astro';
 import Coleta from '../componentes/Coleta.astro';
+import ChamadaLicitacoes from '../componentes/licitacoes/ChamadaHome.astro';
 import { noticiasRecentes } from '../lib/conteudo';
 import { arquivo } from '../lib/directus';
 import { data, iso, recorte } from '../lib/formato';
@@ -120,6 +121,9 @@ const [lider, ...demais] = noticias;
       )
     }
   </Carreira>
+
+  <!-- ── Licitações: quem entrou por outro motivo pode ter oportunidade ── -->
+  <ChamadaLicitacoes />
 
   <!-- ── 04 · A cidade ─────────────────────────────────────────────────── -->
   <Carreira numero="04" rotulo="A cidade" fundo="serra" titulo={A_CIDADE.chamada}>

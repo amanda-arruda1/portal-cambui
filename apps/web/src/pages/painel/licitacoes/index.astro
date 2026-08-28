@@ -1,0 +1,188 @@
+---
+/**
+ * Painel do setor de licitações — a listagem de trabalho.
+ *
+ * O setor também precisa ACHAR o que já publicou: busca e filtros aqui não são
+ * luxo, são a diferença entre localizar o processo em 5 segundos ou abrir
+ * quarenta páginas.
+ *
+ * As ações rápidas ficam na própria linha porque são o que se faz sob pressão
+ * de prazo: suspender, retificar, anexar ata.
+ */
+import Painel from '../../../layouts/Painel.astro';
+import { listarPainel } from '../../../lib/painel/licitacoes.ts';
+import { MODALIDADES, SITUACOES, moeda, rotuloModalidade, situacaoDe } from '../../../lib/licitacoes';
+import { dataHora } from '../../../lib/formato';
+
+const sessao = Astro.locals.sessao!;
+const q = (Astro.url.searchParams.get('q') ?? '').trim();
+const situacaoFiltro = Astro.url.searchParams.get('situacao') ?? '';
+const statusFiltro = Astro.url.searchParams.get('status') ?? '';
+
+const parametros = new URLSearchParams({
+  limit: '200', sort: '-data_publicacao',
+  fields: 'id,numero_processo,numero,ano,slug,modalidade,objeto_resumo,valor_estimado,orcamento_sigiloso,data_sessao,situacao,status,date_updated',
+});
+if (situacaoFiltro) parametros.set('filter[situacao][_eq]', situacaoFiltro);
+if (statusFiltro) parametros.set('filter[status][_eq]', statusFiltro);
+if (q) parametros.set('search', q);
+
+const r = await listarPainel(sessao, parametros.toString());
+const itens = r.ok ? r.dados : [];
+const erro = r.ok ? null : r.motivo;
+
+const rascunhos = itens.filter((i: any) => i.status === 'rascunho').length;
+---
+
+<Painel titulo="Licitações" sessao={sessao}>
+  <nav class="text-sm">
+    <a href="/painel" class="voltar">Fila</a> <span aria-hidden="true">›</span> Licitações
+  </nav>
+
+  <div class="cabeca">
+    <div>
+      <h1 class="t-pagina">Licitações</h1>
+      <p class="resumo">
+        {itens.length} {itens.length === 1 ? 'registro' : 'registros'}
+        {rascunhos > 0 && <> · <strong>{rascunhos}</strong> em rascunho, ainda invisível para o cidadão</>}
+      </p>
+    </div>
+    <a href="/painel/licitacoes/nova" class="botao primario">Publicar nova licitação</a>
+  </div>
+
+  {erro && <div role="alert" class="erro">{erro}</div>}
+
+  <form method="get" class="filtros">
+    <div class="campo-busca">
+      <label for="q" class="t-rotulo">Buscar</label>
+      <input id="q" name="q" type="search" value={q} placeholder="processo, objeto, número…" />
+    </div>
+    <div>
+      <label for="situacao" class="t-rotulo">Situação</label>
+      <select id="situacao" name="situacao">
+        <option value="">Todas</option>
+        {SITUACOES.map((s) => <option value={s.valor} selected={situacaoFiltro === s.valor}>{s.rotulo}</option>)}
+      </select>
+    </div>
+    <div>
+      <label for="status" class="t-rotulo">Visibilidade</label>
+      <select id="status" name="status">
+        <option value="">Todas</option>
+        <option value="rascunho" selected={statusFiltro === 'rascunho'}>Rascunho</option>
+        <option value="publicado" selected={statusFiltro === 'publicado'}>Publicada no portal</option>
+        <option value="arquivado" selected={statusFiltro === 'arquivado'}>Arquivada</option>
+      </select>
+    </div>
+    <button type="submit">Filtrar</button>
+    {(q || situacaoFiltro || statusFiltro) && <a href="/painel/licitacoes" class="limpar">Limpar</a>}
+  </form>
+
+  {
+    itens.length === 0 && !erro ? (
+      <p class="vazio">
+        Nenhuma licitação encontrada com esses filtros.{' '}
+        <a href="/painel/licitacoes/nova">Publicar a primeira</a>.
+      </p>
+    ) : (
+      <ul class="lista">
+        {itens.map((l: any) => (
+          <li>
+            <div class="linha">
+              <div class="dados">
+                <p class="t-rotulo id">
+                  {rotuloModalidade(l.modalidade)} nº {String(l.numero).padStart(3, '0')}/{l.ano}
+                  <span class="processo"> · processo {l.numero_processo}</span>
+                </p>
+                <p class="objeto">
+                  <a href={`/painel/licitacoes/${l.id}`}>{l.objeto_resumo}</a>
+                </p>
+                <p class="meta">
+                  <span class:list={['etiqueta', `t-${situacaoDe(l.situacao).tom}`]}>{situacaoDe(l.situacao).rotulo}</span>
+                  {l.status === 'rascunho' && <span class="etiqueta t-rascunho">Rascunho</span>}
+                  {l.data_sessao && <span>sessão {dataHora(l.data_sessao)}</span>}
+                  <span>{l.orcamento_sigiloso ? 'sigiloso' : moeda(l.valor_estimado)}</span>
+                </p>
+              </div>
+
+              <div class="acoes">
+                <a href={`/painel/licitacoes/${l.id}`} class="botao pequeno">Editar</a>
+                {l.status === 'publicado' && (
+                  <a href={`/licitacoes/${l.ano}/${l.slug}`} target="_blank" rel="noopener noreferrer" class="botao pequeno vazado">
+                    Ver no portal<span class="sr-only"> — abre em nova aba</span>
+                  </a>
+                )}
+                <details class="rapidas">
+                  <summary class="botao pequeno vazado">Ações rápidas</summary>
+                  <div class="menu">
+                    <form method="post" action={`/painel/licitacoes/${l.id}`}>
+                      <input type="hidden" name="acao" value="suspender" />
+                      <button type="submit" class="item">Suspender</button>
+                    </form>
+                    <a href={`/painel/licitacoes/${l.id}#anexos`} class="item">Retificar (nova versão do edital)</a>
+                    <a href={`/painel/licitacoes/${l.id}#anexos`} class="item">Anexar ata da sessão</a>
+                    <a href={`/painel/licitacoes/${l.id}#resultado`} class="item">Publicar resultado</a>
+                  </div>
+                </details>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</Painel>
+
+<style>
+  .voltar { color: var(--color-azul); }
+  .cabeca { margin-top: 0.5rem; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem; }
+  .resumo { margin-top: 0.35rem; color: var(--color-grafite); }
+  .erro { margin-top: 1rem; border-left: 4px solid var(--color-vermelho); background: var(--color-papel); padding: 1rem; color: var(--color-vermelho); }
+
+  .botao { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0.6rem 1.2rem;
+    border-radius: 4px; font-weight: 600; text-decoration: none; border: 2px solid var(--color-azul);
+    background: var(--color-azul); color: var(--color-papel); cursor: pointer; font: inherit; font-weight: 600; }
+  .botao.vazado { background: var(--color-papel); color: var(--color-azul); }
+  .botao.pequeno { min-height: 2.4rem; padding: 0.4rem 0.9rem; font-size: 0.875rem; }
+  .botao:hover { background: var(--color-azul-escuro); border-color: var(--color-azul-escuro); color: var(--color-papel); }
+
+  .filtros { margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end;
+    background: var(--color-papel); padding: 1rem; border: 1px solid var(--color-prata); border-radius: 6px; }
+  .filtros label { display: block; color: var(--color-grafite); margin-bottom: 0.25rem; }
+  .filtros input, .filtros select { font: inherit; min-height: 2.6rem; padding: 0.45rem 0.7rem;
+    border: 1.5px solid var(--color-prata); border-radius: 4px; background: var(--color-papel); }
+  .campo-busca { flex: 1; min-width: 14rem; }
+  .campo-busca input { width: 100%; }
+  .filtros button { font: inherit; font-weight: 600; min-height: 2.6rem; padding: 0.5rem 1.1rem;
+    border: 2px solid var(--color-azul); background: var(--color-azul); color: var(--color-papel); border-radius: 4px; cursor: pointer; }
+  .limpar { color: var(--color-vermelho); font-weight: 600; }
+
+  .vazio { margin-top: 1.5rem; color: var(--color-grafite); }
+  .lista { list-style: none; margin: 1.5rem 0 0; padding: 0; }
+  .linha { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: flex-start;
+    padding: 1rem 0; border-top: 1px solid var(--color-prata); }
+  .lista li:last-child .linha { border-bottom: 1px solid var(--color-prata); }
+  .dados { min-width: 0; flex: 1; }
+  .id { color: var(--color-grafite); }
+  .processo { font-weight: 400; text-transform: none; letter-spacing: 0; }
+  .objeto { margin-top: 0.2rem; font-weight: 600; font-size: 1.05rem; }
+  .objeto a { color: var(--color-tinta); text-decoration: none; }
+  .objeto a:hover { color: var(--color-azul); text-decoration: underline; }
+  .meta { margin-top: 0.4rem; display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; align-items: center;
+    color: var(--color-grafite); font-size: 0.875rem; }
+  .etiqueta { border: 1.5px solid currentColor; border-radius: 999px; padding: 0.05rem 0.6rem; font-weight: 600; font-size: 0.8125rem; }
+  .t-ok { color: var(--color-verde-texto); }
+  .t-aviso, .t-neutro { color: var(--color-grafite); }
+  .t-alerta { color: var(--color-papel); background: var(--color-vermelho); border-color: var(--color-vermelho); }
+  .t-rascunho { color: var(--color-trigo); }
+
+  .acoes { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-start; }
+  .rapidas { position: relative; }
+  .rapidas summary { list-style: none; }
+  .rapidas summary::-webkit-details-marker { display: none; }
+  .menu { position: absolute; right: 0; z-index: 10; margin-top: 0.35rem; min-width: 15rem;
+    background: var(--color-papel); border: 1px solid var(--color-prata); border-radius: 6px;
+    box-shadow: 0 8px 24px rgb(20 28 24 / 0.14); padding: 0.35rem; display: grid; gap: 0.15rem; }
+  .item { display: block; width: 100%; text-align: left; padding: 0.6rem 0.7rem; min-height: 2.6rem;
+    background: none; border: 0; font: inherit; color: inherit; text-decoration: none; border-radius: 4px; cursor: pointer; }
+  .item:hover { background: var(--color-papel-suave); color: var(--color-azul); }
+</style>

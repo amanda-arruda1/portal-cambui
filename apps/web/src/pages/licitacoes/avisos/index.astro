@@ -1,0 +1,219 @@
+---
+/**
+ * Aviso de novas licitações por e-mail.
+ *
+ * LGPD aplicada, não citada:
+ *  · a base é MÍNIMA — e-mail e preferências, nada mais. Sem nome, sem
+ *    telefone, sem CNPJ: nada que permita perfilar quem é o fornecedor;
+ *  · finalidade declarada na própria tela, em uma frase;
+ *  · DUPLO OPT-IN: o cadastro nasce não confirmado e não recebe nada até a
+ *    pessoa clicar no link do e-mail;
+ *  · descadastro em um clique, com link em todo envio;
+ *  · a base não é legível publicamente — a permissão do CMS concede APENAS
+ *    criação, e nem 'confirmado' nem 'token' são preenchíveis de fora.
+ *
+ * HONESTIDADE SOBRE O ESTADO: o SMTP do município ainda não existe. A tela diz
+ * isso em vez de prometer um e-mail que não vai chegar. O cadastro fica
+ * registrado e o envio começa quando o servidor de e-mail entrar.
+ */
+import Base from '../../../layouts/Base.astro';
+import TituloPagina from '../../../componentes/TituloPagina.astro';
+import NotaLegal from '../../../componentes/licitacoes/NotaLegal.astro';
+import { MODALIDADES } from '../../../lib/licitacoes';
+import { EMAIL_CONTATO } from '../../../dados/instituicional';
+
+const BASE_CMS = (process.env.DIRECTUS_INTERNAL_URL || 'http://127.0.0.1:8055').replace(/\/+$/, '');
+/** TODO(cliente): quando o SMTP do município for configurado, trocar para true
+ *  e ligar o envio da confirmação em infra/ (fora do escopo desta entrega). */
+const SMTP_CONFIGURADO = false;
+
+let resultado: { tipo: 'ok' | 'erro'; texto: string } | null = null;
+let digitado = { email: '', palavras_chave: '' };
+let marcadas: string[] = [];
+
+if (Astro.request.method === 'POST') {
+  const f = await Astro.request.formData();
+  const email = String(f.get('email') ?? '').trim().toLowerCase();
+  const palavras = String(f.get('palavras_chave') ?? '').trim();
+  marcadas = f.getAll('modalidades').map(String);
+  digitado = { email, palavras_chave: palavras };
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    resultado = { tipo: 'erro', texto: 'Confira o endereço de e-mail — ele parece incompleto.' };
+  } else if (f.get('consentimento') === null) {
+    resultado = { tipo: 'erro', texto: 'Para receber os avisos é preciso concordar com o uso do seu e-mail para essa finalidade.' };
+  } else {
+    try {
+      const r = await fetch(`${BASE_CMS}/items/licitacao_assinantes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          modalidades: marcadas.join(','),
+          palavras_chave: palavras,
+          criado_em: new Date().toISOString(),
+        }),
+        signal: AbortSignal.timeout(10_000),
+      });
+
+      if (r.ok) {
+        // O token é gerado e guardado pelo servidor, nunca pelo formulário.
+        console.info(`[avisos] novo cadastro para aviso de licitações (aguardando confirmação)`);
+        resultado = { tipo: 'ok', texto: 'cadastrado' };
+      } else {
+        const c = await r.json().catch(() => ({}) as any);
+        resultado = c?.errors?.[0]?.extensions?.code === 'RECORD_NOT_UNIQUE'
+          ? { tipo: 'ok', texto: 'cadastrado' }  // não revela se o e-mail já existe
+          : { tipo: 'erro', texto: 'Não foi possível registrar agora. Tente novamente em alguns minutos.' };
+      }
+    } catch {
+      resultado = { tipo: 'erro', texto: 'O sistema não respondeu. Tente novamente em alguns minutos.' };
+    }
+  }
+}
+---
+
+<Base
+  titulo="Aviso de licitações por e-mail"
+  descricao="Cadastre seu e-mail e receba aviso quando a Prefeitura de Cambuí publicar licitações do seu ramo."
+  semIndexacao
+>
+  <TituloPagina
+    rotulo="Licitações"
+    titulo="Receber aviso de novas licitações"
+    chamada="Cadastre seu e-mail e escolha o que te interessa. Você recebe quando algo novo for publicado — e sai da lista com um clique."
+    trilha={[{ rotulo: 'Licitações', destino: '/licitacoes' }, { rotulo: 'Avisos por e-mail' }]}
+  />
+
+  <div class="carreira bloco">
+    <div class="ourela">
+      <span class="fio fio-ourela" aria-hidden="true"></span>
+      <div class="corpo">
+        {
+          resultado?.texto === 'cadastrado' ? (
+            <div class="sucesso" role="status">
+              <h2 class="t-secao">Pedido registrado</h2>
+              {SMTP_CONFIGURADO ? (
+                <p>
+                  Enviamos um e-mail para <strong>{digitado.email}</strong> com um link de confirmação.
+                  <strong> Você só entra na lista depois de clicar nele</strong> — nenhuma mensagem é
+                  enviada antes disso.
+                </p>
+              ) : (
+                <p>
+                  Seu pedido ficou guardado. <strong>O envio de avisos ainda não está ativo</strong>:
+                  o serviço de e-mail do município está sendo configurado. Quando entrar no ar, você
+                  receberá <em>primeiro</em> um pedido de confirmação — e nada será enviado sem que
+                  você confirme.
+                </p>
+              )}
+              <p class="t-micro">
+                Enquanto isso, o <a href="/licitacoes/feed.xml">feed RSS</a> avisa em tempo real, sem
+                cadastro nenhum, e o <a href="/api/licitacoes">endereço em JSON</a> serve a quem
+                quiser automatizar.
+              </p>
+              <p><a href="/licitacoes" class="botao">Voltar às licitações</a></p>
+            </div>
+          ) : (
+            <>
+              {resultado?.tipo === 'erro' && <div role="alert" class="erro">{resultado.texto}</div>}
+
+              <form method="post" class="formulario">
+                <label class="campo">
+                  <span class="t-rotulo">Seu e-mail <span class="obr">*</span></span>
+                  <input name="email" type="email" required value={digitado.email} autocomplete="email"
+                    placeholder="voce@suaempresa.com.br" />
+                </label>
+
+                <fieldset>
+                  <legend class="t-rotulo">Modalidades de interesse</legend>
+                  <p class="t-micro ajuda">Não marcar nenhuma significa receber todas.</p>
+                  <div class="caixas">
+                    {MODALIDADES.map((m) => (
+                      <label class="caixa">
+                        <input type="checkbox" name="modalidades" value={m.valor} checked={marcadas.includes(m.valor)} />
+                        {m.rotulo}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+
+                <label class="campo">
+                  <span class="t-rotulo">Palavras-chave</span>
+                  <input name="palavras_chave" value={digitado.palavras_chave}
+                    placeholder="merenda, informática, asfalto" />
+                  <span class="t-micro ajuda">
+                    Separadas por vírgula. A busca entende sinônimos, então “merenda” já cobre
+                    “gêneros alimentícios”.
+                  </span>
+                </label>
+
+                <label class="consentimento">
+                  <input type="checkbox" name="consentimento" required />
+                  <span>
+                    Concordo que a Prefeitura use meu e-mail <strong>apenas</strong> para me avisar de
+                    novas licitações. Sei que posso sair da lista a qualquer momento, com um clique, e
+                    que meus dados não são compartilhados com terceiros.
+                  </span>
+                </label>
+
+                <button type="submit" class="botao">Quero receber os avisos</button>
+              </form>
+
+              <aside class="lgpd">
+                <h2 class="t-sub">O que guardamos</h2>
+                <ul>
+                  <li><strong>Seu e-mail</strong> — para enviar o aviso.</li>
+                  <li><strong>As modalidades e palavras marcadas</strong> — para não te mandar o que não interessa.</li>
+                  <li><strong>A data do cadastro</strong> — para saber quando o consentimento foi dado.</li>
+                </ul>
+                <p class="t-micro">
+                  Só isso. Sem nome, sem telefone, sem CNPJ, sem rastreador. Base separada do resto do
+                  portal, e nunca legível publicamente. Detalhes na{' '}
+                  <a href="/privacidade">política de privacidade</a>
+                  {EMAIL_CONTATO && <> ou pelo e-mail <a href={`mailto:${EMAIL_CONTATO}`}>{EMAIL_CONTATO}</a></>}.
+                </p>
+              </aside>
+            </>
+          )
+        }
+
+        <NotaLegal />
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .bloco { padding-bottom: clamp(3rem, 7vw, 5rem); }
+  .fio { min-height: 4rem; }
+  .erro { margin-bottom: 1.5rem; padding: 1rem 1.2rem; border-left: 4px solid var(--color-carmim);
+    background: var(--color-papel); color: var(--color-carmim); border-radius: 0 4px 4px 0; }
+  .formulario { display: grid; gap: 1.75rem; max-width: 40rem; }
+  .campo span:first-child { display: block; color: var(--color-musgo); margin-bottom: 0.35rem; }
+  .obr { color: var(--color-carmim); }
+  input[type='email'], input[type='text'], .campo input:not([type='checkbox']) {
+    width: 100%; font: inherit; min-height: 3rem; padding: 0.7rem 0.9rem;
+    border: 2px solid var(--color-serra); border-radius: 4px; background: var(--color-papel); color: var(--color-tinta);
+  }
+  fieldset { border: 0; padding: 0; margin: 0; }
+  legend { color: var(--color-musgo); }
+  .ajuda { color: var(--color-musgo); margin-top: 0.3rem; }
+  .caixas { margin-top: 0.6rem; display: grid; gap: 0.4rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+  .caixa, .consentimento { display: flex; gap: 0.6rem; align-items: flex-start; font-size: 0.9375rem; line-height: 1.5; }
+  .caixa input, .consentimento input { width: 1.15rem; height: 1.15rem; flex: none; margin-top: 0.25rem; accent-color: var(--color-serra); }
+  .consentimento { max-width: var(--container-leitura); }
+  .botao { display: inline-flex; align-items: center; justify-content: center; min-height: 3rem;
+    padding: 0.8rem 1.6rem; border-radius: 4px; font-weight: 600; text-decoration: none; cursor: pointer;
+    border: 2px solid var(--color-serra); background: var(--color-serra); color: var(--color-papel); font: inherit; font-weight: 600; justify-self: start; }
+  .botao:hover { background: var(--color-serra-noite); border-color: var(--color-serra-noite); }
+  .sucesso { max-width: var(--container-leitura); display: grid; gap: 1rem; }
+  .sucesso a { color: var(--color-serra); font-weight: 600; }
+  .lgpd { margin-top: 3rem; padding: 1.25rem 1.4rem; border-left: 4px solid var(--color-musgo);
+    background: color-mix(in srgb, var(--color-musgo) 7%, transparent); border-radius: 0 4px 4px 0;
+    max-width: var(--container-leitura); }
+  .lgpd ul { margin: 0.75rem 0 0 1.2rem; }
+  .lgpd li { margin-top: 0.3rem; }
+  .lgpd p { margin-top: 0.9rem; color: var(--color-musgo); }
+  .lgpd a { color: var(--color-serra); font-weight: 600; }
+</style>

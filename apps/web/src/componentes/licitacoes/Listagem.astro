@@ -1,0 +1,138 @@
+---
+/**
+ * Miolo da listagem de licitações — filtros, resultados e nota legal.
+ *
+ * Extraído em componente porque DUAS rotas o usam com o mesmo comportamento:
+ * /licitacoes (livre) e /licitacoes/modalidade/<slug> (com a modalidade
+ * fixada). Duplicar o corpo garantiria que uma das duas ficaria para trás.
+ */
+
+import Filtros from './Filtros.astro';
+import LinhaLicitacao from './LinhaLicitacao.astro';
+import NotaLegal from './NotaLegal.astro';
+import { aplicarFiltros, contar, lerFiltros, paraQuery, situacaoDe, todas, type Filtros as TipoFiltros } from '../../lib/licitacoes';
+
+interface Props {
+  /** Filtro fixado pela rota (ex.: /licitacoes/modalidade/pregao-eletronico).
+   *  Fica travado: não aparece como chip removível, porque removê-lo mudaria
+   *  a própria página em que a pessoa está. */
+  fixos?: Partial<TipoFiltros>;
+}
+const { fixos = {} } = Astro.props;
+
+const TETO = 300;
+const agora = Date.now();
+const filtros = { ...lerFiltros(Astro.url), ...fixos };
+
+const { dados: tudo, indisponivel } = await todas();
+const resultado = aplicarFiltros(tudo, filtros, agora);
+const contagens = contar(tudo, filtros, agora);
+
+const secretarias = [...new Map(tudo.filter((l) => l.secretaria).map((l) => [l.secretaria!.slug, l.secretaria!])).values()]
+  .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+/** Agrupamento por urgência. Só se aplica quando não há filtro de tempo ativo —
+ *  com o atalho ligado, a pessoa já escolheu o recorte e um só bloco basta. */
+const DIA = 86400000;
+function grupoDe(l: (typeof resultado)[number]) {
+  const s = l.data_sessao ? +new Date(l.data_sessao) : null;
+  if (!situacaoDe(l.situacao).emAndamento) return 'encerradas';
+  if (s === null) return 'abertas';
+  if (s < agora) return 'encerradas';
+  if (s <= agora + 30 * DIA) return 'breve';
+  return 'abertas';
+}
+const GRUPOS = [
+  { chave: 'breve', titulo: 'Abrem nos próximos 30 dias', nota: 'Ordenadas pela proximidade da sessão.' },
+  { chave: 'abertas', titulo: 'Em andamento', nota: 'Publicadas, com sessão marcada para depois de 30 dias ou sem data definida.' },
+  { chave: 'encerradas', titulo: 'Encerradas', nota: 'Histórico: homologadas, revogadas, fracassadas e desertas.' },
+];
+const agrupado = filtros.tempo
+  ? [{ chave: '', titulo: '', nota: '', itens: resultado.slice(0, TETO) }]
+  : GRUPOS.map((g) => ({ ...g, itens: resultado.filter((l) => grupoDe(l) === g.chave).slice(0, TETO) })).filter((g) => g.itens.length > 0);
+
+const consulta = paraQuery({}, filtros);
+---
+---
+
+<div class="carreira bloco">
+    <div class="ourela">
+      <span class="fio fio-ourela" aria-hidden="true"></span>
+      <div class="corpo">
+        <Filtros filtros={filtros} contagens={contagens} secretarias={secretarias} total={tudo.length} />
+
+        <div class="resumo" role="status" aria-live="polite">
+          <p class="t-sub">
+            {
+              indisponivel
+                ? 'Não foi possível consultar as licitações agora.'
+                : resultado.length === 0
+                  ? 'Nenhuma licitação encontrada'
+                  : `${resultado.length} ${resultado.length === 1 ? 'licitação encontrada' : 'licitações encontradas'}`
+            }
+          </p>
+          {
+            resultado.length > 0 && (
+              <p class="exportar t-micro">
+                <a href={`/licitacoes/exportar.csv${consulta}`}>Baixar esta busca em CSV</a>
+                <span aria-hidden="true"> · </span>
+                <a href="/licitacoes/feed.xml">Assinar o feed RSS</a>
+                <span aria-hidden="true"> · </span>
+                <a href={`/api/licitacoes${consulta}`}>Ver em JSON</a>
+                <span aria-hidden="true"> · </span>
+                <a href="/licitacoes/avisos">Receber aviso por e-mail</a>
+              </p>
+            )
+          }
+        </div>
+
+        {
+          resultado.length === 0 && !indisponivel && (
+            <div class="vazio">
+              <p>
+                Nenhuma licitação corresponde a esses filtros. Tente uma palavra mais simples — a
+                busca entende sinônimos — ou <a href="/licitacoes">veja todas as {tudo.length} licitações</a>.
+              </p>
+              <p class="t-micro">
+                Quer ser avisado quando surgir algo do seu ramo?{' '}
+                <a href="/licitacoes/avisos">Cadastre seu e-mail</a>.
+              </p>
+            </div>
+          )
+        }
+
+        {
+          agrupado.map((g) => (
+            <section class="grupo">
+              {g.titulo && (
+                <>
+                  <h2 class="t-secao titulo-grupo">{g.titulo} <span class="quantos">({g.itens.length})</span></h2>
+                  <p class="t-micro nota-grupo">{g.nota}</p>
+                </>
+              )}
+              <ul class="lista">
+                {g.itens.map((l) => <li><LinhaLicitacao licitacao={l} agora={agora} /></li>)}
+              </ul>
+            </section>
+          ))
+        }
+
+        <NotaLegal />
+      </div>
+    </div>
+  </div>
+
+<style>
+  .bloco { padding-bottom: clamp(3rem, 7vw, 5rem); }
+  .fio { min-height: 6rem; }
+  .resumo { margin-top: 2rem; padding-top: 1.25rem; border-top: 2px solid color-mix(in srgb, var(--color-musgo) 30%, transparent); }
+  .exportar { margin-top: 0.4rem; color: var(--color-musgo); }
+  .exportar a { color: var(--color-serra); font-weight: 600; }
+  .vazio { margin-top: 1.5rem; max-width: var(--container-leitura); color: var(--color-musgo); display: grid; gap: 0.75rem; }
+  .vazio a { color: var(--color-serra); font-weight: 600; }
+  .grupo { margin-top: 2.5rem; }
+  .titulo-grupo { color: var(--color-azul-escuro); }
+  .quantos { color: var(--color-musgo); font-weight: 400; }
+  .nota-grupo { color: var(--color-musgo); margin-top: 0.25rem; }
+  .lista { list-style: none; margin: 1rem 0 0; padding: 0; }
+</style>

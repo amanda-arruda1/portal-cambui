@@ -1,0 +1,109 @@
+---
+/**
+ * Documentos da licitação, agrupados por tipo.
+ *
+ * REGRA QUE NÃO SE NEGOCIA: documento substituído NÃO SOME. Ele continua
+ * visível, marcado como superado, com a versão e a data. Quem baixou o edital
+ * antigo precisa conseguir provar o que estava publicado naquele dia — e quem
+ * chega agora precisa ver, na mesma tela, que existe versão nova.
+ */
+import { TIPOS_ANEXO, formatoLegivel, tamanhoLegivel, type Anexo } from '../../lib/licitacoes';
+import { data as formatarData } from '../../lib/formato';
+
+interface Props { anexos: Anexo[] }
+const { anexos } = Astro.props;
+
+const grupos = TIPOS_ANEXO
+  .map((t) => ({ ...t, itens: anexos.filter((a) => a.tipo === t.valor).sort((a, b) => (a.versao ?? 1) - (b.versao ?? 1)) }))
+  .filter((g) => g.itens.length > 0)
+  .sort((a, b) => a.ordem - b.ordem);
+
+const temSuperado = anexos.some((a) => a.superado);
+---
+
+{
+  grupos.length === 0 ? (
+    <p class="vazio">Nenhum documento anexado a esta publicação até o momento.</p>
+  ) : (
+    <>
+      {temSuperado && (
+        <p class="aviso" role="status">
+          Há documento <strong>substituído por versão mais recente</strong>. A versão antiga
+          continua disponível abaixo, marcada como superada — nada é removido do histórico.
+        </p>
+      )}
+
+      <div class="grupos">
+        {grupos.map((g) => (
+          <section class="grupo">
+            <h3 class="t-rotulo titulo">{g.rotulo}</h3>
+            <ul>
+              {g.itens.map((a) => {
+                const destino = a.arquivo ? `/assets/${a.arquivo.id}?download` : a.url_externa;
+                const externo = !a.arquivo && !!a.url_externa;
+                return (
+                  <li class:list={[a.superado && 'superado']}>
+                    {destino ? (
+                      <a href={destino} download={a.arquivo ? '' : undefined}
+                        {...(externo ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+                        <span class="nome">
+                          <span class="fio-foco">{a.titulo}</span>
+                          {a.versao > 1 && <span class="versao"> — versão {a.versao}</span>}
+                        </span>
+                        <span class="meta">
+                          {a.superado && <strong class="marca">Superado</strong>}
+                          <span>{formatarData(a.data_publicacao)}</span>
+                          {a.arquivo && (
+                            <span class="tecnico">
+                              {formatoLegivel(a.arquivo.type)}
+                              {a.arquivo.filesize ? ` · ${tamanhoLegivel(Number(a.arquivo.filesize))}` : ''}
+                            </span>
+                          )}
+                          {externo && <span class="tecnico">abre em outro site</span>}
+                        </span>
+                      </a>
+                    ) : (
+                      <span class="sem-arquivo">{a.titulo} — arquivo não disponível</span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </>
+  )
+}
+
+<style>
+  .vazio { margin-top: 1.25rem; color: var(--color-musgo); }
+  .aviso {
+    margin-top: 1.25rem; padding: 0.9rem 1.1rem; border-left: 4px solid var(--color-carmim);
+    background: color-mix(in srgb, var(--color-carmim) 8%, transparent);
+    border-radius: 0 4px 4px 0; max-width: var(--container-leitura); font-size: 0.9375rem;
+  }
+  .grupos { margin-top: 1.5rem; display: grid; gap: 1.75rem; }
+  .titulo { color: var(--color-musgo); }
+  .grupo ul { list-style: none; margin: 0.6rem 0 0; padding: 0; }
+  .grupo li { border-top: 1px solid color-mix(in srgb, var(--color-musgo) 24%, transparent); }
+  .grupo li:last-child { border-bottom: 1px solid color-mix(in srgb, var(--color-musgo) 24%, transparent); }
+  .grupo a {
+    display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+    gap: 0.25rem 1.5rem; padding-block: 0.85rem; min-height: 3rem;
+    text-decoration: none; color: inherit;
+  }
+  .nome { font-weight: 600; }
+  .versao { font-weight: 400; color: var(--color-musgo); }
+  .meta { display: inline-flex; flex-wrap: wrap; gap: 0.5rem 0.9rem; color: var(--color-musgo); font-size: 0.875rem; align-items: baseline; }
+  .tecnico { font-variant-numeric: tabular-nums; }
+  /* Superado é dito por TEXTO, não só por opacidade: informação nenhuma neste
+     portal depende de cor ou de forma para ser compreendida. */
+  .marca {
+    color: var(--color-papel); background: var(--color-musgo);
+    border-radius: 3px; padding: 0.05rem 0.45rem; font-size: 0.75rem;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .superado .nome { text-decoration: line-through; text-decoration-thickness: 1px; color: var(--color-musgo); }
+  .sem-arquivo { display: block; padding-block: 0.85rem; color: var(--color-musgo); }
+</style>

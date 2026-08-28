@@ -1,0 +1,266 @@
+---
+/**
+ * Página de uma licitação.
+ *
+ * A primeira dobra responde, sem rolagem: O QUE É, QUANDO ABRE, QUANTO TEMPO
+ * FALTA e ONDE BAIXO O EDITAL. O resto — objeto completo, linha do tempo,
+ * lotes, demais anexos — vem depois.
+ *
+ * URL permanente: /licitacoes/<ano>/<slug>. Link mandado por WhatsApp em 2026
+ * tem de abrir em 2031, então nem o ano nem o slug mudam depois de publicada.
+ */
+import Base from '../../../layouts/Base.astro';
+import Etiqueta from '../../../componentes/licitacoes/Etiqueta.astro';
+import NotaLegal from '../../../componentes/licitacoes/NotaLegal.astro';
+import Contagem from '../../../componentes/licitacoes/Contagem.astro';
+import Anexos from '../../../componentes/licitacoes/Anexos.astro';
+import { limpar } from '../../../lib/sanitizar';
+import { dataHora, data as formatarData } from '../../../lib/formato';
+import {
+  CRITERIOS, MODOS_DISPUTA, TIPOS_EVENTO, anexosDe, documentoPublico, eventosDe, lotesDe,
+  moeda, porSlug, rotuloModalidade, situacaoDe,
+} from '../../../lib/licitacoes';
+
+const ano = Number(Astro.params.ano);
+const slug = Astro.params.slug ?? '';
+if (!Number.isFinite(ano)) return Astro.rewrite('/404');
+const l = await porSlug(ano, slug);
+if (!l) return Astro.rewrite('/404');
+
+const [anexos, lotes, eventos] = await Promise.all([anexosDe(l.id), lotesDe(l.id), eventosDe(l.id)]);
+const situacao = situacaoDe(l.situacao);
+const numero = `${String(l.numero).padStart(3, '0')}/${l.ano}`;
+const titulo = `${rotuloModalidade(l.modalidade)} nº ${numero}`;
+const edital = anexos.find((a) => a.tipo === 'edital' && !a.superado);
+const endereco = new URL(Astro.url.pathname, Astro.site ?? 'https://www.prefeituradecambui.mg.gov.br').href;
+
+const ficha: Array<[string, string]> = [
+  ['Processo administrativo', l.numero_processo],
+  ['Modalidade', `${rotuloModalidade(l.modalidade)} — forma ${l.forma === 'presencial' ? 'presencial' : 'eletrônica'}`],
+  ['Critério de julgamento', CRITERIOS[l.criterio_julgamento] ?? l.criterio_julgamento],
+  ['Modo de disputa', MODOS_DISPUTA[l.modo_disputa] ?? l.modo_disputa],
+  ['Registro de preços', l.registro_precos ? 'Sim' : 'Não'],
+  ['Órgão demandante', l.secretaria?.nome ?? 'Não informado'],
+  ['Valor estimado', l.orcamento_sigiloso ? 'Orçamento sigiloso (art. 24 da Lei 14.133/2021)' : (l.valor_estimado ? moeda(l.valor_estimado) : 'Não divulgado')],
+  ['Publicação do edital', formatarData(l.data_publicacao)],
+  ...(l.data_abertura_propostas ? ([['Abertura das propostas', dataHora(l.data_abertura_propostas)]] as Array<[string, string]>) : []),
+  ...(l.prazo_impugnacao ? ([['Prazo para impugnação', dataHora(l.prazo_impugnacao)]] as Array<[string, string]>) : []),
+  ...(l.prazo_esclarecimentos ? ([['Prazo para esclarecimentos', dataHora(l.prazo_esclarecimentos)]] as Array<[string, string]>) : []),
+];
+
+const compartilhar = `Licitação da Prefeitura de Cambuí — ${titulo}: ${l.objeto_resumo}. ${endereco}`;
+---
+
+<Base titulo={`${titulo} — Licitações`} descricao={l.objeto_resumo.slice(0, 180)}>
+  <article>
+    <div class="carreira topo">
+      <div class="ourela">
+        <span class="fio fio-ourela" aria-hidden="true"></span>
+        <div class="corpo">
+          <nav aria-label="Você está aqui" class="trilha t-micro">
+            <ol>
+              <li><a href="/">Início</a></li>
+              <li><span aria-hidden="true">›</span> <a href="/licitacoes">Licitações</a></li>
+              <li><span aria-hidden="true">›</span> <a href={`/licitacoes/modalidade/${l.modalidade.replace(/_/g, '-')}`}>{rotuloModalidade(l.modalidade)}</a></li>
+            </ol>
+          </nav>
+
+          <div class="identificacao">
+            <p class="t-rotulo numero">{titulo}</p>
+            <Etiqueta situacao={l.situacao} grande />
+          </div>
+
+          <h1 class="t-pagina objeto">{l.objeto_resumo}</h1>
+
+          {l.motivo_situacao && situacao.tom === 'alerta' && (
+            <div class="alerta" role="alert">
+              <p class="t-sub">{situacao.rotulo}</p>
+              <p>{l.motivo_situacao}</p>
+            </div>
+          )}
+
+          <div class="acao">
+            <Contagem quando={l.data_sessao} situacao={l.situacao} />
+            <div class="botoes">
+              {edital?.arquivo ? (
+                <a class="botao primario" href={`/assets/${edital.arquivo.id}?download`} download>
+                  Baixar o edital
+                  <span class="peso">PDF · {Math.round((Number(edital.arquivo.filesize) || 0) / 1024)} KB</span>
+                </a>
+              ) : (
+                <p class="sem-edital">Edital ainda não anexado a esta publicação.</p>
+              )}
+              {l.data_sessao && <a class="botao" href={`/licitacoes/${l.ano}/${l.slug}/sessao.ics`}>Adicionar ao calendário</a>}
+              {l.sistema_sessao_url && (
+                <a class="botao" href={l.sistema_sessao_url} target="_blank" rel="noopener noreferrer">
+                  Onde ocorre a sessão<span class="sr-only"> — abre em nova aba</span>
+                </a>
+              )}
+            </div>
+            <p class="compartilhar t-micro">
+              <a href={`https://wa.me/?text=${encodeURIComponent(compartilhar)}`} target="_blank" rel="noopener noreferrer">Compartilhar no WhatsApp</a>
+              <span aria-hidden="true"> · </span>
+              <button type="button" data-copiar={endereco}>Copiar o link</button>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="regua-tricô" aria-hidden="true"></div>
+
+    <div class="carreira miolo">
+      <div class="ourela">
+        <span class="fio fio-ourela" aria-hidden="true"></span>
+        <div class="corpo">
+          <section>
+            <h2 class="t-secao">Dados da contratação</h2>
+            <dl class="ficha">{ficha.map(([r, v]) => (<div><dt class="t-rotulo">{r}</dt><dd>{v}</dd></div>))}</dl>
+            {l.forma === 'presencial' && l.justificativa_presencial && (
+              <p class="justificativa">
+                <strong>Justificativa da forma presencial</strong> (art. 17, §2º, da Lei 14.133/2021): {l.justificativa_presencial}
+              </p>
+            )}
+          </section>
+
+          {l.objeto && (
+            <section>
+              <h2 class="t-secao">Objeto</h2>
+              <div class="conteudo-rico" set:html={limpar(l.objeto)} />
+            </section>
+          )}
+
+          <section>
+            <h2 class="t-secao">Documentos</h2>
+            <Anexos anexos={anexos} />
+          </section>
+
+          {lotes.length > 0 && (
+            <section>
+              <h2 class="t-secao">Resultado por lote</h2>
+              <div class="rolagem">
+                <table>
+                  <caption class="sr-only">Lotes da licitação, com situação e empresa vencedora</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Lote</th><th scope="col">Descrição</th><th scope="col">Situação</th>
+                      <th scope="col">Vencedor</th><th scope="col">CNPJ</th><th scope="col">Valor homologado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lotes.map((lo) => (
+                      <tr>
+                        <th scope="row">{lo.numero}</th>
+                        <td>{lo.descricao}</td>
+                        <td>{lo.situacao === 'homologado' ? 'Homologado' : lo.situacao}</td>
+                        <td>{lo.vencedor_razao_social ?? '—'}</td>
+                        <td class="numerico">{documentoPublico(lo.vencedor_cnpj)}</td>
+                        <td class="numerico">{moeda(lo.valor_homologado)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {eventos.length > 0 && (
+            <section>
+              <h2 class="t-secao">Andamento do processo</h2>
+              <p class="t-micro nota">A ordem carrega informação: é a única lista numerada desta página.</p>
+              <ol class="tempo">
+                {eventos.map((e) => (
+                  <li>
+                    <span class="marco" aria-hidden="true"></span>
+                    <div>
+                      <p class="t-rotulo quando"><time datetime={e.data}>{dataHora(e.data)}</time></p>
+                      <p class="oque">{TIPOS_EVENTO[e.tipo] ?? e.tipo}</p>
+                      {e.descricao && <p class="detalhe">{e.descricao}</p>}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+
+          <section>
+            <h2 class="t-secao">Registro oficial</h2>
+            <ul class="oficiais">
+              {l.pncp_url && (
+                <li>
+                  <a href={l.pncp_url} target="_blank" rel="noopener noreferrer">
+                    <span class="fio-foco">Ver no PNCP</span>
+                    {l.pncp_id && <span class="codigo"> — {l.pncp_id}</span>}
+                    <span class="sr-only"> — abre em nova aba</span>
+                  </a>
+                </li>
+              )}
+              <li><a href="/licitacoes"><span class="fio-foco">Todas as licitações</span></a></li>
+            </ul>
+            <NotaLegal />
+          </section>
+        </div>
+      </div>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .fio { min-height: 4rem; }
+  .trilha ol { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; padding: 0; color: var(--color-musgo); }
+  .trilha a { color: var(--color-serra); text-decoration: none; }
+  .identificacao { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1rem; margin-top: 1.25rem; }
+  .numero { color: var(--color-musgo); }
+  .objeto { margin-top: 0.6rem; max-width: 26ch; }
+  .alerta { margin-top: 1.5rem; padding: 1rem 1.25rem; border-left: 5px solid var(--color-carmim);
+    background: color-mix(in srgb, var(--color-carmim) 9%, transparent); border-radius: 0 4px 4px 0; max-width: var(--container-leitura); }
+  .alerta p:first-child { color: var(--color-carmim); }
+  .alerta p + p { margin-top: 0.4rem; }
+  .acao { margin-top: 2rem; }
+  .botoes { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; }
+  .botao { display: inline-flex; flex-direction: column; align-items: flex-start; justify-content: center;
+    min-height: 3rem; padding: 0.6rem 1.3rem; border-radius: 4px; border: 2px solid var(--color-serra);
+    color: var(--color-serra); background: var(--color-papel); text-decoration: none; font-weight: 600; }
+  .botao.primario { background: var(--color-serra); color: var(--color-papel); }
+  .botao:hover { background: var(--color-serra-noite); border-color: var(--color-serra-noite); color: var(--color-papel); }
+  .peso { font-size: 0.75rem; font-weight: 400; opacity: 0.85; }
+  .sem-edital { color: var(--color-carmim); font-weight: 600; }
+  .compartilhar { margin-top: 1rem; color: var(--color-musgo); }
+  .compartilhar a, .compartilhar button { color: var(--color-serra); font: inherit; font-weight: 600;
+    background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+  .miolo { padding-block: 2.5rem clamp(3rem, 7vw, 5rem); }
+  .miolo section + section { margin-top: 3rem; }
+  .ficha { margin-top: 1.25rem; display: grid; gap: 1rem 2.5rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); max-width: 58rem; }
+  .ficha dt { color: var(--color-musgo); }
+  .ficha dd { margin: 0.2rem 0 0; }
+  .justificativa { margin-top: 1.5rem; max-width: var(--container-leitura); color: var(--color-musgo); }
+  .rolagem { overflow-x: auto; margin-top: 1.25rem; }
+  table { width: 100%; border-collapse: collapse; min-width: 40rem; }
+  th, td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid color-mix(in srgb, var(--color-musgo) 26%, transparent); }
+  thead th { border-bottom-width: 2px; color: var(--color-azul-escuro); font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .numerico { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .nota { color: var(--color-musgo); margin-top: 0.25rem; }
+  .tempo { list-style: none; margin: 1.5rem 0 0; padding: 0 0 0 1.5rem;
+    border-left: 2px solid color-mix(in srgb, var(--color-musgo) 30%, transparent); display: grid; gap: 1.75rem; }
+  .tempo li { position: relative; }
+  .marco { position: absolute; left: -1.95rem; top: 0.35rem; width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--color-carmim); }
+  .quando { color: var(--color-musgo); }
+  .oque { font-weight: 600; margin-top: 0.15rem; }
+  .detalhe { color: var(--color-musgo); margin-top: 0.25rem; max-width: var(--container-leitura); }
+  .oficiais { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: 0.6rem; }
+  .oficiais a { color: var(--color-serra); text-decoration: none; font-weight: 600; }
+  .codigo { font-weight: 400; color: var(--color-musgo); font-variant-numeric: tabular-nums; }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copiar]').forEach((b) => {
+    b.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(b.dataset.copiar!);
+        const antes = b.textContent;
+        b.textContent = 'Link copiado';
+        setTimeout(() => { b.textContent = antes; }, 2200);
+      } catch { /* sem permissão: a URL segue visível na barra de endereço */ }
+    });
+  });
+</script>

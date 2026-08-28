@@ -1,0 +1,241 @@
+---
+/**
+ * CHAMADA DE LICITAÇÕES NA HOME — abertura nos próximos 30 dias.
+ *
+ * O cliente pediu "rolando". Traduzi a intenção — chamar atenção para
+ * oportunidades com prazo curto — e recusei a forma literal: marquee é
+ * ilegível, e carrossel de 2 segundos impede a leitura.
+ *
+ * A forma escolhida é uma FAIXA DE PRAZOS: uma trilha horizontal com rolagem
+ * nativa e encaixe (scroll-snap), que avança um cartão a cada 6 segundos.
+ * A escolha se defende assim:
+ *   · rolagem NATIVA significa que funciona sem JavaScript, responde a
+ *     arrastar no celular, à roda do mouse e às setas do teclado;
+ *   · o avanço automático é lento o bastante para ler um cartão inteiro;
+ *   · PARA no hover, no foco e no botão de pausa — WCAG 2.2.2 exige controle
+ *     para movimento acima de 5 segundos, e este passa disso de propósito,
+ *     porque 5 segundos não dão para ler um objeto de licitação;
+ *   · com prefers-reduced-motion, o avanço nem começa e a faixa vira uma
+ *     lista rolável comum — equivalente e completa, nada é escondido.
+ *
+ * Altura fixa reservada por CSS: a faixa não empurra a home nem causa
+ * deslocamento de layout quando os dados chegam.
+ *
+ * Cada cartão traz o prazo nas DUAS formas: "abre em 6 dias" é acionável,
+ * a data absoluta é verificável. O briefing pede as duas, e com razão.
+ */
+import Etiqueta from './Etiqueta.astro';
+import { moeda, prazoAte, rotuloModalidade, situacaoDe, todas } from '../../lib/licitacoes';
+import { dataHora } from '../../lib/formato';
+
+const agora = Date.now();
+const DIA = 86400000;
+
+const { dados, indisponivel } = await todas();
+const proximas = dados
+  .filter((l) => {
+    if (!l.data_sessao) return false;
+    if (!situacaoDe(l.situacao).emAndamento) return false;
+    const s = +new Date(l.data_sessao);
+    return s >= agora && s <= agora + 30 * DIA;
+  })
+  .sort((a, b) => +new Date(a.data_sessao!) - +new Date(b.data_sessao!));
+
+/* Derivados calculados AQUI, e não dentro do JSX: o compilador do Astro lê um
+ * '<' dentro de expressão como início de fragmento, e `diasRestantes <= 7`
+ * quebrava a compilação com uma mensagem sobre Fragment shorthand que não
+ * ajudava nada. Além de contornar isso, o template fica sem lógica. */
+const cartoes = proximas.map((l) => {
+  const prazo = prazoAte(l.data_sessao, agora)!;
+  return { l, prazo, urgente: prazo.diasRestantes < 8 };
+});
+---
+
+<section class="chamada" aria-labelledby="titulo-licitacoes">
+  <div class="carreira">
+    <div class="ourela">
+      <div class="marca">
+        <span class="numero t-rotulo" aria-hidden="true">06</span>
+        <span class="fio fio-ourela" aria-hidden="true"></span>
+      </div>
+      <div class="corpo">
+        <div class="cabeca">
+          <h2 id="titulo-licitacoes" class="t-rotulo rotulo">Licitações abrindo</h2>
+          <a href="/licitacoes" class="acao"><span class="fio-foco">Todas as licitações</span> <span aria-hidden="true">→</span></a>
+        </div>
+        <p class="t-secao titulo">
+          {proximas.length > 0
+            ? `${proximas.length} ${proximas.length === 1 ? 'oportunidade aberta' : 'oportunidades abertas'} nos próximos 30 dias`
+            : 'Oportunidades para fornecedores'}
+        </p>
+
+        {
+          proximas.length === 0 ? (
+            /* Estado vazio COM DIREÇÃO: o bloco não desaparece em silêncio —
+               diz o que está acontecendo e oferece os dois caminhos úteis. */
+            <div class="vazio">
+              <p>
+                {indisponivel
+                  ? 'Não foi possível consultar as licitações agora. Tente novamente em alguns minutos.'
+                  : 'Nenhuma licitação com sessão marcada para os próximos 30 dias.'}
+              </p>
+              <p class="acoes-vazio">
+                <a href="/licitacoes/avisos" class="botao">Receber aviso por e-mail</a>
+                <a href="/licitacoes" class="botao vazado">Ver o histórico de licitações</a>
+              </p>
+            </div>
+          ) : (
+            <div class="faixa" data-faixa>
+              <div class="controles">
+                <button type="button" data-pausa aria-pressed="false" class="controle">
+                  <span class="rotulo-pausa">Pausar avanço automático</span>
+                </button>
+                <span class="dica t-micro" aria-hidden="true">Arraste ou use as setas do teclado</span>
+              </div>
+
+              <ul class="trilha" data-trilha tabindex="0" role="list"
+                  aria-label="Licitações com sessão nos próximos 30 dias">
+                {cartoes.map(({ l, prazo, urgente }) => (
+                    <li class="cartao">
+                      <a href={`/licitacoes/${l.ano}/${l.slug}`}>
+                        <span class="topo">
+                          <span class="t-rotulo modalidade">{rotuloModalidade(l.modalidade)}</span>
+                          <Etiqueta situacao={l.situacao} />
+                        </span>
+                        <span class="objeto"><span class="fio-foco">{l.objeto_resumo}</span></span>
+                        <span class="pe">
+                          <strong class:list={['falta', urgente && 'urgente']}>{prazo.texto}</strong>
+                          <span class="quando"><time datetime={l.data_sessao!}>{dataHora(l.data_sessao)}</time></span>
+                          <span class="valor">
+                            {l.orcamento_sigiloso ? 'Orçamento sigiloso' : l.valor_estimado ? moeda(l.valor_estimado) : 'Valor não divulgado'}
+                          </span>
+                        </span>
+                      </a>
+                    </li>
+                ))}
+              </ul>
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .chamada { background: var(--color-papel); padding-block: clamp(2.5rem, 6vw, 4.5rem); }
+  .marca { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+  .numero { color: var(--color-carmim); }
+  .fio { flex: 1; min-height: 3rem; }
+  @media (max-width: 47.99rem) { .numero { display: none; } }
+
+  .cabeca { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.5rem 1.5rem; }
+  .rotulo { color: var(--color-musgo); }
+  .acao { color: inherit; text-decoration: none; font-weight: 600; font-size: 0.9375rem; }
+  .titulo { margin-top: 0.35rem; max-width: 26ch; }
+
+  .faixa { margin-top: 1.5rem; }
+  .controles { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1rem; margin-bottom: 0.75rem; }
+  .controle {
+    font: inherit; font-size: 0.875rem; font-weight: 600; cursor: pointer;
+    min-height: 2.5rem; padding: 0.4rem 0.9rem; border-radius: 999px;
+    border: 2px solid var(--color-serra); background: var(--color-papel); color: var(--color-serra);
+  }
+  .controle:hover { background: var(--color-serra); color: var(--color-papel); }
+  .controle[aria-pressed='true'] { background: var(--color-carmim); border-color: var(--color-carmim); color: var(--color-papel); }
+  .dica { color: var(--color-musgo); }
+
+  /* Rolagem nativa com encaixe: funciona sem JavaScript, no dedo, na roda e
+     no teclado. A altura é reservada para não haver deslocamento de layout. */
+  .trilha {
+    list-style: none; margin: 0; padding: 0 0 0.75rem;
+    display: grid; grid-auto-flow: column; grid-auto-columns: min(21rem, 82vw);
+    gap: 1rem; overflow-x: auto; scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain; scrollbar-width: thin;
+    min-height: 13.5rem;
+  }
+  .trilha:focus-visible { outline: 3px solid var(--color-carmim); outline-offset: 4px; }
+
+  .cartao { scroll-snap-align: start; }
+  .cartao > a {
+    display: flex; flex-direction: column; gap: 0.6rem; height: 100%;
+    padding: 1rem 1.1rem; border-radius: 6px;
+    border: 1.5px solid color-mix(in srgb, var(--color-musgo) 30%, transparent);
+    text-decoration: none; color: inherit; background: var(--color-papel);
+  }
+  .cartao > a:hover { border-color: var(--color-serra); }
+  .topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; }
+  .modalidade { color: var(--color-musgo); }
+  .objeto {
+    font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .pe { margin-top: auto; display: grid; gap: 0.15rem; font-size: 0.875rem; color: var(--color-musgo); }
+  .falta { color: var(--color-serra); font-size: 1rem; }
+  .falta.urgente { color: var(--color-carmim); }
+  .valor { font-variant-numeric: tabular-nums; }
+
+  .vazio { margin-top: 1.25rem; max-width: var(--container-leitura); color: var(--color-musgo); }
+  .acoes-vazio { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; }
+  .botao {
+    display: inline-flex; align-items: center; min-height: 2.9rem; padding: 0.7rem 1.3rem;
+    border-radius: 4px; font-weight: 600; text-decoration: none;
+    background: var(--color-serra); color: var(--color-papel); border: 2px solid var(--color-serra);
+  }
+  .botao.vazado { background: transparent; color: var(--color-serra); }
+  .botao:hover { background: var(--color-serra-noite); border-color: var(--color-serra-noite); color: var(--color-papel); }
+</style>
+
+<script>
+  const faixa = document.querySelector<HTMLElement>('[data-faixa]');
+  const trilha = faixa?.querySelector<HTMLElement>('[data-trilha]');
+  const botao = faixa?.querySelector<HTMLButtonElement>('[data-pausa]');
+  const rotulo = botao?.querySelector<HTMLElement>('.rotulo-pausa');
+
+  if (faixa && trilha && botao && rotulo) {
+    const reduzir = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let timer: ReturnType<typeof setInterval> | null = null;
+    let pausadoPeloUsuario = false;
+
+    const avancar = () => {
+      const cartao = trilha.querySelector<HTMLElement>('.cartao');
+      if (!cartao) return;
+      const passo = cartao.offsetWidth + 16;
+      const fim = trilha.scrollWidth - trilha.clientWidth - 4;
+      // Volta ao início ao chegar no fim, sem salto brusco.
+      trilha.scrollTo({ left: trilha.scrollLeft >= fim ? 0 : trilha.scrollLeft + passo, behavior: 'smooth' });
+    };
+
+    const parar = () => { if (timer) { clearInterval(timer); timer = null; } };
+    const tocar = () => {
+      // Movimento reduzido: NUNCA inicia. Não é atenuado, é desligado.
+      if (reduzir.matches || pausadoPeloUsuario || timer) return;
+      timer = setInterval(avancar, 6000);
+    };
+
+    const marcarBotao = () => {
+      const pausado = pausadoPeloUsuario || reduzir.matches;
+      botao.setAttribute('aria-pressed', String(pausado));
+      rotulo.textContent = pausado ? 'Retomar avanço automático' : 'Pausar avanço automático';
+      botao.disabled = reduzir.matches;
+      if (reduzir.matches) rotulo.textContent = 'Avanço automático desligado';
+    };
+
+    botao.addEventListener('click', () => {
+      pausadoPeloUsuario = !pausadoPeloUsuario;
+      if (pausadoPeloUsuario) parar(); else tocar();
+      marcarBotao();
+    });
+
+    /* Para no hover E no foco: quem navega por teclado não pode ver o
+       conteúdo escapar embaixo do cursor de foco. */
+    for (const evento of ['pointerenter', 'focusin']) faixa.addEventListener(evento, parar);
+    for (const evento of ['pointerleave', 'focusout']) faixa.addEventListener(evento, tocar);
+    // Rolar com o dedo também interrompe: a pessoa assumiu o controle.
+    trilha.addEventListener('pointerdown', () => { pausadoPeloUsuario = true; parar(); marcarBotao(); });
+
+    reduzir.addEventListener('change', () => { parar(); marcarBotao(); tocar(); });
+    marcarBotao();
+    tocar();
+  }
+</script>
