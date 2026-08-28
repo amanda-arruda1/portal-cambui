@@ -106,8 +106,8 @@ export interface Anexo {
   data_publicacao: string; versao: number; substitui: string | null; superado: boolean; ordem: number | null;
 }
 export interface Lote {
-  id: string; numero: number; descricao: string; valor_estimado: number | null; situacao: string;
-  vencedor_razao_social: string | null; vencedor_cnpj: string | null; valor_homologado: number | null;
+  id: string; numero: number; descricao: string; valor_estimado: number | string | null; situacao: string;
+  vencedor_razao_social: string | null; vencedor_cnpj: string | null; valor_homologado: number | string | null;
 }
 export interface Evento { id: string; data: string; tipo: string; descricao: string | null; anexo: string | null }
 
@@ -117,7 +117,7 @@ export interface Licitacao {
   criterio_julgamento: string; modo_disputa: string; registro_precos: boolean;
   secretaria: { nome: string; slug: string } | null;
   objeto_resumo: string; objeto: string | null;
-  valor_estimado: number | null; orcamento_sigiloso: boolean;
+  valor_estimado: number | string | null; orcamento_sigiloso: boolean;
   data_publicacao: string; data_abertura_propostas: string | null; data_sessao: string | null;
   prazo_impugnacao: string | null; prazo_esclarecimentos: string | null;
   situacao: string; motivo_situacao: string | null;
@@ -338,8 +338,8 @@ export function aplicarFiltros(lista: Licitacao[], f: Filtros, agora = Date.now(
   if (f.situacao) r = r.filter((l) => l.situacao === f.situacao);
   if (f.ano) r = r.filter((l) => String(l.ano) === f.ano);
   if (f.secretaria) r = r.filter((l) => l.secretaria?.slug === f.secretaria);
-  if (f.valorMin) r = r.filter((l) => (l.valor_estimado ?? 0) >= Number(f.valorMin));
-  if (f.valorMax) r = r.filter((l) => (l.valor_estimado ?? Infinity) <= Number(f.valorMax));
+  if (f.valorMin) r = r.filter((l) => (numero(l.valor_estimado) ?? 0) >= Number(f.valorMin));
+  if (f.valorMax) r = r.filter((l) => (numero(l.valor_estimado) ?? Infinity) <= Number(f.valorMax));
   if (f.tempo) r = r.filter((l) => dentroDoTempo(l, f.tempo, agora));
   return ordenar(r, f.ordem, agora);
 }
@@ -350,7 +350,7 @@ export function ordenar(lista: Licitacao[], ordem: string, agora = Date.now()): 
     return copia.sort((a, b) => +new Date(b.data_publicacao) - +new Date(a.data_publicacao));
   }
   if (ordem === 'valor') {
-    return copia.sort((a, b) => (b.valor_estimado ?? -1) - (a.valor_estimado ?? -1));
+    return copia.sort((a, b) => (numero(b.valor_estimado) ?? -1) - (numero(a.valor_estimado) ?? -1));
   }
   /* Padrão: proximidade da abertura. O que abre logo vem primeiro; o que já
      passou vai para o fim, do mais recente para o mais antigo. É a ordem que
@@ -419,10 +419,26 @@ export function prazoAte(iso: string | null, agora = Date.now()): Prazo | null {
     texto: dias === 1 ? 'abre amanhã' : `abre em ${dias} dias` };
 }
 
-export function moeda(v: number | null | undefined): string {
-  if (v === null || v === undefined) return '—';
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+/**
+ * Valor em reais.
+ *
+ * Aceita texto porque é ASSIM que o Directus devolve DECIMAL — "2145578.00", e
+ * não 2145578. Chamar toLocaleString num texto devolve o próprio texto, então a
+ * página exibia o número cru. Pego olhando a tela pronta, não o código.
+ */
+export function moeda(v: number | string | null | undefined): string {
+  if (v === null || v === undefined || v === '') return '—';
+  const n = typeof v === 'number' ? v : Number(v);
+  if (!Number.isFinite(n)) return '—';
+  return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 }
+
+/** Mesma armadilha do DECIMAL: normaliza para número antes de comparar ou somar. */
+export const numero = (v: number | string | null | undefined): number | null => {
+  if (v === null || v === undefined || v === '') return null;
+  const n = typeof v === 'number' ? v : Number(v);
+  return Number.isFinite(n) ? n : null;
+};
 
 /** CNPJ é público. CPF de pessoa física NUNCA — se aparecer, é mascarado. */
 export function documentoPublico(doc: string | null): string {

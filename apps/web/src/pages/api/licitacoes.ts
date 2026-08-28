@@ -9,7 +9,7 @@
  * Sem chave, sem cadastro, com CORS aberto: é dado público.
  */
 import type { APIRoute } from 'astro';
-import { aplicarFiltros, lerFiltros, rotuloModalidade, situacaoDe, todas } from '../../lib/licitacoes';
+import { aplicarFiltros, lerFiltros, numero, rotuloModalidade, situacaoDe, todas } from '../../lib/licitacoes';
 
 const TETO = 500;
 
@@ -47,7 +47,8 @@ export const GET: APIRoute = async ({ url, site }) => {
       objeto: l.objeto_resumo,
       // Sigiloso NÃO devolve o valor. O dado existe no banco; o que a lei
       // permite divulgar é a informação de que ele é sigiloso.
-      valor_estimado: l.orcamento_sigiloso ? null : l.valor_estimado,
+      // número de verdade no JSON: quem consome espera 2145578, não "2145578.00".
+      valor_estimado: l.orcamento_sigiloso ? null : numero(l.valor_estimado),
       orcamento_sigiloso: l.orcamento_sigiloso,
       situacao: { codigo: l.situacao, nome: situacaoDe(l.situacao).rotulo },
       motivo_situacao: l.motivo_situacao,

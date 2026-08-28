@@ -7,7 +7,7 @@
  * se o servidor consegue usar o arquivo ou desiste.
  */
 import type { APIRoute } from 'astro';
-import { aplicarFiltros, lerFiltros, rotuloModalidade, situacaoDe, todas, CRITERIOS } from '../../lib/licitacoes';
+import { aplicarFiltros, lerFiltros, numero, rotuloModalidade, situacaoDe, todas, CRITERIOS } from '../../lib/licitacoes';
 
 const celula = (v: unknown): string => {
   if (v === null || v === undefined) return '';
@@ -34,7 +34,7 @@ export const GET: APIRoute = async ({ url, site }) => {
     l.numero_processo, l.numero, l.ano, rotuloModalidade(l.modalidade), l.forma,
     CRITERIOS[l.criterio_julgamento] ?? l.criterio_julgamento,
     l.secretaria?.nome ?? '', l.objeto_resumo,
-    l.orcamento_sigiloso ? '' : (l.valor_estimado ?? ''),
+    l.orcamento_sigiloso ? '' : (numero(l.valor_estimado) ?? ''),
     l.orcamento_sigiloso ? 'sim' : 'nao',
     situacaoDe(l.situacao).rotulo,
     dataBr(l.data_publicacao), dataBr(l.data_abertura_propostas), dataBr(l.data_sessao),
