@@ -1,0 +1,60 @@
+---
+/**
+ * As duas datas de uma edição, lado a lado e explicadas.
+ *
+ * Não é redundância: disponibilização é quando o arquivo foi ao ar;
+ * publicação legal é a data de que se contam os prazos. Confundir as duas é
+ * como se perde recurso — e é o erro mais comum em portal de diário municipal,
+ * que costuma mostrar uma só data sem dizer qual é.
+ */
+import { dataBr, explicarPrazo } from '../../lib/diario/dominio.mjs';
+import type { RegraPrazo } from '../../lib/diario/dominio.mjs';
+interface Props {
+  disponibilizacao: string;
+  publicacaoLegal: string;
+  regra: RegraPrazo;
+  compacto?: boolean;
+}
+const { disponibilizacao, publicacaoLegal, regra, compacto = false } = Astro.props;
+---
+<div class:list={['duas-datas', compacto && 'compacto']}>
+  <dl>
+    <div>
+      <dt>Disponibilização</dt>
+      <dd><time datetime={String(disponibilizacao).slice(0, 10)}>{dataBr(disponibilizacao)}</time></dd>
+      <dd class="nota">Dia em que o arquivo assinado foi publicado no portal.</dd>
+    </div>
+    <div class="destaque">
+      <dt>Publicação legal</dt>
+      <dd><time datetime={String(publicacaoLegal).slice(0, 10)}>{dataBr(publicacaoLegal)}</time></dd>
+      <dd class="nota">Data que conta prazo.</dd>
+    </div>
+  </dl>
+  {!compacto && <p class="explicacao">{explicarPrazo(disponibilizacao, publicacaoLegal, regra)}</p>}
+</div>
+
+<style>
+  .duas-datas dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+    gap: 0; margin: 0; border: 1px solid color-mix(in srgb, var(--color-musgo) 30%, transparent); }
+  .duas-datas dl > div { padding: 0.9rem 1.1rem; min-width: 0; }
+  .duas-datas dl > div + div { border-left: 1px solid color-mix(in srgb, var(--color-musgo) 30%, transparent); }
+  .duas-datas .destaque { background: color-mix(in srgb, var(--color-serra) 7%, transparent); }
+  .duas-datas dt { font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--color-musgo); font-weight: 600; }
+  .duas-datas dd { margin: 0.25rem 0 0; font-family: var(--font-titulo, inherit);
+    font-size: 1.375rem; font-weight: 600; color: var(--color-serra-noite); }
+  /* Segundo <dd> em vez de <p>: um <p> solto dentro de <dl> não é conteúdo
+     permitido, e o validador de acessibilidade reprova — com razão, porque
+     confunde a associação termo/definição no leitor de tela. */
+  .duas-datas dd.nota { margin: 0.3rem 0 0; font-size: 0.8125rem; color: var(--color-musgo);
+    line-height: 1.4; font-family: inherit; font-size: 0.8125rem; font-weight: 400; }
+  .compacto dd { font-size: 1.125rem; }
+  .explicacao { margin: 0.85rem 0 0; font-size: 0.9375rem; color: var(--color-musgo);
+    border-left: 3px solid var(--color-serra); padding-left: 0.9rem; }
+
+  /* Em telas estreitas a borda lateral vira borda superior, senão as duas
+     colunas empilhadas ficam sem separação visível. */
+  @media (max-width: 34rem) {
+    .duas-datas dl > div + div { border-left: 0; border-top: 1px solid color-mix(in srgb, var(--color-musgo) 30%, transparent); }
+  }
+</style>

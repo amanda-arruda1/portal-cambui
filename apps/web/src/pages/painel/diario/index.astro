@@ -1,0 +1,193 @@
+---
+/**
+ * Painel do Diário Oficial — a mesa de trabalho.
+ *
+ * O que aparece primeiro depende do papel: o redator vê o que ELE precisa
+ * corrigir; o editor vê a fila de revisão; a autoridade vê o que espera
+ * assinatura. Uma tela igual para todos obrigaria cada um a procurar o próprio
+ * trabalho no meio do dos outros.
+ */
+import Painel from '../../../layouts/Painel.astro';
+import { filaDeMaterias, listarEdicoes, papelDiario, pode, cadernos } from '../../../lib/painel/diario';
+import { rotuloTipoAto, SITUACOES_MATERIA, SITUACOES_EDICAO, TIPOS_EDICAO } from '../../../lib/diario/vocabulario';
+import { dataBr } from '../../../lib/diario/dominio.mjs';
+
+const sessao = Astro.locals.sessao!;
+const papel = papelDiario(sessao);
+
+const [materias, edicoes, cads] = await Promise.all([
+  filaDeMaterias(sessao),
+  listarEdicoes(sessao, { limit: '12' }),
+  cadernos(sessao),
+]);
+
+const lista = materias.ok ? materias.dados : [];
+const nomeCaderno = new Map((cads.ok ? cads.dados : []).map((c: any) => [c.id, c.nome]));
+
+/* A fila de cada papel. Ordem = urgência de quem olha. */
+const FILAS: Record<string, { titulo: string; situacoes: string[]; vazio: string }> = {
+  redator: { titulo: 'Suas matérias', situacoes: ['devolvida', 'rascunho', 'enviada', 'aprovada', 'pautada'],
+    vazio: 'Você ainda não enviou nenhuma matéria.' },
+  editor: { titulo: 'Fila de revisão', situacoes: ['enviada', 'em_revisao', 'devolvida', 'aprovada', 'pautada', 'rascunho'],
+    vazio: 'Nenhuma matéria aguardando revisão.' },
+  signataria: { titulo: 'Aguardando sua assinatura', situacoes: [],
+    vazio: 'Nenhuma edição aguardando assinatura.' },
+  administrador: { titulo: 'Todas as matérias', situacoes: ['enviada', 'em_revisao', 'devolvida', 'aprovada', 'pautada', 'rascunho'],
+    vazio: 'Nenhuma matéria no sistema.' },
+  nenhum: { titulo: '', situacoes: [], vazio: '' },
+};
+const fila = FILAS[papel];
+
+const porSituacao = new Map<string, typeof lista>();
+for (const m of lista) {
+  if (!porSituacao.has(m.situacao)) porSituacao.set(m.situacao, []);
+  porSituacao.get(m.situacao)!.push(m);
+}
+
+const emAndamento = (edicoes.ok ? edicoes.dados : []).filter((e: any) => e.situacao !== 'publicada');
+const publicadas = (edicoes.ok ? edicoes.dados : []).filter((e: any) => e.situacao === 'publicada').slice(0, 5);
+const contar = (s: string) => porSituacao.get(s)?.length ?? 0;
+---
+<Painel titulo="Diário Oficial" sessao={sessao}>
+  <div class="cabeca">
+    <div>
+      <h1>Diário Oficial</h1>
+      <p class="papel">Você está como <strong>{
+        papel === 'redator' ? 'Redator setorial' : papel === 'editor' ? 'Editor do Diário'
+        : papel === 'signataria' ? 'Autoridade signatária' : papel === 'administrador' ? 'Administrador' : 'sem função no Diário'
+      }</strong>.</p>
+    </div>
+    {pode(sessao, 'redigir') && <a href="/painel/diario/materias/nova" class="botao">Nova matéria</a>}
+  </div>
+
+  {papel === 'nenhum' && (
+    <div class="aviso" role="note">
+      <strong>Sua função no portal não inclui o Diário Oficial.</strong>
+      <p>Peça à TI para atribuir um dos papéis: Redator setorial, Editor, Autoridade signatária ou Administrador.</p>
+    </div>
+  )}
+
+  {!materias.ok && <p class="erro" role="alert">{materias.motivo}</p>}
+
+  <section class="painel-secao">
+    <h2>Edições em andamento</h2>
+    {emAndamento.length === 0 ? (
+      <p class="vazio">Nenhuma edição aberta.
+        {pode(sessao, 'montar_pauta') && <> <a href="/painel/diario/edicoes/nova">Abrir uma nova edição</a>.</>}</p>
+    ) : (
+      <table class="tabela">
+        <thead><tr><th>Edição</th><th>Tipo</th><th>Situação</th><th>Publicação legal</th><th>Páginas</th><th></th></tr></thead>
+        <tbody>
+          {emAndamento.map((e: any) => (
+            <tr>
+              <td><strong>nº {e.numero}</strong></td>
+              <td>{TIPOS_EDICAO[e.tipo]}</td>
+              <td><span class:list={['etiqueta', e.situacao]}>{SITUACOES_EDICAO[e.situacao]}</span></td>
+              <td>{dataBr(e.data_publicacao_legal)}</td>
+              <td>{e.total_paginas ?? '—'}</td>
+              <td><a href={`/painel/diario/edicoes/${e.id}`}>Abrir</a></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )}
+    {pode(sessao, 'montar_pauta') && emAndamento.length > 0 && (
+      <p class="acao-secundaria"><a href="/painel/diario/edicoes/nova">Abrir outra edição</a></p>
+    )}
+  </section>
+
+  {papel !== 'signataria' && (
+    <section class="painel-secao">
+      <h2>{fila.titulo}</h2>
+      <div class="contadores">
+        {fila.situacoes.map((s) => (
+          <span class:list={['contador', contar(s) > 0 && 'tem']}>
+            <strong>{contar(s)}</strong> {SITUACOES_MATERIA[s]}
+          </span>
+        ))}
+      </div>
+
+      {lista.length === 0 ? <p class="vazio">{fila.vazio}</p> : (
+        <table class="tabela">
+          <thead><tr><th>Ato</th><th>Ementa</th><th>Caderno</th><th>Órgão</th><th>Situação</th><th></th></tr></thead>
+          <tbody>
+            {fila.situacoes.flatMap((s) => porSituacao.get(s) ?? []).slice(0, 60).map((m) => (
+              <tr>
+                <td class="ato">{rotuloTipoAto(m.tipo_ato)}{m.numero_ato ? ` ${m.numero_ato}/${m.ano_ato}` : ''}</td>
+                <td class="ementa">{m.ementa.length > 90 ? m.ementa.slice(0, 88) + '…' : m.ementa}</td>
+                <td>{m.caderno ? nomeCaderno.get(m.caderno) ?? '—' : '—'}</td>
+                <td>{m.orgao_texto || m.secretaria?.nome || '—'}</td>
+                <td><span class:list={['etiqueta', m.situacao]}>{SITUACOES_MATERIA[m.situacao]}</span></td>
+                <td><a href={`/painel/diario/materias/${m.id}`}>Abrir</a></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
+  )}
+
+  {publicadas.length > 0 && (
+    <section class="painel-secao">
+      <h2>Últimas edições publicadas</h2>
+      <ul class="publicadas">
+        {publicadas.map((e: any) => (
+          <li>
+            <a href={`/diario-oficial/edicao/${e.numero}`}>Edição nº {e.numero}</a>
+            <span>{dataBr(e.data_publicacao_legal)} · {e.total_paginas ?? '—'} páginas</span>
+            {e.anulada && <span class="anulada">anulada</span>}
+          </li>
+        ))}
+      </ul>
+      <p class="acao-secundaria">Edição publicada é imutável: não aparece aqui para edição, só para consulta.</p>
+    </section>
+  )}
+</Painel>
+
+<style>
+  .cabeca { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between;
+    align-items: flex-start; margin-bottom: 1.5rem; }
+  h1 { margin: 0; font-size: 1.6rem; }
+  .papel { margin: 0.25rem 0 0; color: var(--color-musgo); font-size: 0.9375rem; }
+  .botao { background: var(--color-serra); color: #fff; padding: 0.65rem 1.2rem; border-radius: 3px;
+    text-decoration: none; font-weight: 600; min-height: 2.75rem; display: inline-flex; align-items: center; }
+  .botao:focus-visible { outline: 3px solid var(--color-carmim); outline-offset: 2px; }
+  .painel-secao { margin-bottom: 2.5rem; }
+  .painel-secao h2 { font-size: 1.0625rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--color-musgo); border-bottom: 1px solid color-mix(in srgb, var(--color-musgo) 25%, transparent);
+    padding-bottom: 0.35rem; margin: 0 0 0.9rem; }
+  .contadores { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+  .contador { font-size: 0.875rem; color: var(--color-musgo); padding: 0.3rem 0.7rem;
+    border: 1px solid color-mix(in srgb, var(--color-musgo) 28%, transparent); border-radius: 999px; }
+  .contador.tem { border-color: var(--color-serra); color: var(--color-serra-noite); }
+  .contador strong { color: var(--color-serra); }
+  .tabela { width: 100%; border-collapse: collapse; font-size: 0.9375rem; display: block; overflow-x: auto; }
+  .tabela th { text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--color-musgo); padding: 0.4rem 0.6rem 0.4rem 0; white-space: nowrap; }
+  .tabela td { padding: 0.6rem 0.6rem 0.6rem 0; vertical-align: top;
+    border-top: 1px solid color-mix(in srgb, var(--color-musgo) 18%, transparent); }
+  .tabela .ato { font-weight: 600; white-space: nowrap; }
+  .tabela .ementa { min-width: 18rem; }
+  .tabela a { color: var(--color-serra); font-weight: 600; }
+  .etiqueta { font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 2px; white-space: nowrap;
+    background: color-mix(in srgb, var(--color-musgo) 15%, transparent); }
+  .etiqueta.enviada, .etiqueta.em_revisao, .etiqueta.aguardando_assinatura {
+    background: color-mix(in srgb, #b07a00 20%, transparent); color: #6b4a00; }
+  .etiqueta.devolvida { background: color-mix(in srgb, var(--color-carmim) 18%, transparent); color: var(--color-carmim); }
+  .etiqueta.aprovada, .etiqueta.pautada, .etiqueta.publicada, .etiqueta.fechada {
+    background: color-mix(in srgb, var(--color-serra) 18%, transparent); color: var(--color-serra-noite); }
+  .vazio { color: var(--color-musgo); }
+  .vazio a, .acao-secundaria a { color: var(--color-serra); font-weight: 600; }
+  .acao-secundaria { margin-top: 0.75rem; font-size: 0.875rem; color: var(--color-musgo); }
+  .publicadas { list-style: none; margin: 0; padding: 0; }
+  .publicadas li { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; align-items: baseline;
+    padding: 0.5rem 0; border-top: 1px solid color-mix(in srgb, var(--color-musgo) 18%, transparent); }
+  .publicadas a { color: var(--color-serra); font-weight: 600; }
+  .publicadas span { font-size: 0.875rem; color: var(--color-musgo); }
+  .anulada { color: var(--color-carmim) !important; font-weight: 700; }
+  .aviso, .erro { padding: 1rem 1.2rem; border-radius: 0 4px 4px 0; margin-bottom: 1.5rem;
+    border-left: 4px solid var(--color-carmim);
+    background: color-mix(in srgb, var(--color-carmim) 8%, transparent); }
+  .aviso strong { display: block; margin-bottom: 0.25rem; }
+  .aviso p { margin: 0; }
+</style>

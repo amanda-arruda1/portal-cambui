@@ -1,0 +1,28 @@
+{
+  "name": "portal-cambui",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "Portal institucional e Órgão Oficial Eletrônico da Prefeitura Municipal de Cambuí/MG",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "npm --prefix apps/web run dev",
+    "build": "npm --prefix apps/web run build",
+    "start": "npm --prefix apps/web run start",
+    "check": "npm --prefix apps/web run check",
+    "esquema": "node infra/directus/diario/aplicar-esquema.mjs && node infra/directus/diario/aplicar-permissoes.mjs",
+    "seed": "node infra/directus/diario/seed.mjs",
+    "seed:reset": "node infra/directus/diario/seed.mjs --reset",
+    "export": "node infra/diario/exportar.mjs",
+    "verificar": "node infra/diario/verificar-acervo.mjs",
+    "testar:dominio": "node infra/diario/testar-dominio.mjs",
+    "testar:assinatura": "node infra/diario/testar-assinatura.mjs",
+    "testar": "npm run testar:dominio && npm run testar:assinatura && npm run testar:paginacao",
+    "testar:paginacao": "node infra/diario/testar-paginacao.mjs"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  }
+}

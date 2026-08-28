@@ -1,0 +1,194 @@
+---
+/**
+ * Aviso de nova edição por e-mail.
+ *
+ * Duplo opt-in, finalidade declarada e descadastro em um clique. A base é
+ * MÍNIMA: e-mail e preferências, nada mais. Sem nome, sem telefone, sem
+ * rastreador — não há como perfilar quem acompanha o diário oficial do próprio
+ * município, e não deve haver.
+ */
+import Base from '../../../layouts/Base.astro';
+import TituloPagina from '../../../componentes/TituloPagina.astro';
+import { acervo } from '../../../lib/diario/indice';
+import { cadastrar, AVISOS_LIGADOS } from '../../../lib/diario/avisos';
+
+export const prerender = false;
+
+const a = await acervo();
+const secretarias = [...new Map(
+  a.materias.filter((m) => m.secretaria).map((m) => [m.secretaria!.slug, m.secretaria!]),
+).values()].sort((x, y) => x.nome.localeCompare(y.nome, 'pt-BR'));
+
+let estado: 'formulario' | 'sucesso' | 'erro' = 'formulario';
+let recado = '';
+let valores = { email: '', cadernos: [] as string[], secretarias: [] as string[], palavras: '' };
+
+if (Astro.request.method === 'POST') {
+  const f = await Astro.request.formData();
+  valores = {
+    email: String(f.get('email') ?? '').trim().toLowerCase(),
+    cadernos: f.getAll('cadernos').map(String),
+    secretarias: f.getAll('secretarias').map(String),
+    palavras: String(f.get('palavras') ?? '').trim().slice(0, 300),
+  };
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(valores.email)) {
+    estado = 'erro';
+    recado = 'Confira o endereço de e-mail: ele não parece válido.';
+  } else if (!AVISOS_LIGADOS) {
+    estado = 'erro';
+    recado = 'O envio de avisos ainda não foi configurado neste servidor. Tente novamente mais tarde.';
+  } else {
+    const r = await cadastrar(new URL(Astro.request.url).origin, valores);
+    if (r.ok) {
+      estado = 'sucesso';
+    } else {
+      estado = 'erro';
+      recado = r.motivo === 'EMAIL_INVALIDO'
+        ? 'Este endereço de e-mail foi recusado pelo sistema. Confira se está correto.'
+        : 'Não foi possível concluir o cadastro agora. Tente novamente em alguns minutos.';
+    }
+  }
+}
+---
+<Base titulo="Receber o Diário Oficial por e-mail" descricao="Cadastre-se para receber aviso quando o Município de Cambuí publicar uma nova edição do Diário Oficial." semIndexacao={true}>
+  <TituloPagina
+    titulo="Receber avisos por e-mail"
+    chamada="Aviso de nova edição do Diário Oficial, com filtro por caderno, secretaria ou palavra-chave."
+    trilha={[{ rotulo: 'Diário Oficial', destino: '/diario-oficial' }, { rotulo: 'Avisos por e-mail' }]}
+  />
+
+  <div class="carreira"><div class="ourela"><span class="fio fio-ourela" aria-hidden="true"></span>
+    <div class="corpo conteudo">
+
+      {estado === 'sucesso' ? (
+        <div class="resposta boa" role="status">
+          <h2>Falta um passo: confirme na sua caixa de entrada</h2>
+          <p>Enviamos uma mensagem para <strong>{valores.email}</strong> com um link de confirmação.
+            <strong> Enquanto você não confirmar, nenhum aviso é enviado.</strong></p>
+          <p>Não chegou em alguns minutos? Confira a caixa de spam. Se ainda assim não chegar,
+            <a href="/contato">fale com a Prefeitura</a>.</p>
+          <p><a href="/diario-oficial">Voltar ao Diário Oficial</a></p>
+        </div>
+      ) : (
+        <>
+          {estado === 'erro' && <p class="resposta ruim" role="alert">{recado}</p>}
+
+          <form method="post" class="formulario">
+            <p class="campo">
+              <label for="email">Seu e-mail <span class="obrigatorio">(obrigatório)</span></label>
+              <input type="email" id="email" name="email" required autocomplete="email"
+                value={valores.email} aria-describedby="ajuda-email" />
+              <span id="ajuda-email" class="ajuda">É o único dado obrigatório. Não pedimos nome nem telefone.</span>
+            </p>
+
+            <fieldset>
+              <legend>Quais cadernos lhe interessam?</legend>
+              <p class="ajuda">Deixe tudo desmarcado para receber a edição inteira.</p>
+              <div class="marcadores">
+                {a.cadernos.map((c) => (
+                  <label class="marcador">
+                    <input type="checkbox" name="cadernos" value={c.slug}
+                      checked={valores.cadernos.includes(c.slug)} />
+                    <span>{c.nome}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend>Alguma secretaria em especial?</legend>
+              <p class="ajuda">Deixe desmarcado para receber de todas.</p>
+              <div class="marcadores">
+                {secretarias.map((s) => (
+                  <label class="marcador">
+                    <input type="checkbox" name="secretarias" value={s.slug}
+                      checked={valores.secretarias.includes(s.slug)} />
+                    <span>{s.nome}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <p class="campo">
+              <label for="palavras">Palavras-chave</label>
+              <input type="text" id="palavras" name="palavras" value={valores.palavras}
+                placeholder="Ex.: recapeamento, merenda, concurso" aria-describedby="ajuda-palavras" />
+              <span id="ajuda-palavras" class="ajuda">Separadas por vírgula. Se preencher, você só
+                recebe aviso quando alguma delas aparecer na edição.</span>
+            </p>
+
+            <div class="finalidade">
+              <h2>Para que usamos o seu e-mail</h2>
+              <ul>
+                <li><strong>Finalidade única:</strong> avisar quando uma nova edição do Diário Oficial
+                  for publicada, conforme os filtros que você escolheu.</li>
+                <li><strong>O que guardamos:</strong> o seu e-mail e essas preferências. Mais nada.</li>
+                <li><strong>Com quem compartilhamos:</strong> ninguém. Não há rastreador de terceiros
+                  nas páginas do Diário Oficial.</li>
+                <li><strong>Como sair:</strong> um clique no link ao pé de qualquer aviso. O
+                  descadastro <strong>apaga</strong> o registro — não o marca como inativo.</li>
+                <li><strong>Base legal:</strong> consentimento (LGPD, art. 7º, I), que você dá ao
+                  confirmar pelo e-mail e retira quando quiser.</li>
+              </ul>
+              <p class="ressalva">O aviso é uma cortesia e <strong>não substitui a publicação
+                oficial</strong>: o que produz efeitos é a edição publicada, na data de publicação
+                legal nela indicada. Prazo não se conta do e-mail.</p>
+            </div>
+
+            <button type="submit" class="enviar">Cadastrar meu e-mail</button>
+          </form>
+
+          <p class="alternativa">
+            Prefere não deixar o seu e-mail? Use o
+            <a href="/diario-oficial/feed.xml">feed RSS das novas edições</a> — ele não exige
+            cadastro nenhum.
+          </p>
+        </>
+      )}
+    </div>
+  </div></div>
+</Base>
+
+<style>
+  .conteudo { padding-block: 1.5rem 3rem; max-width: var(--container-leitura); }
+  .formulario { margin-top: 0.5rem; }
+  .campo { margin: 0 0 1.4rem; }
+  label { display: block; font-weight: 600; margin-bottom: 0.3rem; }
+  .obrigatorio { font-weight: 400; color: var(--color-musgo); font-size: 0.875rem; }
+  input[type='email'], input[type='text'] { width: 100%; padding: 0.65rem 0.75rem; font: inherit;
+    min-height: 2.75rem; border: 1px solid color-mix(in srgb, var(--color-musgo) 45%, transparent);
+    border-radius: 3px; }
+  input:focus-visible { outline: 3px solid var(--color-carmim); outline-offset: 1px; }
+  .ajuda { display: block; margin-top: 0.3rem; font-size: 0.875rem; color: var(--color-musgo); }
+  fieldset { border: 1px solid color-mix(in srgb, var(--color-musgo) 28%, transparent);
+    border-radius: 4px; padding: 1rem 1.1rem; margin: 0 0 1.4rem; }
+  legend { font-weight: 600; padding: 0 0.4rem; }
+  .marcadores { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+    gap: 0.4rem 1rem; margin-top: 0.6rem; }
+  .marcador { display: flex; align-items: center; gap: 0.5rem; font-weight: 400;
+    min-height: 2.25rem; margin: 0; }
+  .marcador input { width: 1.15rem; height: 1.15rem; flex: none; }
+  .finalidade { margin: 0 0 1.5rem; padding: 1.1rem 1.3rem;
+    background: color-mix(in srgb, var(--color-musgo) 7%, transparent); border-radius: 4px; }
+  .finalidade h2 { font-size: 0.9375rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--color-musgo); margin: 0 0 0.6rem; }
+  .finalidade ul { margin: 0; padding-left: 1.2rem; font-size: 0.9375rem; }
+  .finalidade li { margin-bottom: 0.4rem; }
+  .ressalva { margin: 0.8rem 0 0; font-size: 0.9375rem; border-left: 3px solid var(--color-serra);
+    padding-left: 0.85rem; }
+  .enviar { background: var(--color-carmim); color: #fff; border: 0; padding: 0.8rem 1.6rem;
+    border-radius: 3px; font: inherit; font-weight: 600; font-size: 1rem; cursor: pointer;
+    min-height: 2.9rem; }
+  .enviar:hover { background: color-mix(in srgb, var(--color-carmim) 85%, #000); }
+  .enviar:focus-visible { outline: 3px solid var(--color-serra); outline-offset: 2px; }
+  .alternativa { margin-top: 2rem; font-size: 0.9375rem; color: var(--color-musgo); }
+  .alternativa a, .resposta a { color: var(--color-serra); font-weight: 600; }
+  .resposta { padding: 1.25rem 1.4rem; border-radius: 0 4px 4px 0; margin-bottom: 1.5rem; }
+  .resposta.boa { border-left: 5px solid var(--color-serra);
+    background: color-mix(in srgb, var(--color-serra) 8%, transparent); }
+  .resposta.ruim { border-left: 5px solid var(--color-carmim); color: var(--color-carmim);
+    background: color-mix(in srgb, var(--color-carmim) 8%, transparent); }
+  .resposta h2 { margin: 0 0 0.5rem; font-size: 1.25rem; color: var(--color-serra-noite); }
+  .resposta p { margin: 0 0 0.6rem; }
+</style>

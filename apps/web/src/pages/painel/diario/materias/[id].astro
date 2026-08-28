@@ -1,0 +1,262 @@
+---
+/**
+ * Uma matéria no painel: ver, editar, revisar, devolver, aprovar.
+ *
+ * A tela muda com o papel e com a situação. Matéria publicada aparece só para
+ * leitura — o banco recusaria a alteração de qualquer forma, e mostrar campos
+ * editáveis que vão dar erro é enganar quem está trabalhando.
+ */
+import Painel from '../../../../layouts/Painel.astro';
+import FormularioMateria from '../../../../componentes/painel/diario/FormularioMateria.astro';
+import {
+  obterMateria, atualizarMateria, cadernos, secretarias, filaDeMaterias,
+  validarMateria, impedimentos, confirmacoes, devolver, aprovar,
+  pode, papelDiario, conflitoDeInteresse, registrarAuditoria, sugerirSlug,
+} from '../../../../lib/painel/diario';
+import { limparComRelato } from '../../../../lib/sanitizar';
+import { rotuloTipoAto, SITUACOES_MATERIA } from '../../../../lib/diario/vocabulario';
+import { dataBr } from '../../../../lib/diario/dominio.mjs';
+
+export const prerender = false;
+const sessao = Astro.locals.sessao!;
+const id = String(Astro.params.id);
+const papel = papelDiario(sessao);
+
+let recado: { tom: 'bom' | 'ruim'; texto: string } | null = null;
+if (Astro.url.searchParams.get('novo')) {
+  recado = { tom: 'bom', texto: 'Matéria criada. Ela aparece na fila do editor do Diário.' };
+}
+
+let problemas: ReturnType<typeof validarMateria> = [];
+let relatoLimpeza: string[] = [];
+
+if (Astro.request.method === 'POST') {
+  const f = await Astro.request.formData();
+  const acao = String(f.get('acao') ?? '');
+  const t = (n: string) => String(f.get(n) ?? '').trim();
+
+  if (acao === 'devolver') {
+    const r = await devolver(sessao, id, t('motivo'));
+    recado = r.ok
+      ? { tom: 'bom', texto: 'Matéria devolvida à secretaria com o motivo registrado.' }
+      : { tom: 'ruim', texto: r.motivo };
+    if (r.ok) await registrarAuditoria(sessao, 'materia_devolvida', { materia: id, detalhe: t('motivo').slice(0, 200) });
+  } else if (acao === 'aprovar') {
+    const r = await aprovar(sessao, id);
+    recado = r.ok
+      ? { tom: 'bom', texto: 'Matéria aprovada. Já pode entrar numa pauta.' }
+      : { tom: 'ruim', texto: r.motivo };
+    if (r.ok) await registrarAuditoria(sessao, 'materia_aprovada', { materia: id, detalhe: 'Aprovada para pauta.' });
+  } else if (acao === 'revisar') {
+    const r = await atualizarMateria(sessao, id, { situacao: 'em_revisao' });
+    recado = r.ok ? { tom: 'bom', texto: 'Matéria marcada como em revisão por você.' } : { tom: 'ruim', texto: r.motivo };
+  } else if (acao === 'enviar' || acao === 'salvar') {
+    const limpeza = limparComRelato(t('corpo'));
+    relatoLimpeza = limpeza.removidas;
+    const dados: any = {
+      tipo_ato: t('tipo_ato'), numero_ato: t('numero_ato') || null,
+      ano_ato: Number(t('ano_ato')) || null,
+      caderno: t('caderno') || null, secretaria: t('secretaria') || null,
+      orgao_texto: t('orgao_texto') || null,
+      ementa: t('ementa'), corpo: limpeza.html,
+      processo_administrativo: t('processo_administrativo') || null,
+      data_alvo: t('data_alvo') || null, vigencia_inicio: t('vigencia_inicio') || null,
+      retifica: t('retifica') || null, republica: t('republica') || null, revoga: t('revoga') || null,
+      motivo_republicacao: t('motivo_republicacao') || null,
+    };
+    problemas = validarMateria(dados);
+    const impede = impedimentos(problemas);
+    const confirma = confirmacoes(problemas);
+    if (impede.length === 0 && (confirma.length === 0 || f.get('confirmado') === 'sim')) {
+      if (acao === 'enviar') dados.situacao = 'enviada';
+      dados.slug = sugerirSlug(dados);
+      const r = await atualizarMateria(sessao, id, dados);
+      recado = r.ok
+        ? { tom: 'bom', texto: acao === 'enviar' ? 'Matéria enviada para revisão.' : 'Alterações salvas.' }
+        : { tom: 'ruim', texto: r.motivo };
+      if (r.ok) await registrarAuditoria(sessao, acao === 'enviar' ? 'materia_enviada' : 'materia_editada',
+        { materia: id, detalhe: dados.ementa.slice(0, 150) });
+    }
+  }
+}
+
+const [item, cads, secs, existentes] = await Promise.all([
+  obterMateria(sessao, id), cadernos(sessao), secretarias(sessao),
+  filaDeMaterias(sessao, { limit: '150', 'filter[situacao][_eq]': 'publicada', sort: '-date_updated' }),
+]);
+if (!item.ok) return new Response(item.motivo, { status: item.status });
+const m = item.dados;
+
+const devolucoes = await fetch(
+  `${process.env.DIRECTUS_INTERNAL_URL || 'http://127.0.0.1:8055'}/items/diario_devolucoes?filter[materia][_eq]=${id}&sort=-devolvida_em&fields=motivo,devolvida_em,devolvida_por_nome`,
+  { headers: { Authorization: `Bearer ${sessao.acesso}` } },
+).then((r) => (r.ok ? r.json() : { data: [] })).then((c) => c.data ?? []).catch(() => []);
+
+const opcoesMaterias = (existentes.ok ? existentes.dados : [])
+  .filter((x) => x.id !== id)
+  .map((x) => ({ id: x.id, rotulo: `${rotuloTipoAto(x.tipo_ato)}${x.numero_ato ? ` ${x.numero_ato}/${x.ano_ato}` : ''} — ${x.ementa.slice(0, 60)}` }));
+
+const publicada = m.situacao === 'publicada';
+const meuTexto = m.user_created === sessao.usuario.id;
+const podeEditar = !publicada && (
+  papel === 'editor' || papel === 'administrador' ||
+  (papel === 'redator' && meuTexto && ['rascunho', 'devolvida'].includes(m.situacao))
+);
+const podeRevisar = !publicada && pode(sessao, 'aprovar') && ['enviada', 'em_revisao'].includes(m.situacao);
+const conflito = conflitoDeInteresse(sessao, m.user_created, 'aprovar');
+const impede = impedimentos(problemas);
+const confirma = confirmacoes(problemas);
+const avisa = problemas.filter((p) => p.gravidade === 'avisa');
+---
+<Painel titulo={`${rotuloTipoAto(m.tipo_ato)} — Diário Oficial`} sessao={sessao}>
+  <nav class="trilha"><a href="/painel/diario">Diário Oficial</a> › Matéria</nav>
+  <div class="cabeca">
+    <div>
+      <h1>{rotuloTipoAto(m.tipo_ato)}{m.numero_ato ? ` nº ${m.numero_ato}/${m.ano_ato}` : ''}</h1>
+      <p class="situacao"><span class:list={['etiqueta', m.situacao]}>{SITUACOES_MATERIA[m.situacao]}</span>
+        {m.edicao && <span class="na-edicao">na pauta de uma edição</span>}</p>
+    </div>
+  </div>
+
+  {recado && <p class:list={['alerta', recado.tom === 'bom' ? 'ok' : 'erro']} role="status">{recado.texto}</p>}
+
+  {publicada && (
+    <div class="alerta bloqueio" role="note">
+      <strong>Matéria publicada — imutável.</strong>
+      <p>O texto publicado não se altera, nem por quem tem permissão para tudo: a regra vale no
+        banco de dados. Correção se faz por <strong>errata</strong> ou <strong>republicação</strong>
+        em edição posterior, criando remissão nos dois sentidos.</p>
+      <p><a href="/painel/diario/materias/nova">Redigir a errata</a></p>
+    </div>
+  )}
+
+  {devolucoes.length > 0 && (
+    <section class="devolucoes">
+      <h2>Histórico de devoluções</h2>
+      <ul>
+        {devolucoes.map((d: any) => (
+          <li>
+            <p class="motivo">{d.motivo}</p>
+            <p class="quem">{d.devolvida_por_nome ?? 'editor'} · {dataBr(d.devolvida_em)}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {impede.length > 0 && (
+    <div class="alerta erro" role="alert"><strong>Corrija antes de continuar:</strong>
+      <ul>{impede.map((p) => <li>{p.texto}{p.conselho && <span class="conselho">{p.conselho}</span>}</li>)}</ul></div>
+  )}
+  {confirma.length > 0 && impede.length === 0 && (
+    <div class="alerta atencao" role="alert"><strong>Confirme se é isso mesmo:</strong>
+      <ul>{confirma.map((p) => <li>{p.texto}{p.conselho && <span class="conselho">{p.conselho}</span>}</li>)}</ul>
+      <p class="marcar"><label><input type="checkbox" form="materia" name="confirmado" value="sim" required />
+        Li os pontos acima e confirmo que estão corretos.</label></p></div>
+  )}
+  {avisa.length > 0 && (
+    <div class="alerta aviso"><strong>Para a sua atenção:</strong>
+      <ul>{avisa.map((p) => <li>{p.texto}{p.conselho && <span class="conselho">{p.conselho}</span>}</li>)}</ul></div>
+  )}
+  {relatoLimpeza.length > 0 && (
+    <div class="alerta aviso"><strong>Formatação removida:</strong>
+      <p>{relatoLimpeza.join(', ')}. O diário tem forma padronizada.</p></div>
+  )}
+
+  <form method="post" id="materia" class="formulario">
+    <FormularioMateria valores={m} cadernos={cads.ok ? cads.dados : []}
+      secretarias={secs.ok ? secs.dados : []} materias={opcoesMaterias} somenteLeitura={!podeEditar} />
+
+    {podeEditar && (
+      <div class="acoes">
+        {['rascunho', 'devolvida'].includes(m.situacao) && (
+          <button type="submit" name="acao" value="enviar" class="primario">Enviar para revisão</button>
+        )}
+        <button type="submit" name="acao" value="salvar" class="secundario">Salvar alterações</button>
+        <a href="/painel/diario" class="cancelar">Voltar</a>
+      </div>
+    )}
+  </form>
+
+  {podeRevisar && (
+    <section class="revisao">
+      <h2>Revisão</h2>
+      {conflito ? (
+        <p class="alerta bloqueio">
+          <strong>Você redigiu esta matéria.</strong>
+          Quem escreve não aprova o próprio texto — peça a outro editor. A regra também é conferida
+          no servidor, com o autor lido do banco e não do formulário.
+        </p>
+      ) : (
+        <div class="duas-acoes">
+          <form method="post" class="acao-aprovar">
+            <button type="submit" name="acao" value="aprovar" class="primario">Aprovar para pauta</button>
+          </form>
+          <form method="post" class="acao-devolver">
+            <label for="motivo">Devolver à secretaria — diga o que precisa mudar <span class="obrig">*</span></label>
+            <textarea id="motivo" name="motivo" rows="3" required
+              placeholder="Ex.: falta o número do processo administrativo; o CPF precisa ser mascarado."></textarea>
+            <p class="ajuda">O motivo fica registrado e é o que a secretaria vai ler. Devolução sem
+              explicação só produz o mesmo texto reenviado.</p>
+            <button type="submit" name="acao" value="devolver" class="secundario">Devolver</button>
+          </form>
+        </div>
+      )}
+    </section>
+  )}
+</Painel>
+
+<style>
+  .trilha { font-size: 0.875rem; color: var(--color-musgo); margin-bottom: 0.5rem; }
+  .trilha a { color: var(--color-serra); }
+  .cabeca { margin-bottom: 1.25rem; }
+  h1 { margin: 0 0 0.3rem; font-size: 1.5rem; }
+  .situacao { margin: 0; display: flex; gap: 0.6rem; align-items: center; }
+  .na-edicao { font-size: 0.875rem; color: var(--color-musgo); }
+  .etiqueta { font-size: 0.75rem; padding: 0.2rem 0.55rem; border-radius: 2px;
+    background: color-mix(in srgb, var(--color-musgo) 15%, transparent); }
+  .etiqueta.devolvida { background: color-mix(in srgb, var(--color-carmim) 18%, transparent); color: var(--color-carmim); }
+  .etiqueta.publicada, .etiqueta.aprovada, .etiqueta.pautada {
+    background: color-mix(in srgb, var(--color-serra) 18%, transparent); color: var(--color-serra-noite); }
+  .formulario { max-width: 60rem; }
+  .alerta { padding: 1rem 1.2rem; margin-bottom: 1.5rem; border-radius: 0 4px 4px 0; border-left: 4px solid; }
+  .alerta.ok { border-color: var(--color-serra); background: color-mix(in srgb, var(--color-serra) 8%, transparent); }
+  .alerta.erro { border-color: var(--color-carmim); background: color-mix(in srgb, var(--color-carmim) 8%, transparent); }
+  .alerta.atencao { border-color: #b07a00; background: color-mix(in srgb, #b07a00 10%, transparent); }
+  .alerta.aviso { border-color: var(--color-musgo); background: color-mix(in srgb, var(--color-musgo) 8%, transparent); }
+  .alerta.bloqueio { border-color: var(--color-carmim); background: color-mix(in srgb, var(--color-carmim) 6%, transparent); }
+  .alerta strong { display: block; margin-bottom: 0.3rem; }
+  .alerta ul { margin: 0; padding-left: 1.2rem; }
+  .alerta li { margin-bottom: 0.4rem; }
+  .alerta p { margin: 0 0 0.4rem; }
+  .alerta a { color: var(--color-serra); font-weight: 600; }
+  .conselho { display: block; font-size: 0.875rem; color: var(--color-musgo); margin-top: 0.15rem; }
+  .marcar label { display: flex; gap: 0.5rem; align-items: flex-start; font-weight: 600; }
+  .devolucoes { margin-bottom: 1.75rem; }
+  .devolucoes h2 { font-size: 0.9375rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--color-musgo); margin: 0 0 0.5rem; }
+  .devolucoes ul { list-style: none; margin: 0; padding: 0; }
+  .devolucoes li { padding: 0.7rem 0.9rem; margin-bottom: 0.5rem; border-radius: 3px;
+    background: color-mix(in srgb, var(--color-carmim) 6%, transparent);
+    border-left: 3px solid var(--color-carmim); }
+  .devolucoes .motivo { margin: 0 0 0.2rem; }
+  .devolucoes .quem { margin: 0; font-size: 0.8125rem; color: var(--color-musgo); }
+  .acoes, .duas-acoes { display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: flex-start;
+    margin-top: 1.5rem; padding-top: 1.25rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-musgo) 22%, transparent); }
+  .revisao { margin-top: 2.5rem; }
+  .revisao h2 { font-size: 0.9375rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--color-musgo); margin: 0; }
+  .acao-devolver { flex: 1 1 22rem; min-width: 0; }
+  .acao-devolver label { display: block; font-weight: 600; font-size: 0.9375rem; margin-bottom: 0.3rem; }
+  .acao-devolver textarea { width: 100%; padding: 0.55rem 0.7rem; font: inherit;
+    border: 1px solid color-mix(in srgb, var(--color-musgo) 45%, transparent); border-radius: 3px; }
+  .ajuda { font-size: 0.8125rem; color: var(--color-musgo); margin: 0.3rem 0 0.6rem; }
+  .obrig { color: var(--color-carmim); }
+  .primario { background: var(--color-serra); color: #fff; border: 0; padding: 0.7rem 1.4rem;
+    border-radius: 3px; font: inherit; font-weight: 600; cursor: pointer; min-height: 2.75rem; }
+  .secundario { background: transparent; border: 1px solid var(--color-musgo); color: var(--color-tinta);
+    padding: 0.7rem 1.3rem; border-radius: 3px; font: inherit; cursor: pointer; min-height: 2.75rem; }
+  .cancelar { color: var(--color-musgo); align-self: center; }
+  button:focus-visible, a:focus-visible { outline: 3px solid var(--color-carmim); outline-offset: 2px; }
+</style>

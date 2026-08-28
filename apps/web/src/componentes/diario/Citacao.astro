@@ -1,0 +1,71 @@
+---
+/**
+ * Bloco de referência de citação, pronto para copiar.
+ *
+ * É a razão de ser mais concreta deste módulo. Hoje o servidor monta essa frase
+ * à mão, olhando o PDF, e erra o número da página — e um edital com referência
+ * de publicação errada volta do tribunal de contas.
+ *
+ * O texto é SEMPRE selecionável. O botão de copiar é conveniência; sem
+ * JavaScript, seleciona-se e copia-se como em qualquer texto. Nenhuma
+ * informação vive só dentro do botão.
+ */
+interface Props { texto: string; }
+const { texto } = Astro.props;
+---
+<section class="citacao" aria-labelledby="titulo-citacao">
+  <h2 id="titulo-citacao">Referência para citação</h2>
+  <p class="explica">
+    Use esta frase ao preencher formulário, edital ou processo administrativo que peça
+    onde o ato foi publicado.
+  </p>
+  <div class="caixa">
+    <p class="texto" id="texto-citacao">{texto}</p>
+    <button type="button" class="copiar" data-copiar="#texto-citacao" hidden>
+      <span class="rotulo">Copiar referência</span>
+    </button>
+  </div>
+  <p class="aviso" role="status" data-aviso-copia hidden>Referência copiada.</p>
+</section>
+
+<script>
+  /* Progressive enhancement: o botão só aparece se a API existir. Mostrar um
+     botão que não funciona é pior do que não mostrar botão nenhum. */
+  if (navigator.clipboard?.writeText) {
+    for (const b of document.querySelectorAll<HTMLButtonElement>('.copiar[data-copiar]')) {
+      b.hidden = false;
+      b.addEventListener('click', async () => {
+        const alvo = document.querySelector(b.dataset.copiar!);
+        if (!alvo?.textContent) return;
+        try {
+          await navigator.clipboard.writeText(alvo.textContent.replace(/\s+/g, ' ').trim());
+          const aviso = document.querySelector<HTMLElement>('[data-aviso-copia]');
+          if (aviso) { aviso.hidden = false; setTimeout(() => { aviso.hidden = true; }, 4000); }
+          b.querySelector('.rotulo')!.textContent = 'Copiada';
+          setTimeout(() => { b.querySelector('.rotulo')!.textContent = 'Copiar referência'; }, 4000);
+        } catch {
+          /* Alguns navegadores negam a área de transferência sem gesto direto.
+             O texto continua selecionável, que é o caminho garantido. */
+        }
+      });
+    }
+  }
+</script>
+
+<style>
+  .citacao { margin: 2.5rem 0; }
+  .citacao h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--color-musgo); margin: 0 0 0.35rem; }
+  .explica { font-size: 0.9375rem; color: var(--color-musgo); margin: 0 0 0.75rem; }
+  .caixa { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-start;
+    background: color-mix(in srgb, var(--color-serra) 6%, transparent);
+    border-left: 4px solid var(--color-serra); padding: 1rem 1.15rem; border-radius: 0 4px 4px 0; }
+  .texto { margin: 0; flex: 1 1 22ch; min-width: 0; font-size: 1.0625rem; line-height: 1.55;
+    color: var(--color-tinta); }
+  .copiar { flex: none; background: var(--color-serra); color: #fff; border: 0;
+    padding: 0.55rem 1rem; border-radius: 3px; font: inherit; font-size: 0.9375rem;
+    font-weight: 600; cursor: pointer; }
+  .copiar:hover { background: var(--color-serra-noite); }
+  .copiar:focus-visible { outline: 3px solid var(--color-carmim); outline-offset: 2px; }
+  .aviso { margin: 0.5rem 0 0; font-size: 0.9375rem; color: var(--color-serra); font-weight: 600; }
+</style>

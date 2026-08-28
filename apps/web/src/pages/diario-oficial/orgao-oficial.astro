@@ -1,0 +1,259 @@
+---
+/**
+ * "Órgão Oficial do Município" — a página que o advogado, o licitante e o
+ * analista de tribunal de contas procuram primeiro.
+ *
+ * Responde, em linguagem direta, quatro perguntas: qual é o veículo oficial
+ * deste município, qual lei o instituiu, desde quando, e o que isso significa
+ * para o meu prazo. Nenhum portal de prefeitura que eu tenha visto responde a
+ * quarta — e é a única que muda a vida de quem consulta.
+ */
+import Base from '../../layouts/Base.astro';
+import TituloPagina from '../../componentes/TituloPagina.astro';
+import { acervo } from '../../lib/diario/indice';
+import { REGRAS_PRAZO, PERIODICIDADES } from '../../lib/diario/vocabulario';
+import { dataBr, romano, publicacaoLegal, ehDiaUtil, proximoDiaUtil, nomeFeriado } from '../../lib/diario/dominio.mjs';
+
+const a = await acervo();
+const v = a.veiculo;
+const primeira = a.edicoes.at(-1) ?? null;
+const ultima = a.edicoes[0] ?? null;
+
+/* Exemplo VIVO da contagem de prazo, calculado agora com as regras deste
+ * veículo. Explicação abstrata de contagem de prazo não ensina ninguém; um
+ * exemplo com as datas de hoje, sim. */
+const hoje = new Date();
+const exemploDisp = hoje.toISOString().slice(0, 10);
+const exemploLegal = publicacaoLegal(exemploDisp, v?.regra_prazo ?? 'primeiro_dia_util_seguinte');
+const exemploInicio = proximoDiaUtil(exemploLegal);
+const feriadoHoje = nomeFeriado(exemploDisp);
+
+const DIAS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+const circulacao = (v?.dias_circulacao ?? [1, 2, 3, 4, 5]).map((d: number) => DIAS[d]);
+---
+<Base
+  titulo="Órgão Oficial do Município"
+  descricao="Qual é o veículo oficial de publicação dos atos do Município de Cambuí/MG, qual lei o instituiu, desde quando, e como se contam os prazos."
+>
+  <TituloPagina
+    titulo="Órgão Oficial do Município"
+    chamada="Onde os atos do Município de Cambuí ganham publicidade e passam a produzir efeitos."
+    trilha={[{ rotulo: 'Diário Oficial', destino: '/diario-oficial' }, { rotulo: 'Órgão Oficial' }]}
+  />
+
+  <div class="carreira">
+    <div class="ourela">
+      <span class="fio fio-ourela" aria-hidden="true"></span>
+      <div class="corpo conteudo">
+
+        {!v ? (
+          <p class="pendente">A configuração do veículo oficial ainda não foi preenchida neste sistema.</p>
+        ) : (
+          <>
+            <section class="resposta-direta">
+              <h2>A resposta curta</h2>
+              <p class="grande">
+                O órgão oficial do Município de Cambuí é o <strong>{v.nome_veiculo}</strong>,
+                {v.lei_numero ? <> instituído pela <strong>{v.lei_numero}</strong>{v.lei_data ? <>, de {dataBr(v.lei_data)}</> : null},</> : null}
+                {v.inicio_circulacao ? <> em circulação eletrônica desde <strong>{dataBr(v.inicio_circulacao)}</strong>.</> : '.'}
+              </p>
+              <p class="para-formulario">
+                Em formulário que pergunte “veículo de publicação”, escreva:
+                <span class="valor">{v.nome_veiculo}</span>
+              </p>
+            </section>
+
+            <section>
+              <h2>O que é “órgão oficial” e por que o nome varia</h2>
+              <p><strong>Órgão oficial</strong> (ou imprensa oficial) é o gênero: o veículo que o ente
+                público define <em>por lei</em> como o lugar onde seus atos ganham publicidade e passam
+                a produzir efeitos. <strong>Diário Oficial</strong> é a espécie mais comum — a
+                publicação periódica em si, com edição numerada, data e assinatura digital.</p>
+              <p>Formulários e editais costumam trazer os dois termos juntos porque nem todo município
+                tem um veículo chamado “Diário Oficial”. O que o campo realmente pergunta é:
+                <strong>onde este ato foi publicado oficialmente?</strong> Para Cambuí, a resposta é
+                a que está no quadro acima.</p>
+            </section>
+
+            <section class="prazo">
+              <h2>Como se contam os prazos — a parte que faz perder recurso</h2>
+              <p>Este veículo trabalha com <strong>duas datas diferentes</strong>, e confundi-las é o
+                erro mais caro que se comete aqui:</p>
+              <dl class="duas">
+                <div>
+                  <dt>Data de disponibilização</dt>
+                  <dd>O dia em que o arquivo assinado foi efetivamente publicado neste portal.</dd>
+                </div>
+                <div>
+                  <dt>Data de publicação legal</dt>
+                  <dd>A data que <strong>conta prazo</strong>. Neste veículo:
+                    {REGRAS_PRAZO[v.regra_prazo]?.toLowerCase()}.</dd>
+                </div>
+              </dl>
+              <p class="fundamento">
+                A regra é a fixada na lei municipal que instituiu o veículo. A mais usual em diários
+                eletrônicos municipais espelha o art. 4º, §3º, da Lei Federal nº 11.419/2006.
+              </p>
+
+              <div class="exemplo">
+                <h3>Exemplo com as datas de hoje</h3>
+                <p>Se uma edição fosse disponibilizada <strong>hoje, {dataBr(exemploDisp)}</strong>
+                  {feriadoHoje ? <> (que é feriado: {feriadoHoje})</> : ehDiaUtil(exemploDisp) ? null : <> (que não é dia útil)</>}:</p>
+                <ol>
+                  <li>Disponibilização: <strong>{dataBr(exemploDisp)}</strong></li>
+                  <li>Publicação legal: <strong>{dataBr(exemploLegal)}</strong></li>
+                  <li>Primeiro dia do prazo: <strong>{dataBr(exemploInicio)}</strong> — porque o prazo
+                    começa a correr no primeiro dia útil <em>seguinte</em> ao da publicação.</li>
+                </ol>
+                <p class="ressalva">Este cálculo considera feriados nacionais e os feriados municipais
+                  cadastrados no sistema. Ele é uma orientação, não parecer jurídico: prazos com
+                  regra própria (recursal, licitatório, processual) seguem a legislação específica.</p>
+              </div>
+            </section>
+
+            <section>
+              <h2>Ficha do veículo</h2>
+              <dl class="ficha">
+                <div><dt>Nome</dt><dd>{v.nome_veiculo}</dd></div>
+                <div><dt>Ente</dt><dd>{v.ente}</dd></div>
+                {v.cnpj && <div><dt>CNPJ</dt><dd>{v.cnpj}</dd></div>}
+                {v.lei_numero && <div><dt>Lei instituidora</dt>
+                  <dd>{v.lei_link ? <a href={v.lei_link}>{v.lei_numero}</a> : v.lei_numero}
+                    {v.lei_data ? `, de ${dataBr(v.lei_data)}` : ''}</dd></div>}
+                {v.inicio_circulacao && <div><dt>Circulação eletrônica desde</dt><dd>{dataBr(v.inicio_circulacao)}</dd></div>}
+                <div><dt>Periodicidade</dt><dd>{PERIODICIDADES[v.periodicidade] ?? v.periodicidade}</dd></div>
+                <div><dt>Dias de circulação</dt><dd>{circulacao.join(', ')}</dd></div>
+                {v.horario_fechamento && <div><dt>Fechamento para envio de matérias</dt>
+                  <dd>{v.horario_fechamento} — depois disso, entra na edição seguinte</dd></div>}
+                <div><dt>Contagem de prazo</dt><dd>{REGRAS_PRAZO[v.regra_prazo] ?? v.regra_prazo}</dd></div>
+                {v.responsavel_publicacao && <div><dt>Responsável pela publicação</dt><dd>{v.responsavel_publicacao}</dd></div>}
+                {v.email_contato && <div><dt>Contato</dt><dd><a href={`mailto:${v.email_contato}`}>{v.email_contato}</a></dd></div>}
+              </dl>
+              {v.lei_ementa && <p class="ementa-lei"><strong>Ementa da lei instituidora:</strong> {v.lei_ementa}</p>}
+            </section>
+
+            {v.expediente?.length ? (
+              <section>
+                <h2>Expediente</h2>
+                <dl class="expediente">
+                  {v.expediente.map((e) => (
+                    <div><dt>{e.cargo}</dt><dd>{e.nome}</dd></div>
+                  ))}
+                </dl>
+              </section>
+            ) : null}
+
+            <section>
+              <h2>O acervo</h2>
+              <dl class="ficha">
+                <div><dt>Edições publicadas</dt><dd>{a.edicoes.length.toLocaleString('pt-BR')}</dd></div>
+                <div><dt>Matérias publicadas</dt><dd>{a.materias.length.toLocaleString('pt-BR')}</dd></div>
+                {primeira && <div><dt>Primeira edição no sistema</dt>
+                  <dd><a href={`/diario-oficial/edicao/${primeira.numero}`}>nº {primeira.numero}</a>, de {dataBr(primeira.data_publicacao_legal)}</dd></div>}
+                {ultima && <div><dt>Última edição</dt>
+                  <dd><a href={`/diario-oficial/edicao/${ultima.numero}`}>nº {ultima.numero}</a>, de {dataBr(ultima.data_publicacao_legal)}
+                    {ultima.volume ? ` — Ano ${romano(ultima.volume)}` : ''}</dd></div>}
+              </dl>
+              {v.veiculo_anterior && (
+                <div class="antes">
+                  <h3>E os atos anteriores?</h3>
+                  <p>{v.veiculo_anterior}</p>
+                </div>
+              )}
+            </section>
+
+            <section>
+              <h2>Limites deste veículo</h2>
+              <p>Este é o órgão oficial de publicidade dos atos do Município.
+                <strong> Ele não substitui</strong>:</p>
+              <ul class="limites">
+                <li>o <a href="https://pncp.gov.br" target="_blank" rel="noopener noreferrer">Portal Nacional de
+                  Contratações Públicas (PNCP)</a>, onde a Lei nº 14.133/2021 exige a divulgação
+                  oficial das contratações;</li>
+                <li>o Diário Oficial do Estado de Minas Gerais, nas hipóteses em que a lei o exigir;</li>
+                <li>a publicação em jornal de grande circulação, onde ainda for exigida.</li>
+              </ul>
+              <p>O documento com fé pública é o <strong>arquivo PDF assinado digitalmente</strong> de
+                cada edição. As páginas deste portal existem para leitura, acessibilidade e citação;
+                em qualquer divergência, prevalece o arquivo assinado, que qualquer pessoa pode
+                conferir na <a href="/diario-oficial/autenticidade">página de autenticidade</a> ou no
+                <a href="https://validar.iti.gov.br" target="_blank" rel="noopener noreferrer"> validador oficial
+                do Governo Federal</a>.</p>
+            </section>
+
+            <section>
+              <h2>Fundamento legal</h2>
+              <ul class="normas">
+                <li><strong>MP nº 2.200-2/2001</strong> e <strong>Lei nº 14.063/2020</strong> — a assinatura
+                  eletrônica qualificada (ICP-Brasil) confere presunção de autenticidade e integridade
+                  ao documento.</li>
+                <li><strong>Lei nº 12.527/2011</strong> (Acesso à Informação) — acesso, formato aberto e
+                  dados legíveis por máquina. Este módulo publica
+                  <a href="/api/diario-oficial"> API em JSON</a>,
+                  <a href="/diario-oficial/exportar.csv"> CSV</a> e
+                  <a href="/diario-oficial/feed.xml"> RSS</a>.</li>
+                <li><strong>Lei nº 14.133/2021</strong> — publicidade dos atos de contratação; este veículo
+                  complementa o PNCP, não o substitui.</li>
+                <li><strong>Lei nº 13.709/2018</strong> (LGPD) — a publicidade legal é base para publicar,
+                  e não autoriza exposição desnecessária. CPF aparece mascarado; endereço residencial
+                  e dado de saúde não são publicados. Ver a
+                  <a href="/privacidade">política de privacidade</a>.</li>
+                {v.lei_numero && <li><strong>{v.lei_numero}</strong> — lei municipal que institui este
+                  veículo e fixa periodicidade, horário de fechamento e a regra de contagem de prazo.</li>}
+              </ul>
+            </section>
+          </>
+        )}
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .conteudo { padding-block: 1.5rem 3rem; max-width: var(--container-leitura); }
+  section { margin-bottom: 2.75rem; }
+  h2 { font-size: 1.25rem; color: var(--color-serra-noite); margin: 0 0 0.75rem;
+    padding-bottom: 0.35rem; border-bottom: 2px solid var(--color-serra); }
+  h3 { font-size: 1.0625rem; color: var(--color-serra-noite); margin: 1.25rem 0 0.4rem; }
+  p { line-height: 1.7; }
+
+  .resposta-direta { padding: 1.4rem 1.6rem; border-left: 5px solid var(--color-serra);
+    background: color-mix(in srgb, var(--color-serra) 7%, transparent); border-radius: 0 4px 4px 0; }
+  .resposta-direta h2 { border: 0; font-size: 0.875rem; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--color-musgo); margin-bottom: 0.4rem; padding: 0; }
+  .grande { font-size: 1.1875rem; line-height: 1.6; margin: 0; }
+  .para-formulario { margin: 1rem 0 0; font-size: 0.9375rem; color: var(--color-musgo); }
+  .valor { display: block; margin-top: 0.35rem; padding: 0.6rem 0.8rem; background: #fff;
+    border: 1px dashed var(--color-serra); border-radius: 3px; color: var(--color-tinta);
+    font-weight: 600; }
+
+  .duas { display: grid; gap: 0.9rem; margin: 1rem 0; }
+  .duas > div { padding-left: 1rem; border-left: 3px solid var(--color-musgo); }
+  .duas dt { font-weight: 700; color: var(--color-serra-noite); }
+  .duas dd { margin: 0.2rem 0 0; }
+  .fundamento { font-size: 0.9375rem; color: var(--color-musgo); }
+
+  .exemplo { margin-top: 1.25rem; padding: 1.1rem 1.3rem;
+    border: 1px solid color-mix(in srgb, var(--color-serra) 35%, transparent); border-radius: 4px; }
+  .exemplo h3 { margin-top: 0; }
+  .exemplo ol { margin: 0.5rem 0; padding-left: 1.3rem; }
+  .exemplo li { margin-bottom: 0.3rem; }
+  .ressalva { font-size: 0.875rem; color: var(--color-musgo); margin: 0.75rem 0 0; }
+
+  .ficha, .expediente { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+    gap: 0.9rem 1.5rem; margin: 0; }
+  .ficha > div, .expediente > div { min-width: 0; }
+  .ficha dt, .expediente dt { font-size: 0.75rem; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--color-musgo); font-weight: 600; }
+  .ficha dd, .expediente dd { margin: 0.15rem 0 0; }
+  .ficha a, .normas a, .limites a, .antes a { color: var(--color-serra); font-weight: 600; }
+  .ementa-lei { margin-top: 1rem; font-size: 0.9375rem; color: var(--color-musgo); }
+  .antes { margin-top: 1.25rem; padding: 1rem 1.2rem;
+    background: color-mix(in srgb, var(--color-musgo) 7%, transparent); border-radius: 4px; }
+  .antes h3 { margin-top: 0; }
+  .antes p { margin: 0; font-size: 0.9375rem; }
+  .limites, .normas { padding-left: 1.3rem; }
+  .limites li, .normas li { margin-bottom: 0.5rem; line-height: 1.6; }
+  .pendente { padding: 1.5rem; border: 1px solid color-mix(in srgb, var(--color-musgo) 30%, transparent);
+    border-radius: 4px; }
+</style>

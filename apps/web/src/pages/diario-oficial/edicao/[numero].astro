@@ -1,0 +1,238 @@
+---
+/**
+ * Página de uma edição: a capa, o sumário navegável e — o que mais importa
+ * para quem audita — os dados da assinatura e as duas datas explicadas.
+ */
+import Base from '../../../layouts/Base.astro';
+import TituloPagina from '../../../componentes/TituloPagina.astro';
+import DuasDatas from '../../../componentes/diario/DuasDatas.astro';
+import NotaLegal from '../../../componentes/diario/NotaLegal.astro';
+import { acervo, materiasDaEdicao } from '../../../lib/diario/indice';
+import { TIPOS_EDICAO, MOTIVOS_ANULACAO } from '../../../lib/diario/vocabulario';
+import { dataBr, romano } from '../../../lib/diario/dominio.mjs';
+import type { RegraPrazo } from '../../../lib/diario/dominio.mjs';
+import { arquivo } from '../../../lib/directus';
+
+export const prerender = false;
+
+const numero = Number(Astro.params.numero);
+const a = await acervo();
+const e = a.edicoes.find((x) => x.numero === numero);
+if (!e) return new Response(null, { status: 404, statusText: 'Edição não encontrada' });
+
+const materias = materiasDaEdicao(a, e);
+const pdf = arquivo(e.arquivo_pdf);
+const anterior = a.edicoes.find((x) => x.numero === numero - 1) ?? null;
+const proxima = a.edicoes.find((x) => x.numero === numero + 1) ?? null;
+const anuladaPor = e.anulada_por_edicao ? a.edicoes.find((x) => x.id === e.anulada_por_edicao) : null;
+
+const porCaderno = a.cadernos
+  .map((c) => ({ caderno: c, itens: materias.filter((m) => m.caderno === c.id) }))
+  .filter((g) => g.itens.length);
+---
+<Base
+  titulo={`Edição nº ${e.numero} — ${dataBr(e.data_publicacao_legal)}`}
+  descricao={`Edição nº ${e.numero} do Diário Oficial Eletrônico do Município de Cambuí, publicada em ${dataBr(e.data_publicacao_legal)}.`}
+>
+  <TituloPagina
+    titulo={`Edição nº ${e.numero}`}
+    chamada={`Ano ${romano(e.volume ?? 1)} · ${TIPOS_EDICAO[e.tipo]} · ${materias.length} matérias${e.total_paginas ? ` · ${e.total_paginas} páginas` : ''}`}
+    trilha={[{ rotulo: 'Diário Oficial', destino: '/diario-oficial' }, { rotulo: `Edição nº ${e.numero}` }]}
+  />
+
+  <div class="carreira">
+    <div class="ourela">
+      <span class="fio fio-ourela" aria-hidden="true"></span>
+      <div class="corpo conteudo">
+
+        {e.anulada && (
+          <div class="alerta anulada" role="note">
+            <strong>Edição anulada.</strong>
+            <p>{e.anulada_justificativa}</p>
+            <p class="detalhe">
+              Motivo: {e.anulada_motivo ? MOTIVOS_ANULACAO[e.anulada_motivo] ?? e.anulada_motivo : '—'}
+              {e.anulada_em && <> · Anulada em <time datetime={e.anulada_em.slice(0, 10)}>{dataBr(e.anulada_em)}</time></>}
+              {anuladaPor && <> · Ato de anulação publicado na <a href={`/diario-oficial/edicao/${anuladaPor.numero}`}>Edição nº {anuladaPor.numero}</a></>}
+            </p>
+            <p class="detalhe">Esta edição permanece acessível: o ato de anulação também é público,
+              e retirar do ar o que circulou apagaria o próprio histórico.</p>
+          </div>
+        )}
+
+        {e.importada_acervo && (
+          <div class="alerta acervo" role="note">
+            <strong>Edição importada do acervo.</strong>
+            <p>{e.fonte_acervo}</p>
+          </div>
+        )}
+
+        {e.tipo === 'extraordinaria' && e.justificativa_extraordinaria && (
+          <div class="alerta" role="note">
+            <strong>Edição extraordinária.</strong>
+            <p>Circulou fora do calendário previsto na lei do veículo. Justificativa: {e.justificativa_extraordinaria}</p>
+          </div>
+        )}
+
+        <DuasDatas
+          disponibilizacao={e.data_disponibilizacao}
+          publicacaoLegal={e.data_publicacao_legal}
+          regra={(a.veiculo?.regra_prazo ?? 'primeiro_dia_util_seguinte') as RegraPrazo}
+        />
+
+        {pdf && (
+          <p class="baixar">
+            <a href={pdf} class="botao-pdf">Baixar a edição completa em PDF assinado</a>
+            <span>{e.total_paginas ? `${e.total_paginas} páginas. ` : ''}É este o documento com fé pública.</span>
+          </p>
+        )}
+
+        {porCaderno.length > 0 ? (
+          <section class="sumario">
+            <h2>Sumário</h2>
+            {porCaderno.map((g) => (
+              <div class="grupo">
+                <h3>{g.caderno.nome}</h3>
+                <ol>
+                  {g.itens.map((m) => (
+                    <li>
+                      <a href={`/diario-oficial/materia/${e.ano}/${m.slug}`} class="fio-foco">
+                        <span class="ato">{m.titulo}</span>
+                        <span class="ementa">{m.ementa}</span>
+                      </a>
+                      <span class="orgao">{m.orgao}</span>
+                      {m.pagina_inicial && <span class="pag">p. {m.pagina_inicial}{m.pagina_final && m.pagina_final !== m.pagina_inicial ? `–${m.pagina_final}` : ''}</span>}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ))}
+          </section>
+        ) : (
+          <p class="sem-materias">
+            Esta edição não possui matérias estruturadas neste sistema.
+            {pdf ? ' O conteúdo está no PDF, cujo texto é pesquisável.' : ''}
+          </p>
+        )}
+
+        <section class="assinatura">
+          <h2>Assinatura digital desta edição</h2>
+          {e.assinatura_signatario ? (
+            <>
+              <dl>
+                <div><dt>Assinada por</dt><dd>{e.assinatura_signatario}</dd></div>
+                {e.assinatura_documento && <div><dt>CPF do signatário</dt><dd>{e.assinatura_documento}</dd></div>}
+                <div><dt>Autoridade certificadora</dt><dd>{e.assinatura_emissor ?? '—'}</dd></div>
+                {e.assinatura_em && <div><dt>Data da assinatura</dt><dd>{dataBr(e.assinatura_em)}</dd></div>}
+                <div><dt>Algoritmo</dt><dd>{e.assinatura_algoritmo ?? '—'}</dd></div>
+                <div><dt>Carimbo do tempo</dt><dd>{e.assinatura_carimbo ? 'Sim' : 'Não'}</dd></div>
+                {e.codigo_verificador && <div><dt>Código verificador</dt><dd class="codigo">{e.codigo_verificador}</dd></div>}
+              </dl>
+              {e.sha256 && (
+                <p class="hash">
+                  <span>Impressão digital do arquivo (SHA-256)</span>
+                  <code>{e.sha256}</code>
+                </p>
+              )}
+              {!e.assinatura_carimbo && (
+                <p class="ressalva">
+                  Esta edição não possui carimbo do tempo de autoridade credenciada. A data da
+                  assinatura é a informada pelo relógio de quem assinou — é aceita, mas prova menos
+                  do que um carimbo.
+                </p>
+              )}
+              <p class="como-conferir">
+                <strong>Não acredite nesta página: confira você mesmo.</strong>
+                Use <a href={`/diario-oficial/autenticidade?codigo=${encodeURIComponent(e.codigo_verificador ?? '')}`}>nossa
+                página de verificação</a> — que também aceita o arquivo que você baixou — ou o
+                <a href="https://validar.iti.gov.br" target="_blank" rel="noopener noreferrer">validador oficial do
+                Governo Federal</a>, que é independente deste portal.
+              </p>
+            </>
+          ) : (
+            <p class="ressalva">
+              Esta edição não possui assinatura digital registrada neste sistema
+              {e.importada_acervo ? ' — é um arquivo importado do acervo anterior à implantação.' : '.'}
+            </p>
+          )}
+        </section>
+
+        <nav class="vizinhas" aria-label="Outras edições">
+          {anterior ? <a href={`/diario-oficial/edicao/${anterior.numero}`} rel="prev"><span>Edição anterior</span>nº {anterior.numero} — {dataBr(anterior.data_publicacao_legal)}</a> : <span />}
+          {proxima ? <a href={`/diario-oficial/edicao/${proxima.numero}`} rel="next" class="direita"><span>Próxima edição</span>nº {proxima.numero} — {dataBr(proxima.data_publicacao_legal)}</a> : <span />}
+        </nav>
+
+        <NotaLegal notaDoVeiculo={a.veiculo?.nota_legal} />
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .conteudo { padding-block: 1.5rem 3rem; }
+  .alerta { padding: 1rem 1.2rem; margin-bottom: 1.5rem; border-radius: 0 4px 4px 0;
+    border-left: 4px solid var(--color-musgo);
+    background: color-mix(in srgb, var(--color-musgo) 8%, transparent); max-width: var(--container-leitura); }
+  .alerta.anulada { border-left-color: var(--color-carmim);
+    background: color-mix(in srgb, var(--color-carmim) 8%, transparent); }
+  .alerta strong { display: block; margin-bottom: 0.35rem; color: var(--color-serra-noite); }
+  .alerta.anulada strong { color: var(--color-carmim); }
+  .alerta p { margin: 0.3rem 0 0; }
+  .alerta .detalhe { font-size: 0.875rem; color: var(--color-musgo); }
+  .alerta a { color: var(--color-serra); font-weight: 600; }
+
+  .baixar { margin: 1.75rem 0; display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center; }
+  .botao-pdf { display: inline-block; background: var(--color-carmim); color: #fff;
+    padding: 0.7rem 1.3rem; border-radius: 3px; font-weight: 600; text-decoration: none; }
+  .botao-pdf:hover { background: color-mix(in srgb, var(--color-carmim) 85%, #000); }
+  .botao-pdf:focus-visible { outline: 3px solid var(--color-serra); outline-offset: 2px; }
+  .baixar span { font-size: 0.9375rem; color: var(--color-musgo); }
+
+  .sumario { margin-top: 2.5rem; }
+  .sumario h2 { font-size: 1.25rem; color: var(--color-serra-noite);
+    border-bottom: 2px solid var(--color-serra); padding-bottom: 0.4rem; }
+  .grupo h3 { font-size: 0.9375rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--color-serra); margin: 1.5rem 0 0.5rem; }
+  .grupo ol { list-style: none; margin: 0; padding: 0; }
+  .grupo li { padding: 0.75rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-musgo) 18%, transparent);
+    display: flex; flex-wrap: wrap; gap: 0.2rem 0.75rem; align-items: baseline; }
+  .grupo a { flex: 1 1 18rem; min-width: 0; text-decoration: none; color: var(--color-tinta); }
+  .ato { display: block; font-size: 0.8125rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--color-serra); }
+  .ementa { display: block; margin-top: 0.1rem; line-height: 1.45; }
+  .orgao, .pag { font-size: 0.8125rem; color: var(--color-musgo); flex: none; }
+  .sem-materias { margin: 2rem 0; padding: 1.25rem; max-width: var(--container-leitura);
+    border: 1px solid color-mix(in srgb, var(--color-musgo) 25%, transparent); border-radius: 4px; }
+
+  .assinatura { margin-top: 3rem; padding-top: 1.5rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-musgo) 22%, transparent); }
+  .assinatura h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--color-musgo); margin: 0 0 0.9rem; }
+  .assinatura dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
+    gap: 0.9rem 1.5rem; margin: 0 0 1rem; }
+  .assinatura dt { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--color-musgo); font-weight: 600; }
+  .assinatura dd { margin: 0.2rem 0 0; }
+  .codigo { font-family: ui-monospace, monospace; font-weight: 700; letter-spacing: 0.05em; }
+  .hash { margin: 0 0 1rem; }
+  .hash span { display: block; font-size: 0.75rem; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--color-musgo); font-weight: 600; margin-bottom: 0.2rem; }
+  /* O hash tem 64 caracteres e não quebra sozinho: sem isto, estoura a largura
+     em 360px e a página inteira rola na horizontal. */
+  .hash code { font-family: ui-monospace, monospace; font-size: 0.8125rem;
+    word-break: break-all; overflow-wrap: anywhere; display: block;
+    background: color-mix(in srgb, var(--color-musgo) 8%, transparent); padding: 0.5rem 0.7rem; border-radius: 3px; }
+  .ressalva { font-size: 0.9375rem; color: var(--color-musgo); border-left: 3px solid var(--color-musgo);
+    padding-left: 0.9rem; margin: 0 0 1rem; max-width: var(--container-leitura); }
+  .como-conferir { max-width: var(--container-leitura); font-size: 0.9375rem; }
+  .como-conferir strong { display: block; color: var(--color-serra-noite); }
+  .como-conferir a { color: var(--color-serra); font-weight: 600; }
+
+  .vizinhas { display: flex; justify-content: space-between; gap: 1rem; margin-top: 2.5rem;
+    padding-top: 1.25rem; border-top: 1px solid color-mix(in srgb, var(--color-musgo) 22%, transparent); }
+  .vizinhas a { color: var(--color-tinta); text-decoration: none; max-width: 20rem; }
+  .vizinhas a:hover { color: var(--color-serra); }
+  .vizinhas span { display: block; font-size: 0.75rem; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--color-musgo); font-weight: 600; }
+  .vizinhas .direita { text-align: right; }
+</style>

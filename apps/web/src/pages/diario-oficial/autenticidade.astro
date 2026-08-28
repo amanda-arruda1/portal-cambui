@@ -1,0 +1,313 @@
+---
+/**
+ * Verificação de autenticidade — a página do auditor.
+ *
+ * Dois caminhos, porque as duas perguntas são diferentes:
+ *   • pelo CÓDIGO: "esta edição existe e foi mesmo publicada?"
+ *   • pelo ARQUIVO: "este PDF que está na minha mão é o mesmo que foi assinado,
+ *     ou alguém mexeu nele?"
+ * O segundo é o que realmente importa, e é o que quase nenhum portal de diário
+ * oferece — o que transforma a checagem num ato de fé no próprio portal.
+ *
+ * Por isso esta página insiste, em texto, que o cidadão NÃO precisa acreditar
+ * nela: aponta para o validador oficial do Governo Federal, que é independente.
+ * Confiança que só o próprio sistema atesta não é confiança.
+ */
+import Base from '../../layouts/Base.astro';
+import TituloPagina from '../../componentes/TituloPagina.astro';
+import { acervo } from '../../lib/diario/indice';
+import { verificarPdf } from '../../lib/diario/verificar.mjs';
+import { ancoras } from '../../lib/diario/ancoras';
+import { dataBr } from '../../lib/diario/dominio.mjs';
+import { arquivo } from '../../lib/directus';
+
+export const prerender = false;
+
+const LIMITE_BYTES = 40 * 1024 * 1024;
+
+const a = await acervo();
+const conf = ancoras();
+
+let codigo = (Astro.url.searchParams.get('codigo') ?? '').trim().toUpperCase();
+let laudo: ReturnType<typeof verificarPdf> | null = null;
+let erro: string | null = null;
+let nomeArquivo: string | null = null;
+let edicaoDoArquivo: (typeof a.edicoes)[number] | null = null;
+let conferido = false;
+
+if (Astro.request.method === 'POST') {
+  conferido = true;
+  try {
+    const forma = await Astro.request.formData();
+    const enviado = forma.get('documento');
+    codigo = String(forma.get('codigo') ?? codigo).trim().toUpperCase();
+
+    if (enviado instanceof File && enviado.size > 0) {
+      if (enviado.size > LIMITE_BYTES) {
+        erro = `O arquivo tem ${(enviado.size / 1048576).toFixed(1)} MB e o limite é 40 MB.`;
+      } else {
+        nomeArquivo = enviado.name;
+        const bytes = Buffer.from(await enviado.arrayBuffer());
+        if (bytes.subarray(0, 5).toString('latin1') !== '%PDF-') {
+          erro = 'O arquivo enviado não é um PDF.';
+        } else {
+          laudo = verificarPdf(bytes, { ancoras: conf.pems });
+          /* A pergunta decisiva: este arquivo é ALGUMA edição publicada? A
+           * assinatura pode conferir e o arquivo ainda assim não ser deste
+           * município — comparar o hash com o acervo é o que fecha a resposta. */
+          edicaoDoArquivo = a.edicoes.find((e) => e.sha256 === laudo!.sha256) ?? null;
+        }
+      }
+    } else if (!codigo) {
+      erro = 'Informe um código verificador ou envie um arquivo PDF.';
+    }
+  } catch {
+    erro = 'Não foi possível ler o arquivo enviado. Tente novamente.';
+  }
+}
+
+const porCodigo = codigo ? a.edicoes.find((e) => e.codigo_verificador === codigo) ?? null : null;
+const buscouCodigo = Boolean(codigo);
+---
+<Base
+  titulo="Conferir autenticidade"
+  descricao="Confira se um documento do Diário Oficial Eletrônico de Cambuí é autêntico, pelo código verificador ou enviando o próprio arquivo PDF."
+>
+  <TituloPagina
+    titulo="Conferir autenticidade"
+    chamada="Confira se um documento é mesmo o que foi publicado — pelo código impresso nele, ou enviando o arquivo que você tem em mãos."
+    trilha={[{ rotulo: 'Diário Oficial', destino: '/diario-oficial' }, { rotulo: 'Autenticidade' }]}
+  />
+
+  <div class="carreira">
+    <div class="ourela">
+      <span class="fio fio-ourela" aria-hidden="true"></span>
+      <div class="corpo conteudo">
+
+        {conf.demonstracao && (
+          <div class="alerta demo" role="note">
+            <strong>Atenção: âncora de confiança de demonstração.</strong>
+            <p>Este ambiente confere assinaturas contra uma autoridade certificadora
+              <em> de teste</em>, criada pelo próprio sistema. Ela <strong>não é ICP-Brasil</strong>.
+              A verificação de integridade abaixo é real e funciona de verdade; a de
+              <em>confiança na cadeia</em> só terá valor quando o certificado do município for
+              instalado.</p>
+          </div>
+        )}
+
+        <div class="dois-caminhos">
+          <form method="get" class="cartao" role="search">
+            <h2>Tenho o código verificador</h2>
+            <p class="explica">São 12 caracteres impressos no rodapé de todas as páginas do documento
+              — e no QR Code.</p>
+            <p class="campo">
+              <label for="codigo">Código verificador</label>
+              <input type="text" id="codigo" name="codigo" value={codigo}
+                placeholder="XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" />
+            </p>
+            <button type="submit">Conferir código</button>
+          </form>
+
+          <form method="post" enctype="multipart/form-data" class="cartao destaque">
+            <h2>Tenho o arquivo PDF</h2>
+            <p class="explica">Este é o caminho que prova de verdade: comparamos o arquivo que
+              você tem, byte a byte, com o que foi assinado.</p>
+            <p class="campo">
+              <label for="documento">Arquivo PDF (até 40 MB)</label>
+              <input type="file" id="documento" name="documento" accept="application/pdf,.pdf" required />
+            </p>
+            <button type="submit">Conferir arquivo</button>
+          </form>
+        </div>
+
+        {erro && <p class="resposta ruim" role="alert"><strong>Não foi possível conferir.</strong> {erro}</p>}
+
+        {laudo && !erro && (
+          <section class="laudo" aria-labelledby="titulo-laudo">
+            <h2 id="titulo-laudo">Resultado da conferência</h2>
+            {nomeArquivo && <p class="arquivo-nome">Arquivo enviado: <code>{nomeArquivo}</code></p>}
+
+            <p class:list={['veredito', laudo.integro && laudo.cobreTudo && edicaoDoArquivo ? 'bom' : laudo.integro && laudo.cobreTudo ? 'atencao' : 'ruim']} role="status">
+              {!laudo.assinado
+                ? 'Este arquivo NÃO possui assinatura digital.'
+                : !laudo.integro
+                  ? 'DOCUMENTO ADULTERADO. O conteúdo não corresponde ao que foi assinado.'
+                  : !laudo.cobreTudo
+                    ? 'DOCUMENTO ALTERADO. A assinatura é válida, mas há conteúdo acrescentado depois dela.'
+                    : edicaoDoArquivo
+                      ? `DOCUMENTO AUTÊNTICO. É a Edição nº ${edicaoDoArquivo.numero} deste Diário Oficial, íntegra.`
+                      : 'Assinatura íntegra, mas este arquivo NÃO corresponde a nenhuma edição publicada por este município.'}
+            </p>
+
+            <dl class="detalhes">
+              <div><dt>Possui assinatura digital</dt><dd>{laudo.assinado ? 'Sim' : 'Não'}</dd></div>
+              <div><dt>Conteúdo confere com a assinatura</dt><dd>{laudo.integro ? 'Sim' : 'Não'}</dd></div>
+              <div><dt>Assinatura cobre o arquivo inteiro</dt><dd>{laudo.cobreTudo ? 'Sim' : 'Não'}</dd></div>
+              <div><dt>Corresponde a uma edição publicada</dt>
+                <dd>{edicaoDoArquivo ? <a href={`/diario-oficial/edicao/${edicaoDoArquivo.numero}`}>Sim — Edição nº {edicaoDoArquivo.numero}</a> : 'Não'}</dd></div>
+              {laudo.signatario && <div><dt>Assinado por</dt><dd>{laudo.signatario}</dd></div>}
+              {laudo.emissor && <div><dt>Autoridade certificadora</dt><dd>{laudo.emissor}</dd></div>}
+              {laudo.quando && <div><dt>Data da assinatura</dt><dd>{laudo.quando}</dd></div>}
+              {laudo.validoNaAssinatura !== null && (
+                <div><dt>Certificado válido na data da assinatura</dt><dd>{laudo.validoNaAssinatura ? 'Sim' : 'Não'}</dd></div>
+              )}
+              {laudo.padrao && <div><dt>Padrão</dt><dd>{laudo.padrao}</dd></div>}
+              {laudo.algoritmo && <div><dt>Algoritmo</dt><dd>{laudo.algoritmo}</dd></div>}
+              <div><dt>Carimbo do tempo</dt><dd>{laudo.carimbo ? 'Sim' : 'Não'}</dd></div>
+              <div><dt>Cadeia reconhecida por este portal</dt><dd>{laudo.confiavel ? 'Sim' : 'Não'}</dd></div>
+            </dl>
+
+            <p class="hash"><span>Impressão digital do arquivo enviado (SHA-256)</span><code>{laudo.sha256}</code></p>
+
+            {laudo.problemas.length > 0 && (
+              <div class="problemas">
+                <h3>Ressalvas</h3>
+                <ul>{laudo.problemas.map((p) => <li>{p}</li>)}</ul>
+              </div>
+            )}
+
+            <p class="independente">
+              <strong>Não precisa acreditar nesta página.</strong> Envie o mesmo arquivo ao
+              <a href="https://validar.iti.gov.br" target="_blank" rel="noopener noreferrer"> validador
+              oficial do Governo Federal</a>, que é independente deste portal e do município.
+            </p>
+          </section>
+        )}
+
+        {buscouCodigo && !laudo && (
+          <section class="laudo" aria-labelledby="titulo-codigo">
+            <h2 id="titulo-codigo">Resultado da consulta pelo código</h2>
+            {porCodigo ? (
+              <>
+                <p class="veredito bom" role="status">
+                  Código válido. Corresponde à Edição nº {porCodigo.numero}, de {dataBr(porCodigo.data_publicacao_legal)}.
+                </p>
+                <dl class="detalhes">
+                  <div><dt>Edição</dt><dd><a href={`/diario-oficial/edicao/${porCodigo.numero}`}>nº {porCodigo.numero}</a></dd></div>
+                  <div><dt>Disponibilização</dt><dd>{dataBr(porCodigo.data_disponibilizacao)}</dd></div>
+                  <div><dt>Publicação legal</dt><dd>{dataBr(porCodigo.data_publicacao_legal)}</dd></div>
+                  <div><dt>Páginas</dt><dd>{porCodigo.total_paginas ?? '—'}</dd></div>
+                  <div><dt>Assinada por</dt><dd>{porCodigo.assinatura_signatario ?? '—'}</dd></div>
+                  <div><dt>Situação</dt><dd>{porCodigo.anulada ? 'Publicada e posteriormente ANULADA' : 'Publicada'}</dd></div>
+                </dl>
+                {porCodigo.sha256 && (
+                  <p class="hash"><span>Impressão digital da edição publicada (SHA-256)</span><code>{porCodigo.sha256}</code></p>
+                )}
+                <p class="independente">
+                  O código diz que a edição existe. Para saber se o <em>arquivo que você tem</em> é
+                  mesmo essa edição, use o segundo caminho acima e envie o PDF —
+                  {arquivo(porCodigo.arquivo_pdf) && <> ou <a href={arquivo(porCodigo.arquivo_pdf)!}>baixe o original aqui</a></>}.
+                </p>
+              </>
+            ) : (
+              <p class="veredito ruim" role="status">
+                Nenhuma edição publicada com o código <strong>{codigo}</strong>.
+                Confira se digitou corretamente — o código não usa as letras I e O nem os
+                algarismos 0 e 1, justamente para não haver confusão.
+              </p>
+            )}
+          </section>
+        )}
+
+        <section class="como">
+          <h2>Como a conferência funciona</h2>
+          <ol>
+            <li><strong>Integridade.</strong> Calculamos o resumo criptográfico (SHA-256) do
+              conteúdo do arquivo e comparamos com o resumo que foi registrado dentro da
+              assinatura no momento em que ela foi aplicada. Um único bit trocado muda o resumo.</li>
+            <li><strong>Cobertura.</strong> Verificamos se a assinatura cobre o arquivo <em>inteiro</em>.
+              É possível anexar conteúdo depois de um PDF assinado; nesse caso a assinatura
+              continua conferindo para a parte antiga, e um leitor desavisado veria um selo
+              verde num documento alterado. Aqui isso é reprovado.</li>
+            <li><strong>Confiança.</strong> Verificamos se o certificado de quem assinou foi
+              emitido por uma autoridade certificadora reconhecida. Esta é uma pergunta
+              diferente das duas primeiras: um documento pode ser íntegro e assinado por
+              qualquer pessoa.</li>
+          </ol>
+          <p>As três respostas aparecem separadas de propósito. Um único selo "válido"
+             esconderia justamente a distinção que importa numa auditoria.</p>
+        </section>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .conteudo { padding-block: 1.5rem 3rem; }
+  .alerta { padding: 1rem 1.2rem; margin-bottom: 1.75rem; border-radius: 0 4px 4px 0;
+    border-left: 4px solid var(--color-carmim);
+    background: color-mix(in srgb, var(--color-carmim) 8%, transparent);
+    max-width: var(--container-leitura); }
+  .alerta strong { display: block; margin-bottom: 0.3rem; color: var(--color-carmim); }
+  .alerta p { margin: 0; }
+
+  .dois-caminhos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
+    gap: 1.25rem; margin-bottom: 2rem; }
+  .cartao { border: 1px solid color-mix(in srgb, var(--color-musgo) 30%, transparent);
+    border-radius: 4px; padding: 1.25rem; min-width: 0; }
+  .cartao.destaque { border-color: var(--color-serra); border-width: 2px;
+    background: color-mix(in srgb, var(--color-serra) 4%, transparent); }
+  .cartao h2 { font-size: 1.0625rem; margin: 0 0 0.35rem; color: var(--color-serra-noite); }
+  .explica { margin: 0 0 0.9rem; font-size: 0.9375rem; color: var(--color-musgo); }
+  .campo { margin: 0 0 0.9rem; }
+  .campo label { display: block; font-size: 0.875rem; font-weight: 600;
+    color: var(--color-musgo); margin-bottom: 0.3rem; }
+  input { width: 100%; padding: 0.6rem 0.7rem; font: inherit; min-height: 2.75rem;
+    border: 1px solid color-mix(in srgb, var(--color-musgo) 45%, transparent); border-radius: 3px; }
+  input:focus-visible { outline: 3px solid var(--color-carmim); outline-offset: 1px; }
+  .cartao button { background: var(--color-serra); color: #fff; border: 0;
+    padding: 0.65rem 1.3rem; border-radius: 3px; font: inherit; font-weight: 600;
+    cursor: pointer; min-height: 2.75rem; }
+  .cartao.destaque button { background: var(--color-carmim); }
+  .cartao button:focus-visible { outline: 3px solid var(--color-tinta); outline-offset: 2px; }
+
+  .laudo { margin: 2rem 0; padding: 1.5rem;
+    border: 1px solid color-mix(in srgb, var(--color-musgo) 30%, transparent); border-radius: 4px; }
+  .laudo h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--color-musgo); margin: 0 0 0.9rem; }
+  .arquivo-nome { font-size: 0.9375rem; color: var(--color-musgo); margin: 0 0 0.75rem; }
+  .arquivo-nome code { word-break: break-all; }
+
+  .veredito { font-size: 1.125rem; font-weight: 700; line-height: 1.45; margin: 0 0 1.25rem;
+    padding: 0.9rem 1.1rem; border-radius: 3px; border-left: 5px solid; }
+  .veredito.bom { color: var(--color-serra-noite); border-left-color: var(--color-serra);
+    background: color-mix(in srgb, var(--color-serra) 10%, transparent); }
+  .veredito.atencao { color: #6b4a00; border-left-color: #b07a00;
+    background: color-mix(in srgb, #b07a00 12%, transparent); }
+  .veredito.ruim { color: var(--color-carmim); border-left-color: var(--color-carmim);
+    background: color-mix(in srgb, var(--color-carmim) 10%, transparent); }
+  .resposta { padding: 0.9rem 1.1rem; border-radius: 3px; margin: 1.5rem 0; }
+  .resposta.ruim { color: var(--color-carmim); border-left: 5px solid var(--color-carmim);
+    background: color-mix(in srgb, var(--color-carmim) 10%, transparent); }
+
+  .detalhes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+    gap: 0.85rem 1.5rem; margin: 0 0 1.25rem; }
+  .detalhes > div { min-width: 0; }
+  .detalhes dt { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--color-musgo); font-weight: 600; }
+  .detalhes dd { margin: 0.15rem 0 0; }
+  .detalhes a { color: var(--color-serra); font-weight: 600; }
+
+  .hash span { display: block; font-size: 0.75rem; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--color-musgo); font-weight: 600; margin-bottom: 0.2rem; }
+  .hash code { font-family: ui-monospace, monospace; font-size: 0.8125rem;
+    word-break: break-all; overflow-wrap: anywhere; display: block;
+    background: color-mix(in srgb, var(--color-musgo) 8%, transparent);
+    padding: 0.5rem 0.7rem; border-radius: 3px; }
+
+  .problemas { margin-top: 1.25rem; }
+  .problemas h3 { font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--color-carmim); margin: 0 0 0.35rem; }
+  .problemas ul { margin: 0; padding-left: 1.2rem; }
+  .independente { margin: 1.25rem 0 0; font-size: 0.9375rem; max-width: var(--container-leitura); }
+  .independente strong { color: var(--color-serra-noite); }
+  .independente a { color: var(--color-serra); font-weight: 600; }
+
+  .como { margin-top: 3rem; padding-top: 1.5rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-musgo) 22%, transparent);
+    max-width: var(--container-leitura); }
+  .como h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--color-musgo); margin: 0 0 0.75rem; }
+  .como ol { padding-left: 1.3rem; }
+  .como li { margin-bottom: 0.7rem; }
+</style>

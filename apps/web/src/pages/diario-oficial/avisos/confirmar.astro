@@ -1,0 +1,54 @@
+---
+/** Confirmação do duplo opt-in. Sem confirmar, nenhum aviso sai. */
+import Base from '../../../layouts/Base.astro';
+import TituloPagina from '../../../componentes/TituloPagina.astro';
+import { confirmar } from '../../../lib/diario/avisos';
+
+export const prerender = false;
+const t = Astro.url.searchParams.get('t') ?? '';
+const r = await confirmar(t);
+---
+<Base titulo="Confirmação de cadastro" semIndexacao={true}>
+  <TituloPagina titulo="Avisos do Diário Oficial"
+    trilha={[{ rotulo: 'Diário Oficial', destino: '/diario-oficial' }, { rotulo: 'Confirmação' }]} />
+  <div class="carreira"><div class="ourela"><span class="fio fio-ourela" aria-hidden="true"></span>
+    <div class="corpo conteudo">
+      {r.estado === 'confirmado' && (
+        <div class="resposta boa" role="status">
+          <h2>Pronto. Cadastro confirmado.</h2>
+          <p>A partir de agora, <strong>{r.email}</strong> recebe aviso quando o Município publicar
+            uma nova edição do Diário Oficial, conforme os filtros que você escolheu.</p>
+          <p>Todo aviso traz um link de descadastro em um clique.</p>
+        </div>
+      )}
+      {r.estado === 'ja_confirmado' && (
+        <div class="resposta boa" role="status">
+          <h2>Este cadastro já estava confirmado.</h2>
+          <p><strong>{r.email}</strong> já recebe os avisos. Não é preciso fazer mais nada.</p>
+        </div>
+      )}
+      {r.estado === 'invalido' && (
+        <div class="resposta ruim" role="alert">
+          <h2>Não conseguimos confirmar este cadastro.</h2>
+          <p>O link pode ter expirado, já ter sido usado para descadastro, ou ter sido copiado
+            incompleto — o que é comum quando ele quebra em duas linhas no e-mail.</p>
+          <p><a href="/diario-oficial/avisos">Cadastrar novamente</a></p>
+        </div>
+      )}
+      <p class="voltar"><a href="/diario-oficial">Ir para o Diário Oficial</a></p>
+    </div>
+  </div></div>
+</Base>
+<style>
+  .conteudo { padding-block: 1.5rem 3rem; max-width: var(--container-leitura); }
+  .resposta { padding: 1.4rem 1.6rem; border-radius: 0 4px 4px 0; }
+  .resposta.boa { border-left: 5px solid var(--color-serra);
+    background: color-mix(in srgb, var(--color-serra) 8%, transparent); }
+  .resposta.ruim { border-left: 5px solid var(--color-carmim);
+    background: color-mix(in srgb, var(--color-carmim) 8%, transparent); }
+  .resposta h2 { margin: 0 0 0.5rem; font-size: 1.3rem; color: var(--color-serra-noite); }
+  .resposta.ruim h2 { color: var(--color-carmim); }
+  .resposta p { margin: 0 0 0.6rem; }
+  .resposta a, .voltar a { color: var(--color-serra); font-weight: 600; }
+  .voltar { margin-top: 1.5rem; }
+</style>

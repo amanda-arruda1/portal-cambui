@@ -52,6 +52,12 @@ const { titulo, sessao } = Astro.props;
         {
           sessao && (
             <div class="flex items-center gap-4 text-sm">
+              {['Administrator', 'Diário — Redator setorial', 'Diário — Editor',
+                'Diário — Autoridade signatária', 'Diário — Administrador'].includes(sessao.usuario.papel ?? '') && (
+                <a href="/painel/diario" class="underline underline-offset-4 hover:text-azul-claro">
+                  Diário Oficial
+                </a>
+              )}
               {['Administrator', 'Setor de licitações', 'Leitor de licitações', 'Publicador', 'Revisor'].includes(sessao.usuario.papel ?? '') && (
                 <a href="/painel/licitacoes" class="underline underline-offset-4 hover:text-azul-claro">
                   Licitações

@@ -1,0 +1,169 @@
+---
+/**
+ * Calendário de um ano, marcando os dias em que houve circulação.
+ *
+ * O calendário responde uma pergunta que a lista não responde: "houve edição
+ * no dia X?". Para quem confere prazo, a ausência de edição num dia é
+ * informação — significa que o ato não pôde ser publicado ali.
+ */
+import Base from '../../../layouts/Base.astro';
+import TituloPagina from '../../../componentes/TituloPagina.astro';
+import { acervo } from '../../../lib/diario/indice';
+import { TIPOS_EDICAO } from '../../../lib/diario/vocabulario';
+import { dataBr, ehDiaUtil, nomeFeriado, comoDia } from '../../../lib/diario/dominio.mjs';
+
+export const prerender = false;
+
+const ano = Number(Astro.params.ano);
+if (!Number.isInteger(ano) || ano < 1900 || ano > 2200) {
+  return new Response(null, { status: 404, statusText: 'Ano inválido' });
+}
+
+const a = await acervo();
+const doAno = a.edicoes.filter((e) => String(e.data_publicacao_legal).startsWith(String(ano)));
+const porDia = new Map<string, typeof doAno>();
+for (const e of doAno) {
+  const d = String(e.data_publicacao_legal).slice(0, 10);
+  if (!porDia.has(d)) porDia.set(d, []);
+  porDia.get(d)!.push(e);
+}
+
+const anosComEdicao = [...new Set(a.edicoes.map((e) => Number(String(e.data_publicacao_legal).slice(0, 4))))].sort((x, y) => y - x);
+const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const SEMANA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+const SEMANA_LONGA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+
+/** Grade de um mês: começa com os vazios até o primeiro dia da semana. */
+function grade(mes: number) {
+  const primeiro = new Date(Date.UTC(ano, mes, 1));
+  const dias: Array<{ dia: number; iso: string; edicoes: typeof doAno; util: boolean; feriado: string | null } | null> =
+    Array.from({ length: primeiro.getUTCDay() }, () => null);
+  for (let d = 1; d <= 31; d++) {
+    const data = new Date(Date.UTC(ano, mes, d));
+    if (data.getUTCMonth() !== mes) break;
+    const iso = data.toISOString().slice(0, 10);
+    dias.push({ dia: d, iso, edicoes: porDia.get(iso) ?? [], util: ehDiaUtil(iso), feriado: nomeFeriado(iso) });
+  }
+  return dias;
+}
+const meses = Array.from({ length: 12 }, (_, m) => ({ mes: m, dias: grade(m) }))
+  .filter((m) => m.dias.some((d) => d?.edicoes.length));
+---
+<Base titulo={`Arquivo de ${ano}`} descricao={`Edições do Diário Oficial Eletrônico de Cambuí publicadas em ${ano}.`}>
+  <TituloPagina titulo={`Arquivo de ${ano}`}
+    chamada={`${doAno.length} ${doAno.length === 1 ? 'edição publicada' : 'edições publicadas'}. Os dias marcados são os dias em que houve circulação.`}
+    trilha={[{ rotulo: 'Diário Oficial', destino: '/diario-oficial' }, { rotulo: 'Arquivo', destino: '/diario-oficial/arquivo' }, { rotulo: String(ano) }]} />
+
+  <div class="carreira"><div class="ourela"><span class="fio fio-ourela" aria-hidden="true"></span>
+    <div class="corpo conteudo">
+      <nav class="anos" aria-label="Escolher ano">
+        {anosComEdicao.map((x) => (
+          <a href={`/diario-oficial/arquivo/${x}`} aria-current={x === ano ? 'page' : undefined} class:list={[x === ano && 'atual']}>{x}</a>
+        ))}
+      </nav>
+
+      {meses.length === 0 ? <p class="vazio">Nenhuma edição publicada em {ano}.</p> : (
+        <div class="calendarios">
+          {meses.map(({ mes, dias }) => (
+            <section class="mes">
+              <h2>{MESES[mes]}</h2>
+              <table>
+                <caption class="oculto-visual">Dias de circulação em {MESES[mes]} de {ano}</caption>
+                <thead><tr>{SEMANA.map((s, i) => <th scope="col"><abbr title={SEMANA_LONGA[i]}>{s}</abbr></th>)}</tr></thead>
+                <tbody>
+                  {Array.from({ length: Math.ceil(dias.length / 7) }, (_, semana) => (
+                    <tr>
+                      {dias.slice(semana * 7, semana * 7 + 7).map((d) => (
+                        <td class:list={[d && !d.util && 'nao-util', d?.edicoes.length && 'com-edicao']}>
+                          {d ? (
+                            d.edicoes.length ? (
+                              <a href={`/diario-oficial/edicao/${d.edicoes[0].numero}`}
+                                 title={`${d.edicoes.length} ${d.edicoes.length === 1 ? 'edição' : 'edições'} em ${dataBr(d.iso)}${d.edicoes.length === 1 ? ` — nº ${d.edicoes[0].numero}` : ''}`}>
+                                {d.dia}{d.edicoes.length > 1 && <sup>{d.edicoes.length}</sup>}
+                              </a>
+                            ) : (
+                              <span title={d.feriado ?? undefined}>
+                                {d.dia}
+                                {/* O feriado não pode ficar só no title: leitor
+                                    de tela em toque não o alcança. */}
+                                {d.feriado && <span class="oculto-visual"> — {d.feriado}</span>}
+                              </span>
+                            )
+                          ) : ''}
+                        </td>
+                      ))}
+                      {Array.from({ length: Math.max(0, 7 - dias.slice(semana * 7, semana * 7 + 7).length) }, () => <td></td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          ))}
+        </div>
+      )}
+
+      <h2 class="titulo-lista">Edições de {ano}</h2>
+      <ul class="lista">
+        {doAno.map((e) => (
+          <li>
+            <a href={`/diario-oficial/edicao/${e.numero}`} class="fio-foco">
+              <span class="numero">nº {e.numero}</span>
+              <span class="data">{dataBr(e.data_publicacao_legal)}</span>
+            </a>
+            <span class="detalhe">
+              {TIPOS_EDICAO[e.tipo]}{e.total_paginas ? ` · ${e.total_paginas} pág.` : ''}
+              {e.importada_acervo ? ' · importada do acervo' : ''}
+            </span>
+            {e.anulada && <span class="anulada">Anulada</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div></div>
+</Base>
+
+<style>
+  .conteudo { padding-block: 1.5rem 3rem; }
+  .oculto-visual { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  .anos { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.75rem; }
+  .anos a { padding: 0.4rem 0.9rem; border: 1px solid color-mix(in srgb, var(--color-musgo) 35%, transparent);
+    border-radius: 999px; text-decoration: none; color: var(--color-tinta); font-size: 0.9375rem; min-height: 2.25rem;
+    display: inline-flex; align-items: center; }
+  .anos a.atual { background: var(--color-serra); border-color: var(--color-serra); color: #fff; font-weight: 700; }
+  .anos a:focus-visible { outline: 3px solid var(--color-carmim); outline-offset: 2px; }
+
+  .calendarios { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+    gap: 1.5rem; margin-bottom: 2.5rem; }
+  .mes { min-width: 0; }
+  .mes h2 { font-size: 0.9375rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--color-serra); margin: 0 0 0.5rem; border: 0; padding: 0; }
+  .mes table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .mes th { font-size: 0.75rem; color: var(--color-musgo); font-weight: 600; padding-bottom: 0.3rem; }
+  .mes th abbr { text-decoration: none; }
+  .mes td { text-align: center; padding: 0.1rem; font-size: 0.875rem;
+    color: var(--color-tinta); height: 2rem; }
+  /* Dia não útil em musgo cheio (6,15:1 sobre neblina), NÃO esmaecido.
+     Esmaecer com transparência derrubava o contraste para 2,61:1 — abaixo do
+     mínimo AA. E a distinção não fica só na cor: o dia com edição vira botão
+     verde com número em branco, que é diferença de forma, não de matiz. */
+  .mes td.nao-util span { color: var(--color-musgo); }
+  .mes td a { display: flex; align-items: center; justify-content: center;
+    min-height: 1.9rem; background: var(--color-serra); color: #fff;
+    border-radius: 3px; text-decoration: none; font-weight: 700; }
+  .mes td a:hover { background: var(--color-serra-noite); }
+  .mes td a:focus-visible { outline: 3px solid var(--color-carmim); outline-offset: 1px; }
+  .mes td a sup { font-size: 0.625rem; margin-left: 0.1em; }
+
+  .titulo-lista { font-size: 1.125rem; color: var(--color-serra-noite);
+    border-bottom: 2px solid var(--color-serra); padding-bottom: 0.35rem; margin: 0 0 0.5rem; }
+  .lista { list-style: none; margin: 0; padding: 0; }
+  .lista li { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; align-items: baseline; padding: 0.65rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-musgo) 18%, transparent); }
+  .lista a { text-decoration: none; color: var(--color-tinta); display: flex; gap: 0.7rem; align-items: baseline; }
+  .numero { font-weight: 700; color: var(--color-serra); }
+  .detalhe { font-size: 0.875rem; color: var(--color-musgo); }
+  .anulada { font-size: 0.75rem; font-weight: 700; color: #fff; background: var(--color-carmim);
+    padding: 0.1rem 0.45rem; border-radius: 2px; }
+  .vazio { padding: 1.5rem; border: 1px solid color-mix(in srgb, var(--color-musgo) 25%, transparent); border-radius: 4px; }
+</style>

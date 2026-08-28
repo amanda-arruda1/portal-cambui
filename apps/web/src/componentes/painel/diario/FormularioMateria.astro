@@ -1,0 +1,218 @@
+---
+/**
+ * Formulário de matéria — restrito de propósito.
+ *
+ * O editor de texto NÃO oferece cor de fonte nem tamanho arbitrário. Diário
+ * oficial tem forma padronizada, e um editor que permite tudo produz uma edição
+ * onde cada secretaria escreve de um jeito. O que se oferece é o que a forma
+ * admite: negrito, itálico, título de seção, lista, tabela simples.
+ *
+ * A colagem vinda do Word é limpa no envio (lib/sanitizar), e não só aqui —
+ * limpeza que só existe no navegador é decoração.
+ */
+import { TIPOS_ATO } from '../../../lib/diario/vocabulario';
+import { MODELOS } from '../../../lib/painel/diario';
+
+interface Props {
+  valores: Record<string, any>;
+  cadernos: Array<{ id: string; nome: string; dados_pessoais?: boolean }>;
+  secretarias: Array<{ id: string; nome: string }>;
+  materias?: Array<{ id: string; rotulo: string }>;
+  somenteLeitura?: boolean;
+}
+const { valores: v, cadernos, secretarias, materias = [], somenteLeitura = false } = Astro.props;
+const modelosJson = JSON.stringify(MODELOS);
+---
+<div class="grade">
+  <p class="campo">
+    <label for="tipo_ato">Tipo de ato <span class="obrig">*</span></label>
+    <select id="tipo_ato" name="tipo_ato" required disabled={somenteLeitura}>
+      {TIPOS_ATO.map((t) => <option value={t.valor} selected={v.tipo_ato === t.valor}>{t.rotulo}</option>)}
+    </select>
+    <span class="ajuda" id="dica-tipo"></span>
+  </p>
+  <p class="campo curto">
+    <label for="numero_ato">Número</label>
+    <input type="text" id="numero_ato" name="numero_ato" value={v.numero_ato ?? ''} disabled={somenteLeitura}
+      placeholder="Ex.: 412 ou 12-A" aria-describedby="ajuda-numero" />
+    <span class="ajuda" id="ajuda-numero">Texto, não só dígitos: existe ato "12-A" e existe ato sem número.</span>
+  </p>
+  <p class="campo curto">
+    <label for="ano_ato">Ano</label>
+    <input type="number" id="ano_ato" name="ano_ato" value={v.ano_ato ?? new Date().getFullYear()}
+      min="1900" max="2200" disabled={somenteLeitura} />
+  </p>
+</div>
+
+<div class="grade">
+  <p class="campo">
+    <label for="caderno">Caderno <span class="obrig">*</span></label>
+    <select id="caderno" name="caderno" required disabled={somenteLeitura}>
+      <option value="">Escolha…</option>
+      {cadernos.map((c) => <option value={c.id} selected={v.caderno === c.id}>{c.nome}</option>)}
+    </select>
+  </p>
+  <p class="campo">
+    <label for="secretaria">Secretaria de origem</label>
+    <select id="secretaria" name="secretaria" disabled={somenteLeitura}>
+      <option value="">— outro órgão —</option>
+      {secretarias.map((s) => <option value={s.id} selected={v.secretaria === s.id}>{s.nome}</option>)}
+    </select>
+  </p>
+  <p class="campo">
+    <label for="orgao_texto">Ou órgão por extenso</label>
+    <input type="text" id="orgao_texto" name="orgao_texto" value={v.orgao_texto ?? ''} disabled={somenteLeitura}
+      placeholder="Ex.: Câmara Municipal de Cambuí" aria-describedby="ajuda-orgao" />
+    <span class="ajuda" id="ajuda-orgao">Para órgãos que não são secretaria do Executivo.</span>
+  </p>
+</div>
+
+<p class="campo">
+  <label for="ementa">Ementa <span class="obrig">*</span></label>
+  <textarea id="ementa" name="ementa" rows="2" required disabled={somenteLeitura}
+    aria-describedby="ajuda-ementa">{v.ementa ?? ''}</textarea>
+  <span class="ajuda" id="ajuda-ementa">Resumo oficial em uma frase. É o que aparece no sumário da edição,
+    na listagem pública e na busca — é por ela que o cidadão vai achar (ou não achar) este ato.</span>
+</p>
+
+<div class="campo">
+  <label for="corpo">Texto integral do ato <span class="obrig">*</span></label>
+  <div class="barra" role="toolbar" aria-label="Formatação" hidden>
+    <button type="button" data-formatar="bold" title="Negrito"><b>N</b></button>
+    <button type="button" data-formatar="italic" title="Itálico"><i>I</i></button>
+    <button type="button" data-formatar="formatBlock" data-valor="h4" title="Título de seção">T</button>
+    <button type="button" data-formatar="insertUnorderedList" title="Lista">•</button>
+    <button type="button" data-formatar="removeFormat" title="Limpar formatação">✕</button>
+  </div>
+  <textarea id="corpo" name="corpo" rows="16" required disabled={somenteLeitura}
+    aria-describedby="ajuda-corpo">{v.corpo ?? ''}</textarea>
+  <span class="ajuda" id="ajuda-corpo">
+    Aceita HTML simples: <code>&lt;p&gt;</code>, <code>&lt;strong&gt;</code>, <code>&lt;em&gt;</code>,
+    <code>&lt;h4&gt;</code>, listas e tabelas. Cor de fonte e tamanho são removidos no envio — o diário
+    tem forma padronizada. Colagem do Word é limpa automaticamente.
+  </span>
+</div>
+
+<details class="modelos">
+  <summary>Usar um modelo pronto para este tipo de ato</summary>
+  <p class="ajuda">Preenche ementa e texto com a estrutura padrão. Substitua o que está entre colchetes.</p>
+  <button type="button" id="aplicar-modelo" class="secundario" disabled={somenteLeitura}>Aplicar modelo</button>
+  <p class="ajuda" id="dica-modelo"></p>
+</details>
+
+<div class="grade">
+  <p class="campo">
+    <label for="processo_administrativo">Processo administrativo</label>
+    <input type="text" id="processo_administrativo" name="processo_administrativo"
+      value={v.processo_administrativo ?? ''} placeholder="Ex.: 1014/2026" disabled={somenteLeitura} />
+  </p>
+  <p class="campo">
+    <label for="data_alvo">Publicar a partir de</label>
+    <input type="date" id="data_alvo" name="data_alvo" value={v.data_alvo ?? ''} disabled={somenteLeitura}
+      aria-describedby="ajuda-alvo" />
+    <span class="ajuda" id="ajuda-alvo">Deixe vazio para a próxima edição. Preenchido, entra na fila daquele dia.</span>
+  </p>
+  <p class="campo">
+    <label for="vigencia_inicio">Vigência a partir de</label>
+    <input type="date" id="vigencia_inicio" name="vigencia_inicio" value={v.vigencia_inicio ?? ''} disabled={somenteLeitura} />
+  </p>
+</div>
+
+<details class="remissoes" open={Boolean(v.retifica || v.republica || v.revoga)}>
+  <summary>Este ato corrige ou revoga outro?</summary>
+  <p class="ajuda">Escolher aqui cria a remissão nos dois sentidos: a matéria antiga passa a apontar
+    para esta, e esta para ela. É o que impede uma correção de passar despercebida.</p>
+  <div class="grade">
+    {(['retifica', 'republica', 'revoga'] as const).map((campo) => (
+      <p class="campo">
+        <label for={campo}>{campo === 'retifica' ? 'Retifica (errata)' : campo === 'republica' ? 'Republica' : 'Revoga'}</label>
+        <select id={campo} name={campo} disabled={somenteLeitura}>
+          <option value="">—</option>
+          {materias.map((m) => <option value={m.id} selected={v[campo] === m.id}>{m.rotulo}</option>)}
+        </select>
+      </p>
+    ))}
+  </div>
+  <p class="campo">
+    <label for="motivo_republicacao">Motivo da republicação</label>
+    <input type="text" id="motivo_republicacao" name="motivo_republicacao"
+      value={v.motivo_republicacao ?? ''} disabled={somenteLeitura} />
+  </p>
+</details>
+
+<script define:vars={{ modelosJson }}>
+  const MODELOS = JSON.parse(modelosJson);
+  const tipo = document.getElementById('tipo_ato');
+  const dicaTipo = document.getElementById('dica-tipo');
+  const dicaModelo = document.getElementById('dica-modelo');
+  const ementa = document.getElementById('ementa');
+  const corpo = document.getElementById('corpo');
+
+  function atualizarDica() {
+    const m = MODELOS[tipo.value];
+    dicaTipo.textContent = m ? m.dica : '';
+    dicaModelo.textContent = m ? '' : 'Não há modelo pronto para este tipo de ato.';
+    document.getElementById('aplicar-modelo').disabled = !m;
+  }
+  tipo?.addEventListener('change', atualizarDica);
+  atualizarDica();
+
+  document.getElementById('aplicar-modelo')?.addEventListener('click', () => {
+    const m = MODELOS[tipo.value];
+    if (!m) return;
+    const temTexto = ementa.value.trim() || corpo.value.trim();
+    if (temTexto && !confirm('Isto substitui o que já está escrito na ementa e no texto. Continuar?')) return;
+    ementa.value = m.ementa;
+    corpo.value = m.corpo;
+    corpo.focus();
+  });
+
+  /* Colagem do Word: tirar o lixo já aqui poupa a viagem, mas a limpeza que
+     vale é a do servidor — esta é conveniência, não segurança. */
+  corpo?.addEventListener('paste', (e) => {
+    const html = e.clipboardData?.getData('text/html');
+    if (!html) return;
+    e.preventDefault();
+    const limpo = html
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/<\/?(o:p|span|font|meta|link|style|xml)[^>]*>/gi, '')
+      .replace(/\s(style|class|lang|dir)="[^"]*"/gi, '')
+      .replace(/<p[^>]*>/gi, '<p>')
+      .replace(/(&nbsp;| )/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+    const i = corpo.selectionStart, f = corpo.selectionEnd;
+    corpo.value = corpo.value.slice(0, i) + limpo + corpo.value.slice(f);
+    corpo.selectionStart = corpo.selectionEnd = i + limpo.length;
+  });
+</script>
+
+<style>
+  .grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+    gap: 0 1.2rem; }
+  .campo { margin: 0 0 1.2rem; min-width: 0; }
+  .campo.curto { max-width: 12rem; }
+  label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.9375rem; }
+  .obrig { color: var(--color-carmim); }
+  input, select, textarea { width: 100%; padding: 0.55rem 0.7rem; font: inherit; min-height: 2.6rem;
+    border: 1px solid color-mix(in srgb, var(--color-musgo) 45%, transparent); border-radius: 3px;
+    background: #fff; color: var(--color-tinta); }
+  textarea { min-height: auto; font-family: ui-monospace, monospace; font-size: 0.9375rem; line-height: 1.55; }
+  input:disabled, select:disabled, textarea:disabled {
+    background: color-mix(in srgb, var(--color-musgo) 8%, transparent); color: var(--color-musgo); }
+  input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 3px solid var(--color-carmim); outline-offset: 1px; }
+  .ajuda { display: block; margin-top: 0.3rem; font-size: 0.8125rem; color: var(--color-musgo); line-height: 1.45; }
+  .ajuda code { font-size: 0.9em; }
+  details { margin: 0 0 1.4rem; border: 1px solid color-mix(in srgb, var(--color-musgo) 25%, transparent);
+    border-radius: 4px; padding: 0.8rem 1rem; }
+  summary { cursor: pointer; font-weight: 600; font-size: 0.9375rem; color: var(--color-serra); }
+  summary:focus-visible { outline: 3px solid var(--color-carmim); outline-offset: 2px; }
+  .secundario { background: transparent; border: 1px solid var(--color-serra); color: var(--color-serra);
+    padding: 0.45rem 0.9rem; border-radius: 3px; font: inherit; font-weight: 600; cursor: pointer;
+    min-height: 2.5rem; margin-top: 0.5rem; }
+  .secundario:disabled { opacity: 0.5; cursor: not-allowed; }
+  .barra { display: flex; gap: 0.3rem; margin-bottom: 0.3rem; }
+  .barra button { min-width: 2.2rem; min-height: 2.2rem; border: 1px solid color-mix(in srgb, var(--color-musgo) 35%, transparent);
+    background: #fff; border-radius: 3px; cursor: pointer; }
+</style>

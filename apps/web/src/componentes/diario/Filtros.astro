@@ -1,0 +1,190 @@
+---
+/**
+ * Filtros da busca do Diário.
+ *
+ * É um <form method="get">: funciona com o JavaScript desligado, o estado
+ * inteiro mora na URL e o resultado é um link compartilhável. Quem tem JS ganha
+ * o envio automático ao trocar um campo; quem não tem, usa o botão. Nenhuma
+ * funcionalidade existe só no caminho com script.
+ *
+ * Os contadores ao lado de cada opção são calculados sobre o resultado dos
+ * OUTROS filtros — de forma que o número mostrado é o que aquela opção
+ * realmente devolveria, e nunca se oferece um filtro que dá zero.
+ */
+import { TIPOS_ATO } from '../../lib/diario/vocabulario';
+import type { Caderno } from '../../lib/diario/tipos';
+import type { Filtros } from '../../lib/diario/indice';
+
+interface Props {
+  filtros: Filtros;
+  cadernos: Caderno[];
+  secretarias: Array<{ nome: string; slug: string }>;
+  contagens: {
+    cadernos: Map<string, number>; secretarias: Map<string, number>;
+    tipos: Map<string, number>; anos: Map<number, number>;
+  };
+  total: number;
+}
+const { filtros: f, cadernos, secretarias, contagens, total } = Astro.props;
+const anos = [...contagens.anos.keys()].sort((a, b) => b - a);
+const n = (v: number | undefined) => (v ? ` (${v})` : '');
+
+const ATALHOS = [
+  { valor: 'ultima-edicao', rotulo: 'Última edição' },
+  { valor: 'esta-semana', rotulo: 'Esta semana' },
+  { valor: 'este-mes', rotulo: 'Este mês' },
+  { valor: 'licitacoes', rotulo: 'Só licitações' },
+  { valor: 'pessoal', rotulo: 'Só atos de pessoal' },
+];
+---
+<form class="filtros" method="get" action="/diario-oficial" role="search" aria-label="Buscar no Diário Oficial">
+  <div class="linha-busca">
+    <div class="campo-busca">
+      <label for="q">Buscar no texto integral das matérias</label>
+      <input type="search" id="q" name="q" value={f.q} autocomplete="off"
+        placeholder="Ex.: Decreto 1.245/2026, exoneração, merenda escolar" />
+    </div>
+    <button type="submit" class="buscar">Buscar</button>
+  </div>
+  <p class="dica">
+    Procura no texto completo dos atos, não só nos títulos. Aceita erro de acento e de digitação.
+    Digitar o número de um ato — <em>“Portaria 88/2026”</em> — leva direto à matéria.
+  </p>
+
+  <div class="atalhos" role="group" aria-label="Atalhos">
+    {ATALHOS.map((a) => (
+      <button type="submit" name="atalho" value={f.atalho === a.valor ? '' : a.valor}
+        class:list={['atalho', f.atalho === a.valor && 'ativo']}
+        aria-pressed={f.atalho === a.valor ? 'true' : 'false'}>{a.rotulo}</button>
+    ))}
+  </div>
+
+  <details class="avancado" open={Boolean(f.caderno || f.secretaria || f.tipo || f.de || f.ate || f.ano || f.edicao || f.numero)}>
+    <summary>Filtros detalhados</summary>
+    <div class="grade">
+      <p class="campo">
+        <label for="caderno">Caderno</label>
+        <select id="caderno" name="caderno">
+          <option value="">Todos</option>
+          {cadernos.map((c) => (
+            <option value={c.slug} selected={f.caderno === c.slug}>{c.nome}{n(contagens.cadernos.get(c.slug))}</option>
+          ))}
+        </select>
+      </p>
+      <p class="campo">
+        <label for="tipo">Tipo de ato</label>
+        <select id="tipo" name="tipo">
+          <option value="">Todos</option>
+          {TIPOS_ATO.filter((t) => contagens.tipos.get(t.valor) || f.tipo === t.valor).map((t) => (
+            <option value={t.valor} selected={f.tipo === t.valor}>{t.rotulo}{n(contagens.tipos.get(t.valor))}</option>
+          ))}
+        </select>
+      </p>
+      <p class="campo">
+        <label for="secretaria">Órgão de origem</label>
+        <select id="secretaria" name="secretaria">
+          <option value="">Todos</option>
+          {secretarias.filter((s) => contagens.secretarias.get(s.slug) || f.secretaria === s.slug).map((s) => (
+            <option value={s.slug} selected={f.secretaria === s.slug}>{s.nome}{n(contagens.secretarias.get(s.slug))}</option>
+          ))}
+        </select>
+      </p>
+      <p class="campo">
+        <label for="ano">Ano</label>
+        <select id="ano" name="ano">
+          <option value="">Todos</option>
+          {anos.map((a) => (<option value={a} selected={f.ano === String(a)}>{a}{n(contagens.anos.get(a))}</option>))}
+        </select>
+      </p>
+      <p class="campo">
+        <label for="de">Publicado a partir de</label>
+        <input type="date" id="de" name="de" value={f.de} />
+      </p>
+      <p class="campo">
+        <label for="ate">Publicado até</label>
+        <input type="date" id="ate" name="ate" value={f.ate} />
+      </p>
+      <p class="campo">
+        <label for="numero">Número do ato</label>
+        <input type="text" id="numero" name="numero" value={f.numero} inputmode="numeric" placeholder="Ex.: 1245" />
+      </p>
+      <p class="campo">
+        <label for="edicao">Número da edição</label>
+        <input type="text" id="edicao" name="edicao" value={f.edicao} inputmode="numeric" placeholder="Ex.: 412" />
+      </p>
+      <p class="campo">
+        <label for="ordem">Ordenar por</label>
+        <select id="ordem" name="ordem">
+          <option value="" selected={!f.ordem}>Mais recentes primeiro</option>
+          <option value="antigas" selected={f.ordem === 'antigas'}>Mais antigas primeiro</option>
+          <option value="relevancia" selected={f.ordem === 'relevancia'}>Relevância</option>
+        </select>
+      </p>
+    </div>
+    <div class="acoes">
+      <button type="submit" class="aplicar">Aplicar filtros</button>
+      <a href="/diario-oficial" class="limpar">Limpar tudo</a>
+    </div>
+  </details>
+
+  <p class="resumo" role="status">
+    {total === 0 ? 'Nenhuma matéria encontrada.' : total === 1 ? '1 matéria encontrada.' : `${total.toLocaleString('pt-BR')} matérias encontradas.`}
+  </p>
+</form>
+
+<script>
+  /* Enviar ao trocar um campo é conveniência. O botão continua ali para quem
+     navega por teclado e para quem não tem JavaScript. */
+  const form = document.querySelector<HTMLFormElement>('.filtros');
+  if (form) {
+    for (const c of form.querySelectorAll<HTMLSelectElement>('select')) {
+      c.addEventListener('change', () => form.submit());
+    }
+  }
+</script>
+
+<style>
+  .filtros { margin-bottom: 1.5rem; }
+  /* minmax(0,…) obrigatório: sem isso o campo de busca não encolhe e a página
+     rola na horizontal em 360px. Já quebrou uma vez no módulo de licitações. */
+  .linha-busca { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.6rem; align-items: end; }
+  .campo-busca { min-width: 0; }
+  .campo-busca label, .campo label { display: block; font-size: 0.875rem; font-weight: 600;
+    color: var(--color-musgo); margin-bottom: 0.3rem; }
+  input, select { width: 100%; padding: 0.6rem 0.7rem; font: inherit; color: var(--color-tinta);
+    background: var(--color-papel, #fff); border: 1px solid color-mix(in srgb, var(--color-musgo) 45%, transparent);
+    border-radius: 3px; min-height: 2.75rem; }
+  input:focus-visible, select:focus-visible { outline: 3px solid var(--color-carmim); outline-offset: 1px; }
+  .buscar { background: var(--color-carmim); color: #fff; border: 0; padding: 0 1.3rem;
+    min-height: 2.75rem; border-radius: 3px; font: inherit; font-weight: 600; cursor: pointer; }
+  .buscar:hover { background: color-mix(in srgb, var(--color-carmim) 85%, #000); }
+  .buscar:focus-visible { outline: 3px solid var(--color-serra); outline-offset: 2px; }
+  .dica { margin: 0.5rem 0 0; font-size: 0.875rem; color: var(--color-musgo); }
+
+  .atalhos { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.9rem 0 0; }
+  .atalho { background: transparent; border: 1px solid color-mix(in srgb, var(--color-musgo) 40%, transparent);
+    color: var(--color-tinta); padding: 0.4rem 0.85rem; border-radius: 999px; font: inherit;
+    font-size: 0.875rem; cursor: pointer; min-height: 2.25rem; }
+  .atalho:hover { border-color: var(--color-serra); color: var(--color-serra); }
+  .atalho.ativo { background: var(--color-serra); border-color: var(--color-serra); color: #fff; font-weight: 600; }
+  .atalho:focus-visible { outline: 3px solid var(--color-carmim); outline-offset: 2px; }
+
+  .avancado { margin-top: 1rem; border-top: 1px solid color-mix(in srgb, var(--color-musgo) 22%, transparent);
+    padding-top: 0.8rem; }
+  .avancado summary { cursor: pointer; font-weight: 600; color: var(--color-serra); font-size: 0.9375rem;
+    padding: 0.3rem 0; }
+  .avancado summary:focus-visible { outline: 3px solid var(--color-carmim); outline-offset: 2px; }
+  .grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
+    gap: 0.8rem 1rem; margin-top: 0.8rem; }
+  .campo { margin: 0; min-width: 0; }
+  .acoes { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; margin-top: 1rem; }
+  .aplicar { background: var(--color-serra); color: #fff; border: 0; padding: 0.6rem 1.2rem;
+    border-radius: 3px; font: inherit; font-weight: 600; cursor: pointer; min-height: 2.75rem; }
+  .aplicar:focus-visible { outline: 3px solid var(--color-carmim); outline-offset: 2px; }
+  .limpar { color: var(--color-musgo); font-size: 0.9375rem; }
+  .resumo { margin: 1.2rem 0 0; font-size: 0.9375rem; color: var(--color-musgo); font-weight: 600; }
+
+  @media (max-width: 30rem) {
+    .linha-busca { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>

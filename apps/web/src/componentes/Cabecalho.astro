@@ -18,6 +18,10 @@ const SECOES = [
   { rotulo: 'Serviços', destino: '/servicos' },
   { rotulo: 'A cidade', destino: '/a-cidade' },
   { rotulo: 'A Prefeitura', destino: '/secretarias' },
+  /* O Diário Oficial entra no menu principal, e não num canto: é onde os atos
+     do município produzem efeito, e quem procura um ato precisa achá-lo em um
+     passo. Entra antes de Transparência porque é destino mais específico. */
+  { rotulo: 'Diário Oficial', destino: '/diario-oficial' },
   { rotulo: 'Transparência', destino: '/transparencia' },
   { rotulo: 'Notícias', destino: '/noticias' },
 ];

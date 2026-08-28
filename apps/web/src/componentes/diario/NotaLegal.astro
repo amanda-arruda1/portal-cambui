@@ -1,0 +1,35 @@
+---
+/**
+ * Nota permanente sobre o que este veículo é — e o que ele não substitui.
+ *
+ * Protege o município: sugerir que o diário municipal substitui o PNCP ou o
+ * Diário Oficial do Estado onde a lei os exige cria risco jurídico real.
+ */
+interface Props { notaDoVeiculo?: string | null; }
+const { notaDoVeiculo } = Astro.props;
+---
+<aside class="nota-legal" aria-label="Sobre a publicidade oficial">
+  {notaDoVeiculo
+    ? <p>{notaDoVeiculo}</p>
+    : <p><strong>Este é o órgão oficial de publicidade dos atos do Município de Cambuí/MG.</strong>
+        Não substitui o Portal Nacional de Contratações Públicas (PNCP) nem o Diário Oficial do
+        Estado nas hipóteses em que a lei os exigir.</p>}
+  <p>
+    O documento com fé pública é o <strong>arquivo PDF assinado digitalmente</strong>. A versão em
+    página deste portal existe para leitura, acessibilidade e citação; em caso de qualquer
+    divergência, <strong>prevalece o arquivo assinado</strong>, cuja autenticidade pode ser
+    conferida por qualquer pessoa em <a href="/diario-oficial/autenticidade">nossa página de
+    verificação</a> ou no <a href="https://validar.iti.gov.br" target="_blank" rel="noopener noreferrer">validador
+    oficial do Governo Federal</a>.
+  </p>
+</aside>
+
+<style>
+  .nota-legal { margin-top: 3rem; padding: 1.25rem 1.4rem;
+    border-left: 4px solid var(--color-musgo);
+    background: color-mix(in srgb, var(--color-musgo) 7%, transparent);
+    border-radius: 0 4px 4px 0; max-width: var(--container-leitura);
+    font-size: 0.9375rem; color: var(--color-musgo); }
+  .nota-legal p + p { margin-top: 0.6rem; }
+  .nota-legal a { color: var(--color-serra); font-weight: 600; }
+</style>

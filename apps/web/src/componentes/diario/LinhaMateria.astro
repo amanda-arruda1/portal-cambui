@@ -1,0 +1,58 @@
+---
+/**
+ * Uma matéria na listagem — carreira, não cartão (ver DESIGN.md §1).
+ *
+ * Mostra o que decide se o resultado é o certo: tipo e número do ato, ementa,
+ * órgão, edição e data legal. O trecho com o termo marcado só aparece quando
+ * houve busca — em listagem sem busca, seria ruído.
+ */
+import { dataBr } from '../../lib/diario/dominio.mjs';
+import type { MateriaCompleta } from '../../lib/diario/tipos';
+interface Props { materia: MateriaCompleta; trecho?: string; }
+const { materia: m, trecho } = Astro.props;
+const url = `/diario-oficial/materia/${m.edicaoObj?.ano ?? m.ano_ato}/${m.slug}`;
+const paginas = m.pagina_inicial
+  ? (m.pagina_final && m.pagina_final !== m.pagina_inicial ? `p. ${m.pagina_inicial}–${m.pagina_final}` : `p. ${m.pagina_inicial}`)
+  : null;
+---
+<article class="linha-materia">
+  <div class="topo">
+    <span class="tipo">{m.titulo}</span>
+    {m.cadernoObj && <span class="caderno">{m.cadernoObj.nome}</span>}
+    {m.edicaoObj?.anulada && <span class="anulada">Edição anulada</span>}
+  </div>
+  <h3><a href={url} class="fio-foco">{m.ementa}</a></h3>
+  {trecho && <p class="trecho" set:html={trecho} />}
+  <p class="meta">
+    <span>{m.orgao}</span>
+    {m.edicaoObj && (
+      <>
+        <span aria-hidden="true">·</span>
+        <span>Edição nº {m.edicaoObj.numero}</span>
+        <span aria-hidden="true">·</span>
+        <time datetime={m.edicaoObj.data_publicacao_legal}>{dataBr(m.edicaoObj.data_publicacao_legal)}</time>
+      </>
+    )}
+    {paginas && (<><span aria-hidden="true">·</span><span>{paginas}</span></>)}
+  </p>
+</article>
+
+<style>
+  .linha-materia { padding: 1.15rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-musgo) 22%, transparent); }
+  .topo { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.35rem; }
+  .tipo { font-size: 0.8125rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--color-serra); }
+  .caderno { font-size: 0.75rem; color: var(--color-musgo);
+    border: 1px solid color-mix(in srgb, var(--color-musgo) 35%, transparent);
+    padding: 0.1rem 0.45rem; border-radius: 2px; }
+  .anulada { font-size: 0.75rem; font-weight: 700; color: #fff;
+    background: var(--color-carmim); padding: 0.12rem 0.5rem; border-radius: 2px; }
+  h3 { font-size: 1.0625rem; line-height: 1.4; margin: 0 0 0.35rem; font-weight: 500; }
+  h3 a { color: var(--color-tinta); text-decoration: none; }
+  .trecho { margin: 0 0 0.4rem; font-size: 0.9375rem; color: var(--color-musgo); line-height: 1.55; }
+  .trecho :global(mark) { background: color-mix(in srgb, var(--color-carmim) 22%, transparent);
+    color: var(--color-tinta); padding: 0 0.1em; font-weight: 600; }
+  .meta { margin: 0; font-size: 0.875rem; color: var(--color-musgo);
+    display: flex; flex-wrap: wrap; gap: 0.4rem; }
+</style>

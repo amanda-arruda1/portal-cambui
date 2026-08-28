@@ -1,0 +1,47 @@
+---
+/** Arquivo do Diário: entrada por ano. */
+import Base from '../../../layouts/Base.astro';
+import TituloPagina from '../../../componentes/TituloPagina.astro';
+import { acervo } from '../../../lib/diario/indice';
+import { dataBr } from '../../../lib/diario/dominio.mjs';
+
+const a = await acervo();
+const porAno = new Map<number, typeof a.edicoes>();
+for (const e of a.edicoes) {
+  const ano = Number(String(e.data_publicacao_legal).slice(0, 4));
+  if (!porAno.has(ano)) porAno.set(ano, []);
+  porAno.get(ano)!.push(e);
+}
+const anos = [...porAno.entries()].sort((x, y) => y[0] - x[0]);
+---
+<Base titulo="Arquivo do Diário Oficial" descricao="Todas as edições do Diário Oficial Eletrônico de Cambuí, por ano e por data.">
+  <TituloPagina titulo="Arquivo" chamada="Todas as edições publicadas, por ano."
+    trilha={[{ rotulo: 'Diário Oficial', destino: '/diario-oficial' }, { rotulo: 'Arquivo' }]} />
+  <div class="carreira"><div class="ourela"><span class="fio fio-ourela" aria-hidden="true"></span>
+    <div class="corpo conteudo">
+      {anos.length === 0 ? <p>Nenhuma edição publicada ainda.</p> : (
+        <ul class="anos">
+          {anos.map(([ano, lista]) => (
+            <li>
+              <a href={`/diario-oficial/arquivo/${ano}`} class="fio-foco">
+                <span class="ano">{ano}</span>
+                <span class="quantas">{lista.length} {lista.length === 1 ? 'edição' : 'edições'}</span>
+                <span class="faixa">nº {lista.at(-1)!.numero} a nº {lista[0].numero} · de {dataBr(lista.at(-1)!.data_publicacao_legal)} a {dataBr(lista[0].data_publicacao_legal)}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  </div></div>
+</Base>
+<style>
+  .conteudo { padding-block: 1.5rem 3rem; }
+  .anos { list-style: none; margin: 0; padding: 0; border-top: 1px solid color-mix(in srgb, var(--color-musgo) 22%, transparent); }
+  .anos li { border-bottom: 1px solid color-mix(in srgb, var(--color-musgo) 22%, transparent); }
+  .anos a { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; align-items: baseline;
+    padding: 1rem 0; text-decoration: none; color: var(--color-tinta); }
+  .ano { font-size: 1.75rem; font-weight: 700; color: var(--color-serra); min-width: 4ch; }
+  .quantas { font-weight: 600; }
+  .faixa { font-size: 0.875rem; color: var(--color-musgo); flex: 1 1 100%; }
+</style>

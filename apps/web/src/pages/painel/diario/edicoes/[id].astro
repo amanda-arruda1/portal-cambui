@@ -1,0 +1,416 @@
+---
+/**
+ * Montagem, fechamento e publicação de uma edição.
+ *
+ * A ordem das ações é a ordem do rito, e cada passo é irreversível de um jeito
+ * diferente: fechar congela o conteúdo (dá para reabrir, com registro);
+ * publicar não volta nunca. A tela deixa isso explícito antes de cada botão,
+ * porque "tem certeza?" genérico não informa nada.
+ *
+ * A reordenação da pauta funciona SEM JavaScript, com botões de subir e descer
+ * em formulários. Quem tem JS ganha o arrastar. Nunca o contrário.
+ */
+import Painel from '../../../../layouts/Painel.astro';
+import {
+  obterEdicao, atualizarEdicao, filaDeMaterias, atualizarMateria, reordenarPauta,
+  cadernos, veiculo, validarFechamento, impedimentos, confirmacoes,
+  pode, papelDiario, registrarAuditoria, listarEdicoes,
+} from '../../../../lib/painel/diario';
+import { fecharEdicaoNoServico, saudeDoServico } from '../../../../lib/diario/servico';
+import { rotuloTipoAto, SITUACOES_EDICAO, TIPOS_EDICAO } from '../../../../lib/diario/vocabulario';
+import { dataBr } from '../../../../lib/diario/dominio.mjs';
+
+export const prerender = false;
+const sessao = Astro.locals.sessao!;
+const id = String(Astro.params.id);
+const papel = papelDiario(sessao);
+
+let recado: { tom: 'bom' | 'ruim'; texto: string } | null = null;
+
+if (Astro.request.method === 'POST') {
+  const f = await Astro.request.formData();
+  const acao = String(f.get('acao') ?? '');
+
+  if (acao === 'pautar' && pode(sessao, 'montar_pauta')) {
+    const alvo = String(f.get('materia'));
+    const atual = await filaDeMaterias(sessao, { 'filter[edicao][_eq]': id, limit: '500' });
+    const proxima = (atual.ok ? atual.dados.length : 0) + 1;
+    const r = await atualizarMateria(sessao, alvo, { edicao: id, situacao: 'pautada', ordem: proxima });
+    recado = r.ok ? { tom: 'bom', texto: 'Matéria incluída na pauta.' } : { tom: 'ruim', texto: r.motivo };
+    if (r.ok) await registrarAuditoria(sessao, 'materia_pautada', { edicao: id, materia: alvo, detalhe: `Posição ${proxima}.` });
+
+  } else if (acao === 'despautar' && pode(sessao, 'montar_pauta')) {
+    const alvo = String(f.get('materia'));
+    const r = await atualizarMateria(sessao, alvo, { edicao: null, situacao: 'aprovada', ordem: null });
+    recado = r.ok ? { tom: 'bom', texto: 'Matéria retirada da pauta.' } : { tom: 'ruim', texto: r.motivo };
+    if (r.ok) await registrarAuditoria(sessao, 'materia_despautada', { edicao: id, materia: alvo, detalhe: 'Retirada da pauta.' });
+
+  } else if (acao === 'mover' && pode(sessao, 'montar_pauta')) {
+    const alvo = String(f.get('materia'));
+    const direcao = String(f.get('direcao')) === 'cima' ? -1 : 1;
+    const atual = await filaDeMaterias(sessao, { 'filter[edicao][_eq]': id, limit: '500', sort: 'ordem' });
+    if (atual.ok) {
+      const lista = atual.dados;
+      const i = lista.findIndex((m) => m.id === alvo);
+      const j = i + direcao;
+      if (i >= 0 && j >= 0 && j < lista.length) {
+        [lista[i], lista[j]] = [lista[j], lista[i]];
+        const r = await reordenarPauta(sessao, lista.map((m, k) => ({ id: m.id, ordem: k + 1 })));
+        recado = r.ok ? { tom: 'bom', texto: 'Pauta reordenada.' } : { tom: 'ruim', texto: r.motivo };
+        if (r.ok) await registrarAuditoria(sessao, 'edicao_reordenada', { edicao: id, detalhe: 'Ordem das matérias alterada.' });
+      }
+    }
+
+  } else if (acao === 'ordem' && pode(sessao, 'montar_pauta')) {
+    /* Envio do arrastar-e-soltar: lista de ids na nova ordem. */
+    const ids = String(f.get('ordem') ?? '').split(',').filter(Boolean);
+    if (ids.length) {
+      const r = await reordenarPauta(sessao, ids.map((x, k) => ({ id: x, ordem: k + 1 })));
+      recado = r.ok ? { tom: 'bom', texto: 'Pauta reordenada.' } : { tom: 'ruim', texto: r.motivo };
+      if (r.ok) await registrarAuditoria(sessao, 'edicao_reordenada', { edicao: id, detalhe: 'Ordem alterada por arrastar.' });
+    }
+
+  } else if (acao === 'fechar' && pode(sessao, 'fechar')) {
+    const r = await fecharEdicaoNoServico(id, sessao.usuario.nome);
+    recado = r.ok
+      ? { tom: 'bom', texto: `Edição fechada e assinada: ${r.corpo.totalPaginas} páginas, ${r.corpo.materias} matérias. Confira o PDF antes de publicar.` }
+      : { tom: 'ruim', texto: r.corpo?.erro ?? 'O serviço de assinatura não concluiu o fechamento.' };
+
+  } else if (acao === 'reabrir' && pode(sessao, 'reabrir')) {
+    const motivo = String(f.get('motivo') ?? '').trim();
+    if (!motivo) {
+      recado = { tom: 'ruim', texto: 'Reabrir exige motivo — ele fica registrado permanentemente.' };
+    } else {
+      const atual = await obterEdicao(sessao, id);
+      const r = await atualizarEdicao(sessao, id, {
+        situacao: 'em_montagem',
+        reaberturas: ((atual.ok ? atual.dados.reaberturas : 0) ?? 0) + 1,
+      });
+      recado = r.ok ? { tom: 'bom', texto: 'Edição reaberta. O motivo ficou registrado.' } : { tom: 'ruim', texto: r.motivo };
+      if (r.ok) await registrarAuditoria(sessao, 'edicao_reaberta', { edicao: id, detalhe: motivo });
+    }
+
+  } else if (acao === 'publicar' && pode(sessao, 'publicar')) {
+    const materias = await filaDeMaterias(sessao, { 'filter[edicao][_eq]': id, limit: '500', sort: 'ordem' });
+    if (materias.ok) {
+      await reordenarPauta(sessao, materias.dados.map((m) => ({ id: m.id, situacao: 'publicada', status: 'publicado' } as any)));
+    }
+    const r = await atualizarEdicao(sessao, id, {
+      situacao: 'publicada', status: 'publicado', publicada_em: new Date().toISOString(),
+    });
+    recado = r.ok
+      ? { tom: 'bom', texto: 'Edição publicada. A partir de agora ela é imutável — correção só por errata ou republicação.' }
+      : { tom: 'ruim', texto: r.motivo };
+    if (r.ok) await registrarAuditoria(sessao, 'edicao_publicada', { edicao: id, detalhe: 'Edição publicada no portal.' });
+  }
+}
+
+const [e, cads, v, pautaR, disponiveisR, anterioresR, servico] = await Promise.all([
+  obterEdicao(sessao, id),
+  cadernos(sessao),
+  veiculo(sessao),
+  filaDeMaterias(sessao, { 'filter[edicao][_eq]': id, limit: '500', sort: 'ordem' }),
+  filaDeMaterias(sessao, { 'filter[situacao][_eq]': 'aprovada', limit: '200' }),
+  listarEdicoes(sessao, { limit: '2', 'filter[situacao][_eq]': 'publicada' }),
+  saudeDoServico(),
+]);
+if (!e.ok) return new Response(e.motivo, { status: e.status });
+const edicao = e.dados;
+const pauta = pautaR.ok ? pautaR.dados : [];
+const disponiveis = disponiveisR.ok ? disponiveisR.dados : [];
+const nomeCaderno = new Map((cads.ok ? cads.dados : []).map((c: any) => [c.id, c.nome]));
+const ultimoPublicado = anterioresR.ok ? (anterioresR.dados.find((x: any) => x.id !== id)?.numero ?? null) : null;
+
+const problemas = validarFechamento(edicao, {
+  quantasMaterias: pauta.length,
+  ultimoNumero: ultimoPublicado,
+  diasCirculacao: (v.ok ? v.dados?.dias_circulacao : null) ?? [1, 2, 3, 4, 5],
+});
+const impede = impedimentos(problemas);
+const confirma = confirmacoes(problemas);
+
+const emMontagem = edicao.situacao === 'em_montagem';
+const fechada = ['fechada', 'aguardando_assinatura'].includes(edicao.situacao);
+const publicada = edicao.situacao === 'publicada';
+---
+<Painel titulo={`Edição nº ${edicao.numero} — Diário Oficial`} sessao={sessao}>
+  <nav class="trilha"><a href="/painel/diario">Diário Oficial</a> › Edição nº {edicao.numero}</nav>
+  <div class="cabeca">
+    <div>
+      <h1>Edição nº {edicao.numero}</h1>
+      <p class="meta">
+        <span class:list={['etiqueta', edicao.situacao]}>{SITUACOES_EDICAO[edicao.situacao]}</span>
+        {TIPOS_EDICAO[edicao.tipo]} · disponibilização {dataBr(edicao.data_disponibilizacao)} ·
+        <strong> publicação legal {dataBr(edicao.data_publicacao_legal)}</strong>
+        {edicao.total_paginas ? ` · ${edicao.total_paginas} páginas` : ''}
+        {edicao.reaberturas > 0 && <span class="reaberta">reaberta {edicao.reaberturas}×</span>}
+      </p>
+    </div>
+    {publicada && <a href={`/diario-oficial/edicao/${edicao.numero}`} class="botao-ver">Ver no portal</a>}
+  </div>
+
+  {recado && <p class:list={['alerta', recado.tom === 'bom' ? 'ok' : 'erro']} role="status">{recado.texto}</p>}
+
+  {publicada && (
+    <div class="alerta bloqueio" role="note">
+      <strong>Edição publicada — imutável.</strong>
+      <p>Número, datas, PDF, hash e assinatura não mudam mais, e a edição não pode ser removida.
+        A regra vale no banco de dados, não só nesta tela. Correção se faz por errata ou
+        republicação em edição posterior.</p>
+    </div>
+  )}
+
+  {servico.demonstracao && !publicada && (
+    <div class="alerta atencao" role="note">
+      <strong>Certificado de demonstração.</strong>
+      <p>O serviço de assinatura está usando um certificado de teste gerado pelo próprio sistema —
+        <strong> não é ICP-Brasil</strong>. A cadeia funciona de ponta a ponta para validar o fluxo,
+        mas o PDF resultante não tem valor jurídico até o certificado do Município ser instalado.</p>
+    </div>
+  )}
+  {!servico.ok && !publicada && (
+    <div class="alerta erro" role="alert">
+      <strong>O serviço de assinatura não está respondendo.</strong>
+      <p>Sem ele não é possível fechar a edição. Verifique <code>systemctl status portal-diario</code>.</p>
+    </div>
+  )}
+
+  <section class="pauta">
+    <h2>Pauta — {pauta.length} {pauta.length === 1 ? 'matéria' : 'matérias'}</h2>
+    {pauta.length === 0 ? (
+      <p class="vazio">Nenhuma matéria nesta edição ainda.</p>
+    ) : (
+      <ol class="lista-pauta" data-reordenavel={emMontagem ? 'sim' : null}>
+        {pauta.map((m, i) => (
+          <li data-id={m.id} draggable={emMontagem ? 'true' : 'false'}>
+            <span class="posicao">{i + 1}</span>
+            <div class="corpo-item">
+              <p class="ato">{rotuloTipoAto(m.tipo_ato)}{m.numero_ato ? ` nº ${m.numero_ato}/${m.ano_ato}` : ''}</p>
+              <p class="ementa">{m.ementa.length > 110 ? m.ementa.slice(0, 108) + '…' : m.ementa}</p>
+              <p class="detalhe">{m.caderno ? nomeCaderno.get(m.caderno) : '—'} · {m.orgao_texto || m.secretaria?.nome || '—'}</p>
+            </div>
+            {emMontagem && (
+              <div class="controles">
+                <form method="post"><input type="hidden" name="materia" value={m.id} />
+                  <input type="hidden" name="direcao" value="cima" />
+                  <button type="submit" name="acao" value="mover" title="Subir" disabled={i === 0}>↑<span class="oculto"> subir</span></button></form>
+                <form method="post"><input type="hidden" name="materia" value={m.id} />
+                  <input type="hidden" name="direcao" value="baixo" />
+                  <button type="submit" name="acao" value="mover" title="Descer" disabled={i === pauta.length - 1}>↓<span class="oculto"> descer</span></button></form>
+                <form method="post"><input type="hidden" name="materia" value={m.id} />
+                  <button type="submit" name="acao" value="despautar" class="retirar" title="Retirar da pauta">×<span class="oculto"> retirar da pauta</span></button></form>
+              </div>
+            )}
+            <a href={`/painel/diario/materias/${m.id}`} class="abrir">Abrir</a>
+          </li>
+        ))}
+      </ol>
+    )}
+    {emMontagem && (
+      <form method="post" id="form-ordem" hidden>
+        <input type="hidden" name="ordem" id="campo-ordem" />
+        <button type="submit" name="acao" value="ordem">Salvar ordem</button>
+      </form>
+    )}
+  </section>
+
+  {emMontagem && pode(sessao, 'montar_pauta') && (
+    <section class="incluir">
+      <h2>Incluir matéria aprovada</h2>
+      {disponiveis.length === 0 ? (
+        <p class="vazio">Nenhuma matéria aprovada esperando pauta.</p>
+      ) : (
+        <ul class="disponiveis">
+          {disponiveis.slice(0, 40).map((m) => (
+            <li>
+              <div>
+                <p class="ato">{rotuloTipoAto(m.tipo_ato)}{m.numero_ato ? ` nº ${m.numero_ato}/${m.ano_ato}` : ''}</p>
+                <p class="ementa">{m.ementa.length > 100 ? m.ementa.slice(0, 98) + '…' : m.ementa}</p>
+                {m.data_alvo && <p class="detalhe">pedida para {dataBr(m.data_alvo)}</p>}
+              </div>
+              <form method="post"><input type="hidden" name="materia" value={m.id} />
+                <button type="submit" name="acao" value="pautar" class="secundario">Incluir</button></form>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )}
+
+  {!publicada && (
+    <section class="rito">
+      <h2>Fechamento e publicação</h2>
+
+      {impede.length > 0 && (
+        <div class="alerta erro" role="alert"><strong>Impede o fechamento:</strong>
+          <ul>{impede.map((p) => <li>{p.texto}{p.conselho && <span class="conselho">{p.conselho}</span>}</li>)}</ul></div>
+      )}
+      {confirma.length > 0 && (
+        <div class="alerta atencao"><strong>Confirme antes de fechar:</strong>
+          <ul>{confirma.map((p) => <li>{p.texto}{p.conselho && <span class="conselho">{p.conselho}</span>}</li>)}</ul></div>
+      )}
+
+      <div class="passos">
+        <div class:list={['passo', emMontagem && 'atual', !emMontagem && 'feito']}>
+          <h3>1. Fechar</h3>
+          <p>Congela o conteúdo, gera o PDF com sumário e paginação, e aplica a assinatura digital.
+            Depois de fechada, matéria não se edita — mas a edição ainda pode ser reaberta, com motivo registrado.</p>
+          {emMontagem && pode(sessao, 'fechar') && (
+            <form method="post">
+              <button type="submit" name="acao" value="fechar" class="primario"
+                disabled={impede.length > 0 || !servico.ok}>Fechar e assinar a edição</button>
+              {impede.length > 0 && <span class="ajuda">Resolva os impedimentos acima primeiro.</span>}
+            </form>
+          )}
+        </div>
+
+        <div class:list={['passo', fechada && 'atual', publicada && 'feito']}>
+          <h3>2. Conferir</h3>
+          <p>Baixe o PDF e confira o sumário, a paginação e a assinatura <em>antes</em> de publicar.
+            Depois de publicada, não há desfazer.</p>
+          {edicao.arquivo_pdf && (
+            <p><a href={`/assets/${edicao.arquivo_pdf}`} class="link-pdf">Baixar o PDF assinado</a>
+              {edicao.total_paginas && <span class="ajuda">{edicao.total_paginas} páginas</span>}</p>
+          )}
+          {edicao.codigo_verificador && (
+            <p class="ajuda">Código verificador: <code>{edicao.codigo_verificador}</code></p>
+          )}
+        </div>
+
+        <div class:list={['passo', fechada && pode(sessao, 'publicar') && 'atual']}>
+          <h3>3. Publicar</h3>
+          <p><strong>Irreversível.</strong> A edição vai ao ar, as matérias ganham página própria e
+            tudo passa a ser imutável.</p>
+          {fechada && pode(sessao, 'publicar') && (
+            <form method="post" onsubmit="return confirm('Publicar a edição nº ' + document.title.match(/\\d+/)[0] + '? Depois disso ela não pode ser alterada nem removida — só corrigida por errata em edição posterior.')">
+              <button type="submit" name="acao" value="publicar" class="primario perigo">Publicar edição</button>
+            </form>
+          )}
+          {fechada && !pode(sessao, 'publicar') && (
+            <p class="ajuda">Só a autoridade signatária publica. Sua função não inclui esta ação —
+              é a separação entre quem monta e quem assume o ato.</p>
+          )}
+        </div>
+      </div>
+
+      {fechada && pode(sessao, 'reabrir') && (
+        <details class="reabrir">
+          <summary>Preciso reabrir esta edição</summary>
+          <p class="ajuda">Reabrir descongela o conteúdo. O motivo fica registrado permanentemente e a
+            contagem de reaberturas aparece na auditoria — é ela que um controlador interno olha.</p>
+          <form method="post">
+            <label for="motivo">Motivo da reabertura</label>
+            <textarea id="motivo" name="motivo" rows="2" required></textarea>
+            <button type="submit" name="acao" value="reabrir" class="secundario">Reabrir edição</button>
+          </form>
+        </details>
+      )}
+    </section>
+  )}
+</Painel>
+
+<script>
+  /* Arrastar para reordenar. É acréscimo: os botões ↑ ↓ continuam funcionando
+     sem JavaScript, e é por eles que a reordenação é acessível por teclado. */
+  const lista = document.querySelector<HTMLOListElement>('[data-reordenavel]');
+  const form = document.getElementById('form-ordem') as HTMLFormElement | null;
+  const campo = document.getElementById('campo-ordem') as HTMLInputElement | null;
+  if (lista && form && campo) {
+    form.hidden = false;
+    let arrastando: HTMLLIElement | null = null;
+    lista.addEventListener('dragstart', (e) => {
+      arrastando = (e.target as HTMLElement).closest('li');
+      arrastando?.classList.add('arrastando');
+    });
+    lista.addEventListener('dragend', () => {
+      arrastando?.classList.remove('arrastando');
+      arrastando = null;
+      campo.value = [...lista.querySelectorAll('li')].map((li) => li.dataset.id).join(',');
+    });
+    lista.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const alvo = (e.target as HTMLElement).closest('li');
+      if (!alvo || !arrastando || alvo === arrastando) return;
+      const r = alvo.getBoundingClientRect();
+      const depois = (e as DragEvent).clientY > r.top + r.height / 2;
+      alvo.parentNode!.insertBefore(arrastando, depois ? alvo.nextSibling : alvo);
+    });
+  }
+</script>
+
+<style>
+  .trilha { font-size: 0.875rem; color: var(--color-musgo); margin-bottom: 0.5rem; }
+  .trilha a { color: var(--color-serra); }
+  .cabeca { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; margin-bottom: 1.25rem; }
+  h1 { margin: 0 0 0.3rem; font-size: 1.5rem; }
+  .meta { margin: 0; color: var(--color-musgo); font-size: 0.9375rem; display: flex;
+    flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .etiqueta { font-size: 0.75rem; padding: 0.2rem 0.55rem; border-radius: 2px;
+    background: color-mix(in srgb, var(--color-musgo) 15%, transparent); }
+  .etiqueta.publicada { background: color-mix(in srgb, var(--color-serra) 18%, transparent); color: var(--color-serra-noite); }
+  .etiqueta.fechada, .etiqueta.aguardando_assinatura { background: color-mix(in srgb, #b07a00 20%, transparent); color: #6b4a00; }
+  .reaberta { color: var(--color-carmim); font-weight: 600; }
+  .botao-ver { color: var(--color-serra); font-weight: 600; }
+  .oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+  .alerta { padding: 1rem 1.2rem; margin-bottom: 1.5rem; border-radius: 0 4px 4px 0; border-left: 4px solid; }
+  .alerta.ok { border-color: var(--color-serra); background: color-mix(in srgb, var(--color-serra) 8%, transparent); }
+  .alerta.erro, .alerta.bloqueio { border-color: var(--color-carmim); background: color-mix(in srgb, var(--color-carmim) 8%, transparent); }
+  .alerta.atencao { border-color: #b07a00; background: color-mix(in srgb, #b07a00 10%, transparent); }
+  .alerta strong { display: block; margin-bottom: 0.3rem; }
+  .alerta ul { margin: 0; padding-left: 1.2rem; }
+  .alerta p { margin: 0 0 0.3rem; }
+  .conselho { display: block; font-size: 0.875rem; color: var(--color-musgo); }
+
+  section { margin-bottom: 2.5rem; }
+  h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-musgo);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-musgo) 25%, transparent);
+    padding-bottom: 0.35rem; margin: 0 0 0.9rem; }
+  .lista-pauta { list-style: none; margin: 0; padding: 0; }
+  .lista-pauta li { display: flex; gap: 0.9rem; align-items: flex-start; padding: 0.75rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-musgo) 18%, transparent); }
+  .lista-pauta li.arrastando { opacity: 0.4; }
+  .lista-pauta[data-reordenavel] li { cursor: grab; }
+  .posicao { flex: none; width: 2rem; height: 2rem; display: flex; align-items: center;
+    justify-content: center; background: color-mix(in srgb, var(--color-serra) 12%, transparent);
+    color: var(--color-serra-noite); border-radius: 3px; font-weight: 700; font-size: 0.875rem; }
+  .corpo-item { flex: 1; min-width: 0; }
+  .ato { margin: 0; font-weight: 600; font-size: 0.875rem; color: var(--color-serra); }
+  .ementa { margin: 0.15rem 0; }
+  .detalhe { margin: 0; font-size: 0.8125rem; color: var(--color-musgo); }
+  .controles { display: flex; gap: 0.25rem; flex: none; }
+  .controles button { min-width: 2.2rem; min-height: 2.2rem; border: 1px solid color-mix(in srgb, var(--color-musgo) 35%, transparent);
+    background: #fff; border-radius: 3px; cursor: pointer; font-size: 0.9rem; }
+  .controles button:disabled { opacity: 0.35; cursor: not-allowed; }
+  .controles .retirar { color: var(--color-carmim); border-color: color-mix(in srgb, var(--color-carmim) 40%, transparent); }
+  .abrir { flex: none; color: var(--color-serra); font-weight: 600; font-size: 0.875rem; align-self: center; }
+
+  .disponiveis { list-style: none; margin: 0; padding: 0; }
+  .disponiveis li { display: flex; gap: 1rem; justify-content: space-between; align-items: center;
+    padding: 0.6rem 0; border-bottom: 1px solid color-mix(in srgb, var(--color-musgo) 18%, transparent); }
+
+  .passos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr)); gap: 1rem; }
+  .passo { padding: 1rem 1.2rem; border: 1px solid color-mix(in srgb, var(--color-musgo) 25%, transparent);
+    border-radius: 4px; min-width: 0; }
+  .passo.atual { border-color: var(--color-serra); border-width: 2px;
+    background: color-mix(in srgb, var(--color-serra) 4%, transparent); }
+  .passo.feito { opacity: 0.65; }
+  .passo h3 { margin: 0 0 0.4rem; font-size: 1rem; color: var(--color-serra-noite); }
+  .passo p { margin: 0 0 0.7rem; font-size: 0.9375rem; }
+  .link-pdf { color: var(--color-serra); font-weight: 600; }
+  .ajuda { display: block; font-size: 0.8125rem; color: var(--color-musgo); margin-top: 0.3rem; }
+  .primario { background: var(--color-serra); color: #fff; border: 0; padding: 0.65rem 1.2rem;
+    border-radius: 3px; font: inherit; font-weight: 600; cursor: pointer; min-height: 2.6rem; }
+  .primario:disabled { opacity: 0.45; cursor: not-allowed; }
+  .primario.perigo { background: var(--color-carmim); }
+  .secundario { background: transparent; border: 1px solid var(--color-serra); color: var(--color-serra);
+    padding: 0.5rem 1rem; border-radius: 3px; font: inherit; font-weight: 600; cursor: pointer; min-height: 2.5rem; }
+  .reabrir { margin-top: 1.5rem; border: 1px solid color-mix(in srgb, var(--color-musgo) 25%, transparent);
+    border-radius: 4px; padding: 0.8rem 1rem; }
+  .reabrir summary { cursor: pointer; font-weight: 600; color: var(--color-carmim); }
+  .reabrir textarea { width: 100%; max-width: 34rem; padding: 0.55rem 0.7rem; font: inherit;
+    border: 1px solid color-mix(in srgb, var(--color-musgo) 45%, transparent); border-radius: 3px; margin-bottom: 0.6rem; }
+  .reabrir label { display: block; font-weight: 600; font-size: 0.9375rem; margin-bottom: 0.3rem; }
+  .vazio { color: var(--color-musgo); }
+  button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--color-carmim); outline-offset: 2px; }
+</style>

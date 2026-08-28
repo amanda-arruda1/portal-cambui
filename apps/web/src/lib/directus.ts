@@ -87,6 +87,34 @@ export async function listar<T>(colecao: string, parametros: Parametros = {}): P
   return requisitar<T>(colecao, parametros);
 }
 
+/**
+ * Coleção "singleton" do Directus (uma linha só, como a configuração do
+ * veículo oficial). A API devolve um OBJETO em `data`, e não um array — quem
+ * usa `listar()` aqui recebe lista vazia e a página fica muda sem erro nenhum,
+ * que é o tipo de defeito que só aparece em produção.
+ */
+export async function unico<T>(colecao: string, parametros: Parametros = {}): Promise<RespostaUnica<T>> {
+  const url = new URL(`${BASE}/items/${colecao}`);
+  for (const [chave, valor] of Object.entries(parametros)) {
+    if (valor !== undefined) url.searchParams.set(chave, String(valor));
+  }
+  try {
+    const resposta = await fetch(url, {
+      headers: { Accept: 'application/json', ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}) },
+      signal: AbortSignal.timeout(TEMPO_LIMITE_MS),
+    });
+    if (!resposta.ok) {
+      avisarUmaVez(colecao, `HTTP ${resposta.status}`);
+      return { dado: null, indisponivel: true };
+    }
+    const corpo = (await resposta.json()) as { data?: T };
+    return { dado: (corpo.data as T) ?? null, indisponivel: false };
+  } catch (erro) {
+    avisarUmaVez(colecao, erro instanceof Error ? erro.name : 'erro desconhecido');
+    return { dado: null, indisponivel: true };
+  }
+}
+
 export async function umPor<T>(colecao: string, parametros: Parametros = {}): Promise<RespostaUnica<T>> {
   const { dados, indisponivel } = await requisitar<T>(colecao, { ...parametros, limit: 1 });
   return { dado: dados[0] ?? null, indisponivel };

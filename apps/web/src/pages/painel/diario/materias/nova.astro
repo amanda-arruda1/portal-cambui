@@ -1,0 +1,170 @@
+---
+/**
+ * Envio de matéria pela secretaria.
+ *
+ * O redator salva como rascunho ou envia para revisão. Não publica — e o botão
+ * de publicar não existe nesta tela, porque um botão que dá 403 é pior do que
+ * a ausência dele.
+ */
+import Painel from '../../../../layouts/Painel.astro';
+import FormularioMateria from '../../../../componentes/painel/diario/FormularioMateria.astro';
+import {
+  criarMateria, cadernos, secretarias, filaDeMaterias, validarMateria,
+  impedimentos, confirmacoes, sugerirSlug, pode, registrarAuditoria,
+} from '../../../../lib/painel/diario';
+import { limparComRelato } from '../../../../lib/sanitizar';
+import { rotuloTipoAto } from '../../../../lib/diario/vocabulario';
+
+export const prerender = false;
+const sessao = Astro.locals.sessao!;
+
+if (!pode(sessao, 'redigir')) {
+  return new Response(null, { status: 303, headers: { Location: '/painel/diario' } });
+}
+
+const [cads, secs, existentes] = await Promise.all([
+  cadernos(sessao), secretarias(sessao),
+  filaDeMaterias(sessao, { limit: '150', 'filter[situacao][_eq]': 'publicada', sort: '-date_updated' }),
+]);
+
+const opcoesMaterias = (existentes.ok ? existentes.dados : []).map((m) => ({
+  id: m.id,
+  rotulo: `${rotuloTipoAto(m.tipo_ato)}${m.numero_ato ? ` ${m.numero_ato}/${m.ano_ato}` : ''} — ${m.ementa.slice(0, 60)}`,
+}));
+
+let valores: Record<string, any> = { tipo_ato: 'portaria', ano_ato: new Date().getFullYear() };
+let problemas: ReturnType<typeof validarMateria> = [];
+let erro: string | null = null;
+let relatoLimpeza: string[] = [];
+
+if (Astro.request.method === 'POST') {
+  const f = await Astro.request.formData();
+  const t = (n: string) => String(f.get(n) ?? '').trim();
+  const enviar = f.get('acao') === 'enviar';
+  const confirmou = f.get('confirmado') === 'sim';
+
+  const limpeza = limparComRelato(t('corpo'));
+  relatoLimpeza = limpeza.removidas;
+
+  valores = {
+    tipo_ato: t('tipo_ato') || 'portaria',
+    numero_ato: t('numero_ato') || null,
+    ano_ato: Number(t('ano_ato')) || null,
+    caderno: t('caderno') || null,
+    secretaria: t('secretaria') || null,
+    orgao_texto: t('orgao_texto') || null,
+    ementa: t('ementa'),
+    corpo: limpeza.html,
+    processo_administrativo: t('processo_administrativo') || null,
+    data_alvo: t('data_alvo') || null,
+    vigencia_inicio: t('vigencia_inicio') || null,
+    retifica: t('retifica') || null,
+    republica: t('republica') || null,
+    revoga: t('revoga') || null,
+    motivo_republicacao: t('motivo_republicacao') || null,
+  };
+
+  problemas = validarMateria(valores as any);
+  const impede = impedimentos(problemas);
+  const confirma = confirmacoes(problemas);
+
+  if (impede.length === 0 && (confirma.length === 0 || confirmou)) {
+    const r = await criarMateria(sessao, {
+      ...valores,
+      status: 'rascunho',
+      situacao: enviar ? 'enviada' : 'rascunho',
+      slug: sugerirSlug(valores as any),
+    });
+    if (r.ok) {
+      await registrarAuditoria(sessao, enviar ? 'materia_enviada' : 'materia_criada', {
+        materia: r.dados.id,
+        detalhe: `${rotuloTipoAto(valores.tipo_ato)}${valores.numero_ato ? ` ${valores.numero_ato}/${valores.ano_ato}` : ''} — ${valores.ementa.slice(0, 90)}`,
+      });
+      return Astro.redirect(`/painel/diario/materias/${r.dados.id}?novo=1`, 303);
+    }
+    erro = r.motivo;
+  }
+}
+
+const impede = impedimentos(problemas);
+const confirma = confirmacoes(problemas);
+const avisa = problemas.filter((p) => p.gravidade === 'avisa');
+---
+<Painel titulo="Nova matéria — Diário Oficial" sessao={sessao}>
+  <nav class="trilha"><a href="/painel/diario">Diário Oficial</a> › Nova matéria</nav>
+  <h1>Nova matéria</h1>
+  <p class="intro">Escreva o ato e envie para revisão. Quem revisa e publica é o setor responsável
+    pelo Diário — você acompanha por esta mesma tela.</p>
+
+  {erro && <p class="alerta erro" role="alert">{erro}</p>}
+
+  {impede.length > 0 && (
+    <div class="alerta erro" role="alert">
+      <strong>Corrija antes de continuar:</strong>
+      <ul>{impede.map((p) => <li>{p.texto}{p.conselho && <span class="conselho">{p.conselho}</span>}</li>)}</ul>
+    </div>
+  )}
+
+  {confirma.length > 0 && impede.length === 0 && (
+    <div class="alerta atencao" role="alert">
+      <strong>Confirme se é isso mesmo:</strong>
+      <ul>{confirma.map((p) => <li>{p.texto}{p.conselho && <span class="conselho">{p.conselho}</span>}</li>)}</ul>
+      <p class="marcar">
+        <label><input type="checkbox" form="materia" name="confirmado" value="sim" required />
+          Li os pontos acima e confirmo que estão corretos.</label>
+      </p>
+    </div>
+  )}
+
+  {avisa.length > 0 && (
+    <div class="alerta aviso">
+      <strong>Para a sua atenção:</strong>
+      <ul>{avisa.map((p) => <li>{p.texto}{p.conselho && <span class="conselho">{p.conselho}</span>}</li>)}</ul>
+    </div>
+  )}
+
+  {relatoLimpeza.length > 0 && (
+    <div class="alerta aviso">
+      <strong>Formatação removida do texto colado:</strong>
+      <p>{relatoLimpeza.join(', ')}. O diário tem forma padronizada — cor de fonte e tamanho
+        arbitrário não entram.</p>
+    </div>
+  )}
+
+  <form method="post" id="materia" class="formulario">
+    <FormularioMateria valores={valores} cadernos={cads.ok ? cads.dados : []}
+      secretarias={secs.ok ? secs.dados : []} materias={opcoesMaterias} />
+    <div class="acoes">
+      <button type="submit" name="acao" value="enviar" class="primario">Enviar para revisão</button>
+      <button type="submit" name="acao" value="rascunho" class="secundario">Salvar como rascunho</button>
+      <a href="/painel/diario" class="cancelar">Cancelar</a>
+    </div>
+  </form>
+</Painel>
+
+<style>
+  .trilha { font-size: 0.875rem; color: var(--color-musgo); margin-bottom: 0.5rem; }
+  .trilha a { color: var(--color-serra); }
+  h1 { margin: 0 0 0.35rem; font-size: 1.6rem; }
+  .intro { margin: 0 0 1.5rem; color: var(--color-musgo); max-width: 60ch; }
+  .formulario { max-width: 60rem; }
+  .alerta { padding: 1rem 1.2rem; margin-bottom: 1.5rem; border-radius: 0 4px 4px 0; border-left: 4px solid; }
+  .alerta.erro { border-color: var(--color-carmim); background: color-mix(in srgb, var(--color-carmim) 8%, transparent); }
+  .alerta.atencao { border-color: #b07a00; background: color-mix(in srgb, #b07a00 10%, transparent); }
+  .alerta.aviso { border-color: var(--color-musgo); background: color-mix(in srgb, var(--color-musgo) 8%, transparent); }
+  .alerta strong { display: block; margin-bottom: 0.4rem; }
+  .alerta ul { margin: 0; padding-left: 1.2rem; }
+  .alerta li { margin-bottom: 0.4rem; }
+  .conselho { display: block; font-size: 0.875rem; color: var(--color-musgo); margin-top: 0.15rem; }
+  .marcar { margin: 0.8rem 0 0; }
+  .marcar label { display: flex; gap: 0.5rem; align-items: flex-start; font-weight: 600; }
+  .marcar input { width: 1.15rem; height: 1.15rem; margin-top: 0.2rem; }
+  .acoes { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; margin-top: 1.5rem;
+    padding-top: 1.25rem; border-top: 1px solid color-mix(in srgb, var(--color-musgo) 22%, transparent); }
+  .primario { background: var(--color-serra); color: #fff; border: 0; padding: 0.7rem 1.4rem;
+    border-radius: 3px; font: inherit; font-weight: 600; cursor: pointer; min-height: 2.75rem; }
+  .secundario { background: transparent; border: 1px solid var(--color-musgo); color: var(--color-tinta);
+    padding: 0.7rem 1.3rem; border-radius: 3px; font: inherit; cursor: pointer; min-height: 2.75rem; }
+  .cancelar { color: var(--color-musgo); }
+  button:focus-visible, a:focus-visible { outline: 3px solid var(--color-carmim); outline-offset: 2px; }
+</style>

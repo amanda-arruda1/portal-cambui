@@ -1,0 +1,71 @@
+# Serviço de assinatura do Diário Oficial.
+#
+# Existe separado do portal-web por UMA razão: é ele, e não o processo que
+# atende a internet, que detém a chave privada com que se assina como o
+# Município. O portal-web sabe pedir uma certidão; não sabe assiná-la.
+#
+# Também é aqui que mora o Chromium, que precisa de bem mais folga do que o
+# confinamento do portal-web permite — outro motivo para não estar lá.
+
+[Unit]
+Description=Portal Cambui - servico de assinatura do Diario Oficial
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=portal-diario
+Group=portal-diario
+WorkingDirectory=/opt/portal-cambui
+
+# O segredo do serviço, o token do Directus e o caminho do certificado.
+# NÃO recebe o .env geral: não precisa da senha do Postgres.
+EnvironmentFile=/opt/portal-cambui/.env.diario
+Environment=NODE_ENV=production
+# O Chromium quer um HOME para escrever. Sem isto ele nem inicia sob
+# ProtectHome=true, e a mensagem de erro não diz por quê.
+StateDirectory=portal-diario
+Environment=HOME=/var/lib/portal-diario
+Environment=XDG_CONFIG_HOME=/var/lib/portal-diario
+Environment=XDG_CACHE_HOME=/var/lib/portal-diario
+
+ExecStart=/usr/bin/node /opt/portal-cambui/infra/diario/servico-assinatura.mjs
+Restart=always
+RestartSec=5s
+
+# --- Confinamento ---
+# Mais frouxo que o do portal-web porque o Chromium precisa; ainda assim, este
+# processo não escuta na rede externa e não tem capacidade alguma.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+# O V8 e o Chromium geram código em tempo de execução.
+MemoryDenyWriteExecute=false
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+
+# Precisa escrever: perfil efêmero do Chromium (em /tmp privado) e nada mais.
+# Os certificados são SOMENTE LEITURA, e pertencem ao root — nem este serviço
+# pode sobrescrevê-los.
+ReadWritePaths=/opt/portal-cambui/data/diario
+
+# Só fala com o Directus, em loopback.
+IPAddressDeny=any
+IPAddressAllow=localhost
+
+# Chromium consome memória por aba; teto para não competir com o Postgres.
+MemoryMax=1500M
+TasksMax=512
+
+[Install]
+WantedBy=multi-user.target

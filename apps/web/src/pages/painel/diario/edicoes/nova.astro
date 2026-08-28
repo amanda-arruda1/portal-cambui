@@ -1,0 +1,123 @@
+---
+/** Abre uma edição para montagem. O número é sugerido, nunca inventado. */
+import Painel from '../../../../layouts/Painel.astro';
+import { listarEdicoes, criarEdicao, veiculo, pode, registrarAuditoria } from '../../../../lib/painel/diario';
+import { publicacaoLegal, dataBr, ehDiaUtil, nomeFeriado } from '../../../../lib/diario/dominio.mjs';
+import { TIPOS_EDICAO } from '../../../../lib/diario/vocabulario';
+
+export const prerender = false;
+const sessao = Astro.locals.sessao!;
+if (!pode(sessao, 'montar_pauta')) return new Response(null, { status: 303, headers: { Location: '/painel/diario' } });
+
+const [anteriores, v] = await Promise.all([listarEdicoes(sessao, { limit: '1' }), veiculo(sessao)]);
+const ultima = anteriores.ok ? anteriores.dados[0] : null;
+const proximoNumero = (ultima?.numero ?? 0) + 1;
+const regra = v.ok ? (v.dados?.regra_prazo ?? 'primeiro_dia_util_seguinte') : 'primeiro_dia_util_seguinte';
+const diasCirculacao: number[] = v.ok ? (v.dados?.dias_circulacao ?? [1, 2, 3, 4, 5]) : [1, 2, 3, 4, 5];
+
+const hoje = new Date().toISOString().slice(0, 10);
+let erro: string | null = null;
+let valores = { data: hoje, tipo: 'ordinaria', justificativa: '' };
+
+if (Astro.request.method === 'POST') {
+  const f = await Astro.request.formData();
+  valores = {
+    data: String(f.get('data') ?? hoje),
+    tipo: String(f.get('tipo') ?? 'ordinaria'),
+    justificativa: String(f.get('justificativa') ?? '').trim(),
+  };
+  const dia = new Date(`${valores.data}T00:00:00Z`);
+  const previsto = diasCirculacao.includes(dia.getUTCDay()) && ehDiaUtil(valores.data);
+
+  if (!previsto && valores.tipo === 'ordinaria') {
+    erro = `${dataBr(valores.data)} não é dia de circulação previsto na lei do veículo${nomeFeriado(valores.data) ? ` (${nomeFeriado(valores.data)})` : ''}. Marque como extraordinária e justifique.`;
+  } else if (valores.tipo === 'extraordinaria' && !valores.justificativa) {
+    erro = 'Edição extraordinária exige justificativa — ela vai impressa na capa.';
+  } else {
+    const legal = publicacaoLegal(valores.data, regra);
+    const r = await criarEdicao(sessao, {
+      status: 'rascunho', numero: proximoNumero,
+      ano: dia.getUTCFullYear(),
+      volume: v.ok && v.dados?.inicio_circulacao
+        ? dia.getUTCFullYear() - new Date(v.dados.inicio_circulacao).getUTCFullYear() + 1 : 1,
+      tipo: valores.tipo, situacao: 'em_montagem',
+      data_disponibilizacao: `${valores.data}T17:00:00.000Z`,
+      data_publicacao_legal: legal.toISOString().slice(0, 10),
+      justificativa_extraordinaria: valores.justificativa || null,
+    });
+    if (r.ok) {
+      await registrarAuditoria(sessao, 'edicao_criada', { edicao: r.dados.id,
+        detalhe: `Edição nº ${proximoNumero} aberta para montagem, disponibilização em ${dataBr(valores.data)}.` });
+      return Astro.redirect(`/painel/diario/edicoes/${r.dados.id}`, 303);
+    }
+    erro = r.motivo;
+  }
+}
+
+const legalPrevista = publicacaoLegal(valores.data, regra);
+---
+<Painel titulo="Nova edição — Diário Oficial" sessao={sessao}>
+  <nav class="trilha"><a href="/painel/diario">Diário Oficial</a> › Nova edição</nav>
+  <h1>Abrir edição nº {proximoNumero}</h1>
+  <p class="intro">O número vem da sequência do veículo e não se escolhe: ele é contínuo e nunca
+    se reaproveita. {ultima ? `A última publicada foi a nº ${ultima.numero}.` : 'Esta é a primeira.'}</p>
+
+  {erro && <p class="alerta erro" role="alert">{erro}</p>}
+
+  <form method="post" class="formulario">
+    <p class="campo">
+      <label for="data">Data de disponibilização</label>
+      <input type="date" id="data" name="data" value={valores.data} required />
+      <span class="ajuda">O dia em que o PDF assinado vai ao ar.</span>
+    </p>
+
+    <div class="calculado">
+      <p><strong>Publicação legal:</strong> {dataBr(legalPrevista)}</p>
+      <p class="ajuda">Calculada pela regra da lei do veículo. É desta data que se contam os prazos
+        de todos os atos desta edição.</p>
+    </div>
+
+    <p class="campo">
+      <label for="tipo">Tipo</label>
+      <select id="tipo" name="tipo">
+        {Object.entries(TIPOS_EDICAO).map(([k, r]) => <option value={k} selected={valores.tipo === k}>{r}</option>)}
+      </select>
+    </p>
+
+    <p class="campo">
+      <label for="justificativa">Justificativa (obrigatória se extraordinária)</label>
+      <textarea id="justificativa" name="justificativa" rows="3">{valores.justificativa}</textarea>
+      <span class="ajuda">Vai impressa na capa. É o que responde, anos depois, por que aquela edição
+        circulou fora do calendário.</span>
+    </p>
+
+    <div class="acoes">
+      <button type="submit" class="primario">Abrir edição</button>
+      <a href="/painel/diario" class="cancelar">Cancelar</a>
+    </div>
+  </form>
+</Painel>
+<style>
+  .trilha { font-size: 0.875rem; color: var(--color-musgo); margin-bottom: 0.5rem; }
+  .trilha a { color: var(--color-serra); }
+  h1 { margin: 0 0 0.3rem; font-size: 1.5rem; }
+  .intro { margin: 0 0 1.5rem; color: var(--color-musgo); max-width: 60ch; }
+  .formulario { max-width: 34rem; }
+  .campo { margin: 0 0 1.2rem; }
+  label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.9375rem; }
+  input, select, textarea { width: 100%; padding: 0.55rem 0.7rem; font: inherit; min-height: 2.6rem;
+    border: 1px solid color-mix(in srgb, var(--color-musgo) 45%, transparent); border-radius: 3px; }
+  input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 3px solid var(--color-carmim); outline-offset: 1px; }
+  .ajuda { display: block; margin-top: 0.3rem; font-size: 0.8125rem; color: var(--color-musgo); }
+  .calculado { padding: 0.9rem 1.1rem; margin: 0 0 1.2rem; border-radius: 0 4px 4px 0;
+    border-left: 4px solid var(--color-serra); background: color-mix(in srgb, var(--color-serra) 7%, transparent); }
+  .calculado p { margin: 0; }
+  .alerta.erro { padding: 1rem 1.2rem; margin-bottom: 1.5rem; border-radius: 0 4px 4px 0;
+    border-left: 4px solid var(--color-carmim); background: color-mix(in srgb, var(--color-carmim) 8%, transparent); }
+  .acoes { display: flex; gap: 1rem; align-items: center; }
+  .primario { background: var(--color-serra); color: #fff; border: 0; padding: 0.7rem 1.4rem;
+    border-radius: 3px; font: inherit; font-weight: 600; cursor: pointer; min-height: 2.75rem; }
+  .cancelar { color: var(--color-musgo); }
+  button:focus-visible, a:focus-visible { outline: 3px solid var(--color-carmim); outline-offset: 2px; }
+</style>

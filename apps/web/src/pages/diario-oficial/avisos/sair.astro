@@ -1,0 +1,54 @@
+---
+/**
+ * Descadastro em um clique.
+ *
+ * Acontece no GET, sem tela de confirmação, de propósito: quem chega aqui veio
+ * de um link no rodapé de um e-mail e quer sair. Pedir mais um clique é atrito
+ * contra o titular do dado — e o custo de um descadastro acidental é um novo
+ * cadastro, que leva quinze segundos.
+ */
+import Base from '../../../layouts/Base.astro';
+import TituloPagina from '../../../componentes/TituloPagina.astro';
+import { descadastrar } from '../../../lib/diario/avisos';
+
+export const prerender = false;
+const t = Astro.url.searchParams.get('t') ?? '';
+const r = await descadastrar(t);
+---
+<Base titulo="Descadastro dos avisos" semIndexacao={true}>
+  <TituloPagina titulo="Avisos do Diário Oficial"
+    trilha={[{ rotulo: 'Diário Oficial', destino: '/diario-oficial' }, { rotulo: 'Descadastro' }]} />
+  <div class="carreira"><div class="ourela"><span class="fio fio-ourela" aria-hidden="true"></span>
+    <div class="corpo conteudo">
+      {r.estado === 'removido' ? (
+        <div class="resposta boa" role="status">
+          <h2>Pronto. Você não recebe mais os avisos.</h2>
+          <p>O endereço <strong>{r.email}</strong> foi <strong>apagado</strong> da nossa lista —
+            não guardamos registro de que você esteve inscrito.</p>
+          <p>O Diário Oficial continua aberto e sem cadastro em
+            <a href="/diario-oficial"> portal.cambui.mg.gov.br/diario-oficial</a>, e há também um
+            <a href="/diario-oficial/feed.xml"> feed RSS</a>.</p>
+        </div>
+      ) : (
+        <div class="resposta ruim" role="alert">
+          <h2>Não encontramos este cadastro.</h2>
+          <p>Ele já pode ter sido removido antes, ou o link pode ter sido copiado incompleto.
+            De todo modo, <strong>não há inscrição ativa com este link</strong>.</p>
+          <p>Se continuar recebendo mensagens, <a href="/contato">avise a Prefeitura</a>.</p>
+        </div>
+      )}
+    </div>
+  </div></div>
+</Base>
+<style>
+  .conteudo { padding-block: 1.5rem 3rem; max-width: var(--container-leitura); }
+  .resposta { padding: 1.4rem 1.6rem; border-radius: 0 4px 4px 0; }
+  .resposta.boa { border-left: 5px solid var(--color-serra);
+    background: color-mix(in srgb, var(--color-serra) 8%, transparent); }
+  .resposta.ruim { border-left: 5px solid var(--color-carmim);
+    background: color-mix(in srgb, var(--color-carmim) 8%, transparent); }
+  .resposta h2 { margin: 0 0 0.5rem; font-size: 1.3rem; color: var(--color-serra-noite); }
+  .resposta.ruim h2 { color: var(--color-carmim); }
+  .resposta p { margin: 0 0 0.6rem; }
+  .resposta a { color: var(--color-serra); font-weight: 600; }
+</style>

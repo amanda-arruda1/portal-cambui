@@ -11,6 +11,10 @@ export const GET: APIRoute = () =>
       'Disallow: /busca',
       '',
       `Sitemap: ${new URL('/sitemap-index.xml', SITE.urlPublica).href}`,
+      // O sitemap do Astro só enxerga rota estática; matéria e edição do Diário
+      // são SSR e precisam do seu próprio, senão ficam invisíveis na busca —
+      // que é como a maior parte das pessoas procura um ato.
+      `Sitemap: ${new URL('/diario-oficial/sitemap.xml', SITE.urlPublica).href}`,
       '',
     ].join('\n'),
     { headers: { 'Content-Type': 'text/plain; charset=utf-8' } },

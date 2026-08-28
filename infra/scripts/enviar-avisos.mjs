@@ -175,14 +175,23 @@ async function enfileirarNovidades() {
 
 /* ───────────────────────  2. entregar a fila  ─────────────────── */
 
-async function entregarFila() {
+/**
+ * Drena UMA fila. Parametrizada porque agora existem duas — licitações e
+ * Diário Oficial — e duplicar esta função seria garantir que, no dia em que
+ * alguém corrigir um defeito de entrega, corrija só numa delas.
+ *
+ * @param {string} colecao       nome da coleção da fila
+ * @param {string} caminhoSaida  rota de descadastro, para o List-Unsubscribe
+ * @param {string} rotulo        o que aparece no log
+ */
+async function entregarFila(colecao, caminhoSaida, rotulo) {
   const p = new URLSearchParams({
     limit: String(MAX_POR_EXECUCAO), sort: 'criado_em',
     fields: 'id,destinatario,assunto,corpo_texto,corpo_html,tipo,tentativas,assinante.token',
     'filter[estado][_eq]': 'pendente',
   });
-  const fila = await api(`/items/licitacao_envios?${p}`);
-  if (!fila.length) { console.log('  fila vazia'); return { enviados: 0, falhas: 0 }; }
+  const fila = await api(`/items/${colecao}?${p}`);
+  if (!fila.length) { console.log(`  fila de ${rotulo}: vazia`); return { enviados: 0, falhas: 0 }; }
 
   if (!cfgSmtp.host) {
     console.log(`  ${fila.length} mensagem(ns) na fila, mas SMTP_HOST não está definido — nada enviado.`);
@@ -202,9 +211,9 @@ async function entregarFila() {
         texto: m.corpo_texto,
         html: m.corpo_html,
         responderPara: process.env.AVISOS_RESPONDER_PARA || undefined,
-        listaDescadastro: m.assinante?.token ? `${SITE}/licitacoes/avisos/sair?t=${m.assinante.token}` : undefined,
+        listaDescadastro: m.assinante?.token ? `${SITE}${caminhoSaida}?t=${m.assinante.token}` : undefined,
       });
-      await api(`/items/licitacao_envios/${m.id}`, { method: 'PATCH', body: JSON.stringify({
+      await api(`/items/${colecao}/${m.id}`, { method: 'PATCH', body: JSON.stringify({
         estado: 'enviado', enviado_em: new Date().toISOString(), tentativas: (m.tentativas ?? 0) + 1,
       }) });
       enviados++;
@@ -215,7 +224,7 @@ async function entregarFila() {
     } catch (erro) {
       const tentativas = (m.tentativas ?? 0) + 1;
       const desistiu = tentativas >= MAX_TENTATIVAS;
-      await api(`/items/licitacao_envios/${m.id}`, { method: 'PATCH', body: JSON.stringify({
+      await api(`/items/${colecao}/${m.id}`, { method: 'PATCH', body: JSON.stringify({
         estado: desistiu ? 'desistiu' : 'falhou', tentativas, ultimo_erro: String(erro.message).slice(0, 400),
       }) });
       falhas++;
@@ -227,22 +236,153 @@ async function entregarFila() {
 }
 
 /** Devolve à fila o que falhou e ainda tem tentativa — espera crescente. */
-async function reagendarFalhas() {
-  const fila = await api('/items/licitacao_envios?limit=100&fields=id,tentativas,date_created&filter[estado][_eq]=falhou');
+async function reagendarFalhas(colecao) {
+  const fila = await api(`/items/${colecao}?limit=100&fields=id,tentativas,date_created&filter[estado][_eq]=falhou`);
   let voltaram = 0;
   for (const m of fila) {
     const espera = Math.min(2 ** (m.tentativas ?? 1), 60) * 60_000; // 2, 4, 8… até 60 min
     if (Date.now() - new Date(m.date_created).getTime() < espera) continue;
-    if (!SIMULAR) await api(`/items/licitacao_envios/${m.id}`, { method: 'PATCH', body: JSON.stringify({ estado: 'pendente' }) });
+    if (!SIMULAR) await api(`/items/${colecao}/${m.id}`, { method: 'PATCH', body: JSON.stringify({ estado: 'pendente' }) });
     voltaram++;
   }
   if (voltaram) console.log(`  ${voltaram} mensagem(ns) reagendada(s) para nova tentativa`);
 }
 
+/* ─────────────────  novas edições do Diário Oficial  ───────────────── */
+
+/** Interessa a este assinante? Caderno, secretaria ou palavra-chave; vazio = tudo. */
+function interessaEdicao(assinante, materias, cadernosPorId, secretariaPorId) {
+  const cadernos = (assinante.cadernos ?? '').split(',').map((x) => x.trim()).filter(Boolean);
+  const secretarias = (assinante.secretarias ?? '').split(',').map((x) => x.trim()).filter(Boolean);
+  const palavras = (assinante.palavras_chave ?? '').split(',').map((x) => semAcento(x.trim())).filter(Boolean);
+
+  let relevantes = materias;
+  if (cadernos.length) relevantes = relevantes.filter((m) => cadernos.includes(cadernosPorId.get(m.caderno)));
+  if (secretarias.length) relevantes = relevantes.filter((m) => secretarias.includes(secretariaPorId.get(m.secretaria)));
+  if (palavras.length) {
+    relevantes = relevantes.filter((m) => {
+      const alvo = semAcento(`${m.ementa ?? ''} ${String(m.corpo ?? '').replace(/<[^>]*>/g, ' ')}`);
+      return palavras.some((pa) => alvo.includes(pa));
+    });
+  }
+  return relevantes;
+}
+
+function corpoEdicao(veiculo, edicao, materias) {
+  const url = `${SITE}/diario-oficial/edicao/${edicao.numero}`;
+  const data = String(edicao.data_publicacao_legal).slice(0, 10).split('-').reverse().join('/');
+  const disp = String(edicao.data_disponibilizacao).slice(0, 10).split('-').reverse().join('/');
+  const lista = materias.slice(0, 30);
+
+  const texto = [
+    `${veiculo.nome_veiculo}`,
+    `Edição nº ${edicao.numero} — publicação legal em ${data}`,
+    '',
+    `Disponibilizada em ${disp}. Prazos contam a partir de ${data}.`,
+    '',
+    `${materias.length} matéria(s) de seu interesse nesta edição:`,
+    '',
+    ...lista.map((m) => `• ${m.rotulo} — ${m.ementa}`),
+    materias.length > lista.length ? `\n… e mais ${materias.length - lista.length} matéria(s).` : '',
+    '',
+    `Edição completa: ${url}`,
+    '',
+    '--',
+    'Envio automático; não responda a esta mensagem.',
+    'Este aviso NÃO substitui a publicação oficial. O que produz efeitos é a',
+    'edição publicada, na data de publicação legal acima.',
+  ].filter(Boolean).join('\n');
+
+  const html = `<!doctype html><html lang="pt-BR"><body style="margin:0;padding:24px;background:#e9edea;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#141c18;line-height:1.6">
+<table role="presentation" style="max-width:600px;margin:0 auto;background:#fff;border-radius:6px;border-top:5px solid #0c5430" cellpadding="0" cellspacing="0" width="100%">
+<tr><td style="padding:26px 26px 6px">
+<p style="margin:0;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#4c5a51">${escapar(veiculo.nome_veiculo)}</p>
+<h1 style="margin:6px 0 0;font-size:23px;line-height:1.2">Edição nº ${edicao.numero}</h1>
+<p style="margin:6px 0 0;color:#4c5a51;font-size:14px">Disponibilizada em ${disp} · <strong style="color:#141c18">publicação legal em ${data}</strong></p>
+</td></tr>
+<tr><td style="padding:14px 26px">
+<p style="margin:0 0 12px;font-size:15px">${materias.length} matéria(s) de seu interesse:</p>
+<ul style="margin:0 0 18px;padding-left:18px;font-size:15px">
+${lista.map((m) => `<li style="margin-bottom:8px"><strong>${escapar(m.rotulo)}</strong> — ${escapar(m.ementa)}</li>`).join('')}
+</ul>
+${materias.length > lista.length ? `<p style="margin:0 0 18px;color:#4c5a51;font-size:14px">… e mais ${materias.length - lista.length} matéria(s).</p>` : ''}
+<p style="margin:0 0 6px"><a href="${url}" style="display:inline-block;background:#0c5430;color:#fff;text-decoration:none;font-weight:600;padding:12px 24px;border-radius:4px">Ver a edição completa</a></p>
+</td></tr>
+<tr><td style="padding:18px 26px;border-top:1px solid #e9edea;font-size:12px;color:#4c5a51">
+<p style="margin:0 0 6px">Envio automático — não responda a esta mensagem.</p>
+<p style="margin:0">Este aviso não substitui a publicação oficial. O que produz efeitos é a edição publicada, na data de publicação legal acima.</p>
+</td></tr></table></body></html>`;
+
+  return { assunto: `Diário Oficial de Cambuí — Edição nº ${edicao.numero}, de ${data}`, texto, html };
+}
+
+async function enfileirarEdicoes() {
+  const desde = await marcaAnterior();
+  if (!desde) return;
+
+  const p = new URLSearchParams({
+    limit: '20', sort: '-numero',
+    fields: 'id,numero,data_publicacao_legal,data_disponibilizacao,publicada_em',
+    'filter[situacao][_eq]': 'publicada',
+    'filter[publicada_em][_gt]': desde,
+  });
+  const edicoes = await api(`/items/diario_edicoes?${p}`);
+  if (!edicoes.length) { console.log('  Diário: nenhuma edição nova'); return; }
+
+  const veiculo = await api('/items/diario_veiculo');
+  const cadernos = await api('/items/diario_cadernos?limit=-1&fields=id,slug,nome');
+  const cadernosPorId = new Map(cadernos.map((c) => [c.id, c.slug]));
+  const secretarias = await api('/items/secretarias?limit=-1&fields=id,slug').catch(() => []);
+  const secretariaPorId = new Map(secretarias.map((s) => [s.id, s.slug]));
+
+  const assinantes = await api('/items/diario_assinantes?limit=-1&fields=id,email,token,confirmado,cadernos,secretarias,palavras_chave&filter[confirmado][_eq]=true');
+  if (!assinantes.length) { console.log('  Diário: nenhum assinante confirmado'); return; }
+
+  for (const edicao of edicoes) {
+    const materias = await api(`/items/diario_materias?limit=-1&fields=id,ementa,corpo,caderno,secretaria,tipo_ato,numero_ato,ano_ato&filter[edicao][_eq]=${edicao.id}`);
+    const comRotulo = materias.map((m) => ({
+      ...m,
+      rotulo: `${(m.tipo_ato ?? '').replace(/_/g, ' ')}${m.numero_ato ? ` nº ${m.numero_ato}/${m.ano_ato}` : ''}`
+        .replace(/^\w/, (c) => c.toUpperCase()),
+    }));
+
+    for (const a of assinantes) {
+      const relevantes = interessaEdicao(a, comRotulo, cadernosPorId, secretariaPorId);
+      if (!relevantes.length) continue;
+      const corpo = corpoEdicao(veiculo, edicao, relevantes);
+      if (SIMULAR) { console.log(`  [simulação] edição ${edicao.numero} → 1 assinante (${relevantes.length} matérias)`); continue; }
+      await api('/items/diario_envios', { method: 'POST', body: JSON.stringify({
+        destinatario: a.email, assunto: corpo.assunto,
+        corpo_texto: corpo.texto, corpo_html: corpo.html,
+        tipo: 'edicao', estado: 'pendente', tentativas: 0,
+        criado_em: new Date().toISOString(), assinante: a.id, edicao: edicao.id,
+      }) });
+    }
+    console.log(`  Diário: edição nº ${edicao.numero} avaliada para ${assinantes.length} assinante(s)`);
+  }
+}
+
 /* ───────────────────────  execução  ─────────────────── */
 
-console.log(`avisos de licitação — ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}${SIMULAR ? ' (SIMULAÇÃO)' : ''}`);
-if (!SO_FILA) await enfileirarNovidades();
-await reagendarFalhas();
-const r = await entregarFila();
-console.log(`  resultado: ${r.enviados} enviada(s), ${r.falhas} falha(s)`);
+console.log(`avisos do portal — ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}${SIMULAR ? ' (SIMULAÇÃO)' : ''}`);
+
+if (!SO_FILA) {
+  await enfileirarNovidades();
+  await enfileirarEdicoes();
+}
+
+/* As duas filas, na mesma execução. Separadas no banco porque carregam vínculos
+ * diferentes (licitação x edição), mas entregues pelo mesmo caminho — uma só
+ * conexão SMTP, um só limite de vazão. */
+const FILAS = [
+  { colecao: 'licitacao_envios', saida: '/licitacoes/avisos/sair', rotulo: 'licitações' },
+  { colecao: 'diario_envios', saida: '/diario-oficial/avisos/sair', rotulo: 'Diário Oficial' },
+];
+
+let enviados = 0, falhas = 0;
+for (const f of FILAS) {
+  await reagendarFalhas(f.colecao);
+  const r = await entregarFila(f.colecao, f.saida, f.rotulo);
+  enviados += r.enviados; falhas += r.falhas;
+}
+console.log(`  resultado: ${enviados} enviada(s), ${falhas} falha(s)`);

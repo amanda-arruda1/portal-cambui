@@ -21,8 +21,10 @@ uploads/
 backups/
 *.sql
 *.dump
-# ...mas a inicialização do banco é código, não dump: precisa ser versionada.
+# ...mas SQL que é CÓDIGO precisa ser versionado. A regra `*.sql` existe para
+# dump e backup; gatilho, índice e migração são fonte.
 !infra/docker/postgres/initdb/*.sql
+!infra/directus/**/*.sql
 
 # Logs e temporários
 *.log
