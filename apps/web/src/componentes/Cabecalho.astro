@@ -31,12 +31,21 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
     <div class="ourela">
       <span aria-hidden="true"></span>
       <div class="corpo linha-topo">
-        <a href="/" class="marca" aria-label={`${MUNICIPIO.nomeCompleto} — página inicial`}>
-          <img src="/brasao.png" alt="" width="44" height="44" decoding="async" />
+        <!-- Sem aria-label: ele SUBSTITUIRIA o texto visível, e um nome
+             acessível que não contém o que está escrito na tela confunde quem
+             navega por voz ("clicar em Prefeitura de Cambuí" não acharia o
+             link). O complemento entra como texto para leitor de tela. -->
+        <a href="/" class="marca">
+          <!-- brasao.png é um LOCKUP horizontal (1126×510) com o texto em
+               branco, feito para fundo escuro: usado como quadrado ficava
+               esmagado, e o texto some sobre a neblina. Aqui entra só o
+               símbolo, recortado do original e já quadrado. -->
+          <img src="/brasao-simbolo.png" alt="" width="44" height="44" decoding="async" />
           <span class="nomes">
             <strong>Prefeitura de {MUNICIPIO.nome}</strong>
             <span class="t-rotulo uf">Minas Gerais</span>
           </span>
+          <span class="sr-only">— ir para a página inicial</span>
         </a>
 
         <!-- LAI: acesso destacado e sempre visível. -->
@@ -142,7 +151,19 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
     cursor: pointer;
   }
   .campo button:hover { background: var(--color-serra-noite); border-color: var(--color-serra-noite); }
-  @media (max-width: 30rem) { .campo button span { display: none; } .campo button { padding-inline: 1rem; } }
+  /* Abaixo de 480px o rótulo sai da vista, mas NÃO do documento: com
+     display:none o botão ficava sem nome acessível e o leitor de tela
+     anunciava só "botão". Pego pelo Lighthouse; a lupa sozinha não é nome. */
+  @media (max-width: 30rem) {
+    .campo button span {
+      position: absolute;
+      width: 1px; height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
+    .campo button { padding-inline: 1rem; }
+  }
 
   /* Menu: <details> no celular, lista horizontal no desktop. Sem JavaScript
      em nenhum dos dois. */

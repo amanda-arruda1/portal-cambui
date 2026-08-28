@@ -28,6 +28,9 @@
       <button type="button" data-contraste aria-pressed="false" class="grupo unico">
         Alto contraste
       </button>
+      <button type="button" data-libras class="grupo unico">
+        Libras
+      </button>
     </div>
   </div>
 </div>
@@ -123,22 +126,61 @@
     if (localStorage.getItem('cambui:contraste') === 'alto') aplicarContraste(true);
   } catch { /* modo privado: segue no padrão */ }
 
-  /* VLibras entra em tempo ocioso. É script de terceiro e pesado; carregá-lo
-     no caminho crítico penalizaria o LCP de todo mundo para servir a quem
-     precisa dele — que continua sendo servido, um instante depois. */
-  function carregarVLibras() {
+  /* VLibras SOB DEMANDA, e não no carregamento.
+   *
+   * Medido com Lighthouse em 28/08/2026: carregar o plugin automaticamente
+   * custava desempenho a todo mundo e ainda trazia para dentro da nossa página
+   * os defeitos de acessibilidade dele — <img> sem alt, controle sem nome.
+   *
+   * Quem precisa de Libras teria de clicar no botão do plugin de qualquer
+   * forma; agora clica num botão NOSSO, que tem nome acessível de verdade, e o
+   * plugin só então é baixado. Ganha o desempenho de quem não usa, ganha a
+   * clareza de quem usa, e ganha a LGPD: nenhuma requisição a vlibras.gov.br
+   * acontece sem a pessoa pedir.
+   */
+  const botaoLibras = document.querySelector<HTMLButtonElement>('button[data-libras]');
+  let librasCarregando = false;
+
+  /* O plugin injeta <img> sem alt. Não dá para corrigir na origem; dá para
+   * corrigir aqui. Só o atributo alt — NADA de aria-label em <div> sem papel,
+   * que é atributo ARIA proibido e foi a violação que a primeira tentativa
+   * de correção criou. */
+  function corrigirImagensDoVLibras() {
+    const aplicar = () => {
+      document.querySelectorAll<HTMLImageElement>('img:not([alt])').forEach((img) => {
+        if (img.src.includes('vlibras') || img.id.startsWith('vlibras')) img.setAttribute('alt', '');
+      });
+    };
+    aplicar();
+    const observador = new MutationObserver(aplicar);
+    observador.observe(document.body, { childList: true, subtree: true });
+    setTimeout(() => observador.disconnect(), 20000);
+  }
+
+  botaoLibras?.addEventListener('click', () => {
+    if (librasCarregando) return;
+    librasCarregando = true;
+    botaoLibras.disabled = true;
+    botaoLibras.textContent = 'Carregando…';
+
     const s = document.createElement('script');
     s.src = 'https://vlibras.gov.br/app/vlibras-plugin.js';
     s.async = true;
     s.onload = () => {
       // @ts-expect-error — global instalado pelo próprio plugin
-      if (window.VLibras) new window.VLibras.Widget('https://vlibras.gov.br/app');
+      new window.VLibras.Widget('https://vlibras.gov.br/app');
+      corrigirImagensDoVLibras();
+      // O plugin leva um instante para montar o próprio botão de acesso.
+      setTimeout(() => {
+        document.querySelector<HTMLElement>('[vw-access-button]')?.click();
+        botaoLibras.remove();
+      }, 900);
+    };
+    s.onerror = () => {
+      botaoLibras.disabled = false;
+      botaoLibras.textContent = 'Libras indisponível';
+      librasCarregando = false;
     };
     document.body.appendChild(s);
-  }
-  // Guardado numa variável, e não com 'in window' direto no if: o estreitamento
-  // de tipo do TypeScript transformaria 'window' em never no ramo do else.
-  const temOcioso = typeof (window as { requestIdleCallback?: unknown }).requestIdleCallback === 'function';
-  if (temOcioso) requestIdleCallback(carregarVLibras, { timeout: 4000 });
-  else window.addEventListener('load', () => setTimeout(carregarVLibras, 1200));
+  });
 </script>

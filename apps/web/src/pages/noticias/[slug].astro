@@ -21,7 +21,7 @@ const { dados: outras } = await noticiasRecentes(4);
 const relacionadas = outras.filter((n) => n.slug !== noticia.slug).slice(0, 3);
 
 const descricao = noticia.resumo ?? recorte(semHtml(noticia.conteudo), 160);
-const capa = arquivo(noticia.imagem, { width: 1200, quality: 76, fit: 'cover' });
+const capa = arquivo(noticia.imagem, { width: 1200, quality: 76, fit: 'cover', format: 'webp' });
 ---
 
 <Base titulo={noticia.titulo} descricao={descricao} imagem={capa}>

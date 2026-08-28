@@ -394,9 +394,10 @@ próximo da fila.
 3. **`document.execCommand` no editor do painel** é obsoleto. Assumido para não
    trazer um editor inteiro como dependência; o resultado passa pelo
    sanitizador de qualquer forma.
-4. **Lighthouse não foi executado.** Não há navegador neste servidor. Medi o
-   que ele mede — payload, requisições, bloqueio de render, dimensões de imagem
-   — mas os números finais precisam ser confirmados numa máquina com Chrome.
+4. ~~Lighthouse não foi executado.~~ **Executado em 28/08/2026** — ver a seção
+   11. Instalei Chromium 151 (pacote do EPEL) e Lighthouse 13.4.1 no servidor.
+   As metas foram atingidas, e a auditoria encontrou três defeitos reais que a
+   revisão manual não pegou.
 
 ### O que ficou como `TODO(cliente)`
 
@@ -411,3 +412,84 @@ próximo da fila.
 
 Nenhum desses buracos quebra a página: onde o dado falta, a interface diz que
 falta, em português, em vez de exibir um valor inventado.
+
+
+---
+
+## 11. Lighthouse — medição real
+
+Executado em 28/08/2026 com **Chromium 151** + **Lighthouse 13.4.1**, preset
+móvel com estrangulamento de rede simulado, pelo caminho real do navegador
+(HTTPS → Caddy → Nginx → Astro).
+
+### Notas (home, mediana de 4 execuções)
+
+| Categoria | Nota | Meta |
+|---|---|---|
+| **Performance** | **99** | ≥ 90 ✅ |
+| **Acessibilidade** | **100** | 100 ✅ |
+| **Boas práticas** | **100** | — ✅ |
+| SEO | 69 no endereço de homologação · **100** na aplicação | — ⚠️ |
+
+O SEO de 69 é **o `noindex` deliberado da homologação**, e nada mais: rodando
+contra a aplicação sem esse bloqueio, a nota é 100 sem uma única falha. No dia
+da virada, o SEO sobe sozinho ao remover o bloqueio.
+
+### Métricas essenciais (home)
+
+| Métrica | Medido | Teto |
+|---|---|---|
+| Largest Contentful Paint | **1,74 s** | 2,5 s ✅ |
+| Cumulative Layout Shift | **0** | 0,1 ✅ |
+| First Contentful Paint | 0,95 s | — |
+| Total Blocking Time | 100 ms | — |
+| Speed Index | 0,95 s | — |
+
+### Páginas internas
+
+| Página | Performance | Acessibilidade | Boas práticas | LCP | CLS |
+|---|---|---|---|---|---|
+| Serviços | 99 | 100 | 100 | 1,7 s | 0 |
+| Matéria (com imagem) | 100 | 100 | 100 | 2,04 s | 0 |
+| Secretaria | 99 | 100 | 100 | 1,7 s | 0 |
+| A cidade | 100 | 100 | 100 | 1,8 s | 0 |
+
+### Responsividade, medida com o navegador
+
+8 páginas × 4 larguras (360, 768, 1280, 1920): **32 combinações, nenhuma com
+rolagem horizontal** (`scrollWidth == clientWidth` em todas). Alvos de toque
+aprovados a 360px.
+
+### Os três defeitos que a auditoria encontrou
+
+A revisão manual não pegou nenhum dos três. É o argumento a favor de medir.
+
+**1. Botão de busca sem nome acessível abaixo de 480px.** O rótulo "Buscar"
+saía com `display: none` para dar espaço à lupa, e o leitor de tela passava a
+anunciar apenas "botão". Corrigido com ocultação visual (`clip`), que tira da
+vista sem tirar do documento. *Peso 10 na nota de acessibilidade — sozinho
+segurava a nota em 90.*
+
+**2. O brasão estava esmagado.** `brasao.png` é um **lockup horizontal de
+1126×510** com o texto em branco, feito para fundo escuro; estava sendo
+renderizado como quadrado de 44×44. Além da distorção, o texto branco era
+invisível sobre a neblina. Recortei o símbolo do arquivo original para
+`brasao-simbolo.png` (413×413) e passei a usá-lo na proporção certa.
+
+**3. O VLibras carregava sozinho — e piorava as duas notas.** O plugin oficial
+injeta `<img>` sem `alt`, e carregá-lo no tempo ocioso ainda custava desempenho
+a quem não o usa. **Passou a ser sob demanda:** um botão nosso, com nome
+acessível de verdade, na barra de acessibilidade; o plugin só é baixado quando
+alguém pede, e então é aberto direto. Quem precisa de Libras clicaria no botão
+do plugin de qualquer forma — agora clica num botão melhor rotulado, e o resto
+do município não paga por isso. De quebra, é melhor para a LGPD: nenhuma
+requisição a `vlibras.gov.br` acontece sem a pessoa pedir.
+
+*Uma tentativa intermediária de "consertar" o VLibras acrescentando
+`aria-label` nos elementos dele criou uma violação nova — atributo ARIA
+proibido em `<div>` sem papel. Registrado aqui porque é o erro clássico de
+remendar acessibilidade sem medir depois.*
+
+**Ganho extra:** imagens de conteúdo passaram a ser pedidas ao Directus em
+**WebP**. A matéria com imagem tinha LCP de 2,6 s — acima do teto — e caiu para
+**2,04 s**, com performance 100.

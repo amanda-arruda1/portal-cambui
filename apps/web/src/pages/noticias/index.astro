@@ -54,10 +54,10 @@ const totalPaginas = dados.length === POR_PAGINA ? pagina + 1 : pagina;
                         conteúdo, que fazia a matéria sem foto parecer quebrada.
                         Removida na segunda crítica do DESIGN.md — o texto
                         simplesmente ocupa a largura toda, e fica melhor. */}
-                    {arquivo(n.imagem, { width: 320, quality: 70, fit: 'cover' }) && (
+                    {arquivo(n.imagem, { width: 320, quality: 70, fit: 'cover', format: 'webp' }) && (
                       <img
                         class="miniatura"
-                        src={arquivo(n.imagem, { width: 320, quality: 70, fit: 'cover' })!}
+                        src={arquivo(n.imagem, { width: 320, quality: 70, fit: 'cover', format: 'webp' })!}
                         alt=""
                         width="160"
                         height="107"

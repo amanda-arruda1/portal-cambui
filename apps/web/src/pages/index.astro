@@ -77,9 +77,9 @@ const [lider, ...demais] = noticias;
         <div class="noticias entra">
           <article class="lider">
             <a href={`/noticias/${lider.slug}`} class="lider-link">
-              {arquivo(lider.imagem, { width: 900, quality: 72, fit: 'cover' }) && (
+              {arquivo(lider.imagem, { width: 900, quality: 72, fit: 'cover', format: 'webp' }) && (
                 <img
-                  src={arquivo(lider.imagem, { width: 900, quality: 72, fit: 'cover' })!}
+                  src={arquivo(lider.imagem, { width: 900, quality: 72, fit: 'cover', format: 'webp' })!}
                   alt={lider.imagem_descricao ?? ''}
                   width="900"
                   height="506"

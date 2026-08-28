@@ -93,7 +93,13 @@ export async function umPor<T>(colecao: string, parametros: Parametros = {}): Pr
 }
 
 /** URL pública de um arquivo do Directus. O Nginx serve /assets/ fazendo
- *  proxy para o CMS, então o navegador nunca fala com o Directus diretamente. */
+ *  proxy para o CMS, então o navegador nunca fala com o Directus diretamente.
+ *
+ *  As páginas pedem `format: 'webp'` nas imagens de conteúdo. Medido com
+ *  Lighthouse em 28/08/2026: a matéria com imagem em PNG dava LCP de 2,6s,
+ *  acima do teto de 2,5s. Em WebP a mesma imagem cai para menos da metade do
+ *  peso — e o ganho vale ainda mais para as fotografias reais que a prefeitura
+ *  vai enviar, que são muito mais pesadas do que os gradientes de exemplo. */
 export function arquivo(id: string | null | undefined, parametros?: Record<string, string | number>): string | null {
   if (!id) return null;
   const consulta = parametros
