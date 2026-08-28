@@ -254,8 +254,16 @@ export function podeNoPapel(papel: string | null, acao: Acao): boolean {
  * Regra que o Directus não consegue expressar como permissão de linha:
  * ninguém aprova nem publica o próprio texto. Depende de comparar o autor do
  * item com quem está pedindo, e permissão de linha não alcança isso.
+ *
+ * O Administrator é dispensado, como já era no Diário (`diario.ts`): ele tem
+ * `admin_access` e faria a mesma alteração por fora do painel de qualquer forma
+ * — a trava não protegia o conteúdo, só tirava o registro do caminho. O preço é
+ * que a segregação de funções não vale para essa conta; o journal do Directus
+ * passa a ser a única prestação de contas. Para as secretarias a regra segue de
+ * pé: redator, revisor e publicador não conferem o próprio texto.
  */
 export function conflitoDeInteresse(sessao: Sessao, autorDoItem: string | null, acao: Acao): boolean {
   if (acao !== 'aprovar' && acao !== 'publicar') return false;
+  if (sessao.usuario.papel === 'Administrator') return false;
   return Boolean(autorDoItem) && autorDoItem === sessao.usuario.id;
 }
