@@ -110,8 +110,13 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
 
 <style>
   .cabecalho { background: var(--color-neblina); }
-  .topo { padding-top: 0.9rem; }
-  .linha-topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1.5rem; }
+  /* Os respiros do cabeçalho pelo mínimo do clamp: a 360px o cabeçalho
+     custava 278px, e junto com a barra de acessibilidade consumia 323px
+     antes de qualquer conteúdo. Nenhum ELEMENTO encolheu — brasão, faixa da
+     LAI, busca e menu estão todos aqui, do mesmo tamanho. Só os vãos. Do
+     tablet para cima os termos em vw voltam a mandar e o desktop é idêntico. */
+  .topo { padding-top: clamp(0.5rem, 2.5vw, 0.9rem); }
+  .linha-topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: clamp(0.35rem, 2vw, 0.75rem) 1.5rem; }
 
   .marca { display: flex; align-items: center; gap: 0.7rem; text-decoration: none; color: inherit; }
   .marca img { display: block; }
@@ -124,8 +129,8 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
 
   /* A busca é o maior elemento do cabeçalho. É a tese aplicada: o cidadão
      chega com uma tarefa. */
-  .busca { margin-top: 1.25rem; }
-  .etiqueta { display: block; color: var(--color-musgo); margin-bottom: 0.4rem; }
+  .busca { margin-top: clamp(0.75rem, 3.5vw, 1.25rem); }
+  .etiqueta { display: block; color: var(--color-musgo); margin-bottom: clamp(0.25rem, 1.2vw, 0.4rem); }
   .campo { display: flex; gap: 0.5rem; }
   .campo input {
     flex: 1;
@@ -171,12 +176,14 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
 
   /* Menu: <details> no celular, lista horizontal no desktop. Sem JavaScript
      em nenhum dos dois. */
-  .menu { margin-top: 1rem; padding-bottom: 1rem; }
+  .menu { margin-top: clamp(0.5rem, 2.5vw, 1rem); padding-bottom: clamp(0.5rem, 2.5vw, 1rem); }
   .sanfona summary {
     list-style: none;
     cursor: pointer;
     font-weight: 600;
-    padding: 0.7rem 0;
+    /* O padding cai, o min-height NAO: 2,75rem e o alvo de toque e continua
+       sendo quem manda na altura final. */
+    padding: 0.5rem 0;
     min-height: 2.75rem;
     display: flex;
     align-items: center;
