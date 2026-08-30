@@ -15,6 +15,19 @@
  * Estado de hoje: o portal usa UM cookie, de sessão, e só para quem entra no
  * painel das secretarias. Não há analítica. O banner diz exatamente isso em
  * vez de pedir consentimento genérico "para melhorar sua experiência".
+ *
+ * MEDIDO EM 30/08/2026, e o resultado contradizia a quarta regra acima: em
+ * 360x640 o aviso ocupava 516px — 81% da tela. Não era "um diálogo ao pé da
+ * tela", era o muro que este arquivo diz não ser: no primeiro acesso pelo
+ * celular o cidadão não via nem o <h1>. A causa era a granularidade toda
+ * aberta por padrão.
+ *
+ * Correção: o que o cidadão precisa para decidir fica visível (o que o cookie
+ * é, e os dois botões); a granularidade vive em <details>, a um toque. Nada
+ * da semântica de consentimento mudou — os dois botões continuam do mesmo
+ * tamanho e do mesmo peso, o opcional continua DESMARCADO, e fechar o
+ * <details> não aceita nada em nome de ninguém. O `max-height` é a rede para
+ * quem aumenta a fonte no A+: o aviso rola dentro de si em vez de crescer.
  */
 ---
 
@@ -25,23 +38,31 @@
       <div class="corpo">
         <h2 class="t-sub">Este site usa cookies</h2>
         <p class="t-micro texto">
-          Usamos <strong>um cookie essencial</strong>, que mantém a sessão de quem entra no painel de
-          conteúdo das secretarias. Ele não identifica você nem acompanha sua navegação, e por ser
-          indispensável ao funcionamento não depende de consentimento.
+          <strong>Um cookie essencial</strong> mantém a sessão de quem usa o painel. Não
+          identifica nem rastreia você.
         </p>
 
-        <fieldset class="opcoes">
-          <legend class="sr-only">Escolha o que aceitar</legend>
-          <label class="opcao" for="cookie-essenciais">
-            <input type="checkbox" id="cookie-essenciais" checked disabled />
-            <span><strong>Essenciais</strong> — sessão e segurança. Sempre ativos.</span>
-          </label>
-          <label class="opcao" for="cookie-medicao">
-            <input type="checkbox" id="cookie-medicao" name="medicao" />
-            <span><strong>Medição de audiência</strong> — páginas mais procuradas, de forma
-              agregada. Hoje <em>não está em uso</em>; a escolha fica registrada para quando for.</span>
-          </label>
-        </fieldset>
+        <details class="detalhes">
+          <summary class="t-micro">Detalhes e opções</summary>
+          <p class="t-micro texto">
+            O cookie essencial mantém a sessão de quem entra no painel de conteúdo das
+            secretarias. Por ser indispensável ao funcionamento, não depende de consentimento.
+            O que é opcional está abaixo, e vem desmarcado.
+          </p>
+
+          <fieldset class="opcoes">
+            <legend class="sr-only">Escolha o que aceitar</legend>
+            <label class="opcao" for="cookie-essenciais">
+              <input type="checkbox" id="cookie-essenciais" checked disabled />
+              <span><strong>Essenciais</strong> — sessão e segurança. Sempre ativos.</span>
+            </label>
+            <label class="opcao" for="cookie-medicao">
+              <input type="checkbox" id="cookie-medicao" name="medicao" />
+              <span><strong>Medição de audiência</strong> — páginas mais procuradas, de forma
+                agregada. Hoje <em>não está em uso</em>; a escolha fica registrada para quando for.</span>
+            </label>
+          </fieldset>
+        </details>
 
         <div class="botoes">
           <button type="button" data-cookies="recusar">Recusar opcionais</button>
@@ -62,27 +83,64 @@
     background: var(--color-papel);
     border-top: 3px solid var(--color-carmim);
     box-shadow: 0 -8px 32px rgb(20 28 24 / 0.14);
-    padding-block: 1.25rem;
+    padding-block: 0.9rem;
+    /* Rede de segurança: com o <details> aberto e a fonte no A+ o aviso rola
+       dentro de si em vez de voltar a virar muro. `svh` porque a barra do
+       navegador móvel some e volta, e `vh` mediria a tela sem ela. */
+    max-height: 80svh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
+  @media (min-width: 48rem) { .aviso { padding-block: 1.25rem; } }
+
   .texto { color: var(--color-musgo); max-width: var(--container-leitura); margin-top: 0.35rem; }
-  .opcoes { border: 0; padding: 0; margin: 0.9rem 0 0; display: grid; gap: 0.5rem; }
+
+  /* A granularidade a um toque, não no caminho. */
+  .detalhes { margin-top: 0.75rem; }
+  .detalhes summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--color-serra);
+    /* Alvo de toque: o resumo é um controle, e vale a mesma régua da
+       linha de tarefa. */
+    min-height: 2.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .detalhes summary::marker { color: var(--color-carmim); }
+
+  .opcoes { border: 0; padding: 0; margin: 0.5rem 0 0; display: grid; gap: 0.5rem; }
   .opcao { display: flex; gap: 0.6rem; align-items: flex-start; font-size: 0.875rem; line-height: 1.5; max-width: var(--container-leitura); }
   .opcao input { margin-top: 0.3rem; width: 1.1rem; height: 1.1rem; flex: none; accent-color: var(--color-serra); }
 
-  .botoes { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 1.1rem; }
-  /* Mesmo tamanho, mesmo peso: recusar não é o botão feio. */
+  .botoes { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-top: 0.9rem; }
+  /* Em 360px o par nao cabe lado a lado: "Recusar opcionais" + "Aceitar
+     selecionados" pedem 383px de 302 disponiveis. Empilhados em largura
+     inteira eles ficam LITERALMENTE do mesmo tamanho — a regra do topo deste
+     arquivo cumprida melhor do que antes, e 17px mais baixo que o refluxo. */
+  @media (max-width: 30rem) {
+    .botoes button { flex: 1 1 100%; justify-content: center; }
+    .botoes .link { width: 100%; }
+  }
+  /* Mesmo tamanho, mesmo peso: recusar não é o botão feio. O padreado menor
+     no celular é o que faz os dois caberem lado a lado em 360px — empilhados,
+     o par custava 56px e reabria o problema que esta correção fecha. */
   .botoes button {
     font: inherit;
     font-weight: 600;
     font-size: 0.9375rem;
-    padding: 0.7rem 1.4rem;
+    padding: 0.7rem 0.9rem;
     min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
     border-radius: 4px;
     cursor: pointer;
     border: 2px solid var(--color-serra);
     background: var(--color-papel);
     color: var(--color-serra);
   }
+  @media (min-width: 48rem) { .botoes button { padding: 0.7rem 1.4rem; } }
   .botoes button[data-cookies='aceitar'] { background: var(--color-serra); color: var(--color-papel); }
   .botoes button:hover { background: var(--color-serra-noite); color: var(--color-papel); border-color: var(--color-serra-noite); }
   .link { color: var(--color-serra); font-size: 0.875rem; }
