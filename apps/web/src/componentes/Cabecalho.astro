@@ -124,8 +124,33 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
   .nomes strong { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; }
   .uf { color: var(--color-musgo); }
 
-  .lai { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; font-size: 0.875rem; font-weight: 600; }
-  .lai a { color: var(--color-serra); text-decoration: none; }
+  /* Os três links da LAI eram texto puro, sem padding: 23px de alvo de toque
+     no celular — abaixo do piso de 24px do Lighthouse e muito abaixo dos 44px
+     que este projeto exige na LinhaTarefa. Passou despercebido porque a
+     auditoria de alvo de toque não pontua na categoria de acessibilidade.
+
+     O alvo vem do min-height, a régua do projeto. A margem negativa fica no
+     CONTÊINER (nunca nos itens: nos itens, dois links que quebrassem de linha
+     passariam a se sobrepor) e devolve ao layout quase tudo o que o alvo
+     tomou — o cabeçalho não regride os 40px do commit anterior.
+
+     O `position: relative` NÃO é enfeite, e a caixa de 44px não funciona sem
+     ele. A margem negativa faz o link transbordar para fora da sua carreira;
+     o `.corpo` da carreira seguinte vem depois no DOM, pinta por cima e
+     ROUBA O TOQUE dos 11px de baixo. Medido com elementsFromPoint: o alvo
+     real era 34px, não 44 — o `min-height` sozinho é alvo de mentira aqui.
+     O que o link passa a cobrir é vão: o rótulo da busca só começa 2px
+     abaixo do pé da caixa. Se algo for inserido entre a LAI e a busca, esta
+     conta muda e precisa ser remedida. */
+  .lai { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; font-size: 0.875rem; font-weight: 600;
+         margin-block: -0.55rem; position: relative; z-index: 1; }
+  .lai a {
+    color: var(--color-serra);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
 
   /* A busca é o maior elemento do cabeçalho. É a tese aplicada: o cidadão
      chega com uma tarefa. */
