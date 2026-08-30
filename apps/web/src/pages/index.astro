@@ -35,8 +35,7 @@ const [lider, ...demais] = noticias;
             Cambuí<br />resolve o seu dia.
           </h1>
           <p class="t-lead sub">
-            Mais de mil metros de altitude, na Mantiqueira. Este é o portal onde você trata com a
-            Prefeitura — sem fila e sem adivinhar em qual secretaria bater.
+            Trate com a Prefeitura sem fila e sem adivinhar em qual secretaria bater.
           </p>
         </div>
       </div>
@@ -155,9 +154,22 @@ const [lider, ...demais] = noticias;
 </Base>
 
 <style>
-  .hero { background: var(--color-neblina); padding-bottom: clamp(2rem, 5vw, 3.5rem); }
-  .frase { margin-top: clamp(1.5rem, 4vw, 2.5rem); }
-  .sub { margin-top: 1.25rem; max-width: 52ch; color: var(--color-musgo); }
+  /* Os minimos destes tres clamp sao o que vale no celular — e era la que
+     custavam caro. Reduzidos so no minimo: do tablet para cima os termos em
+     vw voltam a mandar e o desktop fica identico. */
+  .hero { background: var(--color-neblina); padding-bottom: clamp(1rem, 5vw, 3.5rem); }
+  .frase { margin-top: clamp(0.75rem, 4vw, 2.5rem); }
+  .sub { margin-top: clamp(0.6rem, 3vw, 1.25rem); max-width: 52ch; color: var(--color-musgo); }
+
+  /* A primeira carreira paga o topo da faixa duas vezes: o respiro da secao
+     mais a margem da lista. No celular ela e a unica secao cujo topo disputa
+     com a dobra, entao so ela encolhe — o ritmo das demais nao muda.
+     `:global` e obrigatorio: a <section id="tarefas"> nasce dentro de
+     Carreira.astro, entao NAO carrega o atributo de escopo desta pagina.
+     Sem ele a regra e escrita, compilada e silenciosamente descartada —
+     foi o que aconteceu na primeira medicao deste protótipo. */
+  :global(#tarefas) { padding-block-start: clamp(1.5rem, 6vw, 4.5rem); }
+  :global(#tarefas) .lista { margin-top: clamp(0.9rem, 3vw, 1.5rem); }
 
   .lista { list-style: none; margin: 1.5rem 0 0; padding: 0; }
   .nota { margin-top: 1.25rem; color: var(--color-musgo); }

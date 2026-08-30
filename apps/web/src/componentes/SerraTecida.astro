@@ -21,10 +21,17 @@
  */
 interface Props {
   /** Altura da faixa. A serra é deliberadamente BAIXA: identidade não pode
-   *  custar um rolar de tela a quem só quer pagar o IPTU. */
+   *  custar um rolar de tela a quem só quer pagar o IPTU.
+   *
+   *  O mínimo era 10rem, e no celular o `clamp` travava SEMPRE nele: a 360px
+   *  o termo 22vw vale 79px, então a serra ficava fixa em 160px justamente na
+   *  tela onde 160px é caro. Medido em 27 de agosto: a 1ª tarefa da home
+   *  nascia 277px abaixo da dobra em 360x640. O mínimo agora é 5,5rem — o
+   *  termo 22vw volta a mandar do tablet para cima e o desktop não muda
+   *  (a 1440px continua batendo no teto de 17rem). */
   altura?: string;
 }
-const { altura = 'clamp(10rem, 22vw, 17rem)' } = Astro.props;
+const { altura = 'clamp(5.5rem, 22vw, 17rem)' } = Astro.props;
 
 /* Perfil da crista, em três planos. Traçado à mão para lembrar o recorte da
    Mantiqueira vista de Cambuí: cristas arredondadas e sobrepostas, não picos
