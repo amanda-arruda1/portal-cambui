@@ -16,11 +16,11 @@ interface Props {
 }
 const { indisponivel = false, assunto } = Astro.props;
 ---
-<div class="rounded-lg border border-prata bg-papel-suave p-8 text-center">
-  <p class="text-lg font-semibold text-azul-escuro">
+<div class="vazio">
+  <p class="t-sub titulo">
     {indisponivel ? 'Conteúdo temporariamente indisponível' : `Ainda não há ${assunto} publicados`}
   </p>
-  <p class="mt-2 text-grafite">
+  <p class="t-lead texto">
     {
       indisponivel
         ? 'Estamos com uma instabilidade nesta seção. Tente novamente em alguns minutos.'
@@ -28,3 +28,14 @@ const { indisponivel = false, assunto } = Astro.props;
     }
   </p>
 </div>
+
+<style>
+  .vazio {
+    padding: 2rem;
+    border-radius: 4px;
+    background: var(--color-papel);
+    border-left: 5px solid var(--color-musgo);
+  }
+  .titulo { color: var(--color-serra); }
+  .texto { margin-top: 0.5rem; color: var(--color-musgo); max-width: var(--container-leitura); }
+</style>

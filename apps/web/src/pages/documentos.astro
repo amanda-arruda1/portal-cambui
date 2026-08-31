@@ -1,5 +1,13 @@
 ---
+/**
+ * Documentos oficiais.
+ *
+ * Inventário completo — editais, leis, decretos, portarias, Diário Oficial —
+ * filtrável por tipo. Linhas de largura total, como o resto do portal: título
+ * de documento oficial não pode ser truncado num cartão.
+ */
 import Base from '../layouts/Base.astro';
+import Carreira from '../componentes/Carreira.astro';
 import EstadoVazio from '../componentes/EstadoVazio.astro';
 import Paginacao from '../componentes/Paginacao.astro';
 import TituloPagina from '../componentes/TituloPagina.astro';
@@ -38,25 +46,22 @@ const base = tipo ? `/documentos?tipo=${tipo}` : '/documentos';
   descricao="Editais, licitações, leis, decretos, portarias e edições do Diário Oficial do Município de Cambuí."
 >
   <TituloPagina
+    rotulo="Documentos"
     titulo="Documentos oficiais"
-    descricao="Editais, licitações, leis, decretos, portarias e Diário Oficial."
+    chamada="Editais, licitações, leis, decretos, portarias e Diário Oficial — tudo num só lugar."
+    trilha={[{ rotulo: 'Documentos oficiais' }]}
   />
 
-  <div class="mx-auto max-w-6xl px-4 py-10">
-    <nav aria-label="Filtrar por tipo" class="nao-imprimir mb-8">
-      <ul class="flex flex-wrap gap-2">
+  <Carreira numero="01" rotulo="Filtrar por tipo" fundo="papel">
+    <nav aria-label="Filtrar por tipo" class="sem-impressao">
+      <ul class="filtros">
         {
           TIPOS.map((item) => (
             <li>
               <a
                 href={item.chave ? `/documentos?tipo=${item.chave}` : '/documentos'}
                 aria-current={tipo === item.chave ? 'page' : undefined}
-                class:list={[
-                  'inline-block rounded-md border px-3 py-1.5 font-semibold',
-                  tipo === item.chave
-                    ? 'border-azul bg-azul text-papel'
-                    : 'border-prata text-grafite hover:bg-papel-suave',
-                ]}
+                class:list={['atalho', tipo === item.chave && 'ativo']}
               >
                 {item.rotulo}
               </a>
@@ -68,27 +73,41 @@ const base = tipo ? `/documentos?tipo=${tipo}` : '/documentos';
 
     {
       dados.length === 0 ? (
-        <EstadoVazio indisponivel={indisponivel} assunto="documentos" />
+        <div class="mt-4">
+          <EstadoVazio indisponivel={indisponivel} assunto="documentos" />
+        </div>
       ) : (
-        <ul class="divide-y divide-prata border-y border-prata">
+        <ul class="lista entra">
           {dados.map((documento) => {
             const destino = documento.url_externa ?? arquivo(documento.arquivo);
             return (
-              <li class="py-4">
-                <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <h2 class="text-lg font-semibold text-azul-escuro">
-                    {destino ? (
-                      <a href={destino} class="underline" rel="noopener noreferrer">
-                        {documento.titulo}
-                      </a>
-                    ) : (
-                      documento.titulo
-                    )}
-                  </h2>
-                  {documento.numero && <span class="text-sm text-grafite">nº {documento.numero}</span>}
-                </div>
-                <p class="mt-1 text-sm text-grafite">{data(documento.data_documento)}</p>
-                {documento.descricao && <p class="mt-1 text-grafite">{documento.descricao}</p>}
+              <li>
+                {destino ? (
+                  <a href={destino} class="linha-tarefa" target={documento.url_externa ? '_blank' : undefined} rel={documento.url_externa ? 'noopener noreferrer' : undefined}>
+                    <span class="texto">
+                      <span class="t-rotulo meta">
+                        {data(documento.data_documento)}
+                        {documento.numero && <> · nº {documento.numero}</>}
+                      </span>
+                      <span class="t-sub titulo"><span class="fio-foco">{documento.titulo}</span></span>
+                      {documento.descricao && <span class="resumo t-micro">{documento.descricao}</span>}
+                    </span>
+                    <svg class="seta" width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                      <path d="M4 11h13M12 6l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </a>
+                ) : (
+                  <div class="linha-tarefa sem-link">
+                    <span class="texto">
+                      <span class="t-rotulo meta">
+                        {data(documento.data_documento)}
+                        {documento.numero && <> · nº {documento.numero}</>}
+                      </span>
+                      <span class="t-sub titulo">{documento.titulo}</span>
+                      {documento.descricao && <span class="resumo t-micro">{documento.descricao}</span>}
+                    </span>
+                  </div>
+                )}
               </li>
             );
           })}
@@ -97,5 +116,30 @@ const base = tipo ? `/documentos?tipo=${tipo}` : '/documentos';
     }
 
     <Paginacao pagina={pagina} totalPaginas={totalPaginas} base={base} />
-  </div>
+  </Carreira>
 </Base>
+
+<style>
+  .filtros { list-style: none; margin: 1.25rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .atalho {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0.5rem 1rem;
+    border: 2px solid color-mix(in srgb, var(--color-serra) 30%, transparent);
+    border-radius: 999px;
+    text-decoration: none;
+    color: var(--color-serra);
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+  .atalho:hover, .atalho.ativo { background: var(--color-serra); color: var(--color-papel); border-color: var(--color-serra); }
+
+  .lista { list-style: none; margin: 2rem 0 0; padding: 0; }
+  .texto { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+  .meta { color: var(--color-musgo); }
+  .titulo { font-family: var(--font-display); letter-spacing: -0.01em; }
+  .resumo { color: var(--color-musgo); }
+  .seta { color: var(--color-carmim); flex: none; }
+  .sem-link .texto { padding-block: 0.25rem; }
+</style>
