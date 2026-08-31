@@ -13,9 +13,17 @@
  *     JavaScript, e continua funcionando se o script falhar.
  */
 import { MUNICIPIO } from '../dados/instituicional';
+import { NECESSIDADES } from '../dados/cidade';
 
 const SECOES = [
-  { rotulo: 'Serviços', destino: '/servicos' },
+  {
+    rotulo: 'Serviços',
+    destino: '/servicos',
+    /* Categorias por necessidade — o mesmo índice de servicos.astro, só que
+       alcançável a partir de qualquer página. Dado estático (dados/cidade.ts):
+       nenhuma chamada nova ao CMS num componente que carrega em toda página. */
+    subitens: NECESSIDADES.map((n) => ({ rotulo: n.titulo, destino: `/servicos#${n.chave}` })),
+  },
   { rotulo: 'A cidade', destino: '/a-cidade' },
   { rotulo: 'A Prefeitura', destino: '/secretarias' },
   /* O Diário Oficial entra no menu principal, e não num canto: é onde os atos
@@ -94,10 +102,19 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
             </summary>
             <ul>
               {SECOES.map((s) => (
-                <li>
+                <li class:list={[s.subitens && 'com-subitens']}>
                   <a href={s.destino} aria-current={ehAtual(s.destino) ? 'page' : undefined}>
                     <span class="fio-foco">{s.rotulo}</span>
                   </a>
+                  {s.subitens && (
+                    <ul class="subitens">
+                      {s.subitens.map((sub) => (
+                        <li>
+                          <a href={sub.destino}><span class="fio-foco">{sub.rotulo}</span></a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </li>
               ))}
             </ul>
@@ -227,6 +244,18 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
   }
   .sanfona a[aria-current='page'] { color: var(--color-carmim); }
 
+  /* Subitens de "Serviços" no celular: sanfona já os mostra abertos, só
+     recuados e um degrau menores — nada de segundo <details> aninhado. */
+  .subitens {
+    list-style: none;
+    margin: 0 0 0.4rem;
+    padding-left: 1rem;
+    display: grid;
+    gap: 0.1rem;
+    border-left: 2px solid color-mix(in srgb, var(--color-musgo) 28%, transparent);
+  }
+  .subitens a { font-weight: 400; padding-block: 0.55rem; min-height: 2.5rem; color: var(--color-musgo); }
+
   @media (min-width: 48rem) {
     .sanfona summary { display: none; }
     .sanfona ul {
@@ -238,6 +267,34 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
     }
     .sanfona[open] ul, .sanfona ul { display: flex; }
     .menu { margin-top: 1.5rem; }
+
+    /* Coluna suspensa: uma lista estreita, não um mega-painel de cartões. Abre
+       por hover e por foco (:focus-within cobre chegar via Tab no link-pai;
+       sem JavaScript, como o resto do menu). */
+    .com-subitens { position: relative; }
+    .com-subitens .subitens {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      z-index: 2;
+      margin: 0;
+      padding: 0.5rem 0;
+      min-width: 15rem;
+      border: none;
+      border-top: 3px solid var(--color-carmim);
+      background: var(--color-papel);
+      box-shadow: 0 0.75rem 1.5rem -0.5rem color-mix(in srgb, var(--color-tinta) 25%, transparent);
+    }
+    .com-subitens:hover .subitens,
+    .com-subitens:focus-within .subitens { display: grid; }
+    .com-subitens .subitens a {
+      padding: 0.6rem 1.1rem;
+      color: var(--color-tinta);
+      font-weight: 600;
+    }
+    .com-subitens .subitens a:hover,
+    .com-subitens .subitens a:focus-visible { color: var(--color-serra); background: var(--color-neblina); }
   }
 </style>
 

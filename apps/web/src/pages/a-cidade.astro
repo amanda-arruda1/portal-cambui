@@ -41,6 +41,13 @@ const PARA_QUEM_CHEGA = [
       <div class="ourela">
         <span aria-hidden="true"></span>
         <div class="corpo">
+          <nav aria-label="Você está aqui" class="trilha t-micro">
+            <ol>
+              <li><a href="/">Início</a></li>
+              <li><span aria-hidden="true">›</span> <span aria-current="page">A cidade</span></li>
+            </ol>
+          </nav>
+
           <p class="t-rotulo etiqueta">A cidade</p>
           <h1 class="t-display frase">{A_CIDADE.chamada}</h1>
           <p class="t-lead sub">{A_CIDADE.texto}</p>
@@ -90,6 +97,8 @@ const PARA_QUEM_CHEGA = [
 
 <style>
   .abertura { background: var(--color-neblina); padding-bottom: clamp(2rem, 5vw, 3rem); }
+  .trilha ol { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; padding: 0; color: var(--color-musgo); }
+  .trilha a { color: var(--color-serra); text-decoration: none; }
   .etiqueta { color: var(--color-carmim); margin-top: clamp(1.25rem, 3vw, 2rem); }
   .frase { margin-top: 0.5rem; max-width: 14ch; }
   .sub { margin-top: 1.25rem; max-width: var(--container-leitura); color: var(--color-musgo); }
