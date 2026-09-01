@@ -30,8 +30,20 @@ interface Props {
    *  termo 22vw volta a mandar do tablet para cima e o desktop não muda
    *  (a 1440px continua batendo no teto de 17rem). */
   altura?: string;
+  /** Cor por trás do véu que desliza (e o fundo do próprio wrapper). Só
+   *  precisa mudar quando a serra nasce sobre um fundo escuro — index.astro,
+   *  desde o degradê de 2026-08-31 — senão o véu revela um retângulo claro
+   *  destoando do hero. */
+  fundo?: string;
+  /** Cor do fio que marca o horizonte. Sobre fundo escuro precisa ser a
+   *  variante clara do trigo (--color-carmim-brilho), senão o traço some. */
+  acento?: string;
 }
-const { altura = 'clamp(5.5rem, 22vw, 17rem)' } = Astro.props;
+const {
+  altura = 'clamp(5.5rem, 22vw, 17rem)',
+  fundo = 'var(--color-neblina)',
+  acento = 'var(--color-carmim)',
+} = Astro.props;
 
 /* Perfil da crista, em três planos. Traçado à mão para lembrar o recorte da
    Mantiqueira vista de Cambuí: cristas arredondadas e sobrepostas, não picos
@@ -44,7 +56,7 @@ const CRISTA_FRENTE =
   'M0 300 C 120 274, 214 288, 316 262 S 486 232, 606 258 C 706 280, 782 262, 884 246 S 1058 272, 1160 258 C 1258 244, 1338 266, 1440 252 L1440 320 L0 320 Z';
 ---
 
-<div class="serra-tecida sem-impressao" style={`--altura-serra:${altura}`} aria-hidden="true">
+<div class="serra-tecida sem-impressao" style={`--altura-serra:${altura};--fundo-serra:${fundo}`} aria-hidden="true">
   <svg viewBox="0 0 1440 320" preserveAspectRatio="none" role="presentation" focusable="false">
     <defs>
       <!-- O ponto meia: o "V" que a malharia repete carreira após carreira.
@@ -78,10 +90,10 @@ const CRISTA_FRENTE =
       <path d={CRISTA_FRENTE} fill="var(--color-serra-noite)" />
       <rect width="1440" height="320" fill="url(#ponto-meia)" opacity="0.13" />
     </g>
-    <path d={CRISTA_FRENTE} fill="none" stroke="var(--color-carmim)" stroke-width="2.5" />
+    <path d={CRISTA_FRENTE} fill="none" stroke={acento} stroke-width="2.5" />
 
     <!-- O véu do tear: desliza para a direita revelando os pontos. -->
-    <rect class="veu" width="1440" height="320" fill="var(--color-neblina)" />
+    <rect class="veu" width="1440" height="320" fill={fundo} />
   </svg>
 </div>
 
@@ -89,7 +101,7 @@ const CRISTA_FRENTE =
   .serra-tecida {
     height: var(--altura-serra);
     line-height: 0;
-    background: var(--color-neblina);
+    background: var(--fundo-serra);
   }
   .serra-tecida svg {
     display: block;

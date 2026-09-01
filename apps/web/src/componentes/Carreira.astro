@@ -11,6 +11,9 @@
  * formal elimina o clichê antes de ele ser tentado.
  */
 interface Props {
+  /** Mantido por compatibilidade com todas as chamadas existentes — o
+   *  numeral em si deixou de ser desenhado a pedido do cliente em
+   *  2026-09-01 (não remover das 25+ chamadas só por isto). */
   numero: string;
   rotulo: string;
   titulo?: string;
@@ -27,7 +30,6 @@ const { numero, rotulo, titulo, fundo = 'neblina', id, acao } = Astro.props;
   <div class="carreira">
     <div class="ourela">
       <div class="marca">
-        <span class="numero t-rotulo" aria-hidden="true">{numero}</span>
         <span class="fio fio-ourela" aria-hidden="true"></span>
       </div>
       <div class="corpo">
@@ -54,16 +56,11 @@ const { numero, rotulo, titulo, fundo = 'neblina', id, acao } = Astro.props;
   .f-serra { background: var(--color-serra); color: var(--color-papel); }
 
   .marca { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-  .numero { color: var(--color-carmim); }
-  .f-serra .numero { color: var(--color-papel); opacity: 0.9; }
   .fio { flex: 1; min-height: 3rem; }
   .f-serra .fio { filter: invert(1) brightness(2); opacity: 0.5; }
 
-  /* No celular a ourela vira só o fio: a estrutura não muda de natureza,
-     apenas perde a margem. O número migra para junto do rótulo. */
   @media (max-width: 47.99rem) {
     .marca { justify-content: stretch; }
-    .numero { display: none; }
   }
 
   .cabeca {

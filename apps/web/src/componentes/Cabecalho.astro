@@ -5,24 +5,31 @@
  * O anti-padrão que este componente recusa: faixa superior azul-institucional
  * com brasão à esquerda e menu horizontal genérico. Aqui:
  *   - o fundo é a neblina, não uma faixa de cor chapada;
- *   - o maior elemento não é o brasão nem o menu: é A BUSCA. O cidadão chega
- *     com uma tarefa, e a busca é o caminho mais curto até ela;
+ *   - a busca continua sendo o elemento mais chamativo do cabeçalho — só que
+ *     desde 2026-08-31, a pedido do usuário, abaixo do menu de seções, não
+ *     acima: o cidadão vê para onde o site vai antes de decidir buscar;
  *   - a Transparência e o e-SIC ficam no topo, sempre visíveis — exigência da
  *     Lei de Acesso à Informação, não enfeite;
  *   - o menu, no celular, é <details>: abre e fecha sem uma linha de
- *     JavaScript, e continua funcionando se o script falhar.
+ *     JavaScript, e continua funcionando se o script falhar. O SUBMENU de
+ *     "Serviços" é a exceção, em qualquer tela: abre só no clique da seta
+ *     (nunca sozinho — nem no hover do desktop, nem preso aberto no
+ *     celular), e por isso depende do script no fim do arquivo.
  */
 import { MUNICIPIO } from '../dados/instituicional';
-import { NECESSIDADES } from '../dados/cidade';
+// import { NECESSIDADES } from '../dados/cidade'; // volta junto com o submenu, ver abaixo
 
 const SECOES = [
   {
     rotulo: 'Serviços',
     destino: '/servicos',
-    /* Categorias por necessidade — o mesmo índice de servicos.astro, só que
-       alcançável a partir de qualquer página. Dado estático (dados/cidade.ts):
-       nenhuma chamada nova ao CMS num componente que carrega em toda página. */
-    subitens: NECESSIDADES.map((n) => ({ rotulo: n.titulo, destino: `/servicos#${n.chave}` })),
+    /* Submenu DESLIGADO em 2026-08-31 a pedido do usuário — ficou com um
+       comportamento errado que ele reportou por imagem e ainda não
+       consegui ver (caminho local do Windows dele, sem acesso daqui).
+       NECESSIDADES e a estrutura de subitens continuam prontas logo abaixo,
+       só não são passadas pra este item — é reativar esta linha quando o
+       problema estiver identificado e corrigido.
+       subitens: NECESSIDADES.map((n) => ({ rotulo: n.titulo, destino: `/servicos#${n.chave}` })), */
   },
   { rotulo: 'A cidade', destino: '/a-cidade' },
   { rotulo: 'A Prefeitura', destino: '/secretarias' },
@@ -38,7 +45,7 @@ const atual = Astro.url.pathname;
 const ehAtual = (destino: string) => atual === destino || (destino !== '/' && atual.startsWith(destino + '/'));
 ---
 
-<header class="cabecalho">
+<header class="cabecalho sobre-serra">
   <div class="carreira topo">
     <div class="ourela">
       <span aria-hidden="true"></span>
@@ -74,59 +81,68 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
     <div class="ourela">
       <span class="fio fio-ourela" aria-hidden="true"></span>
       <div class="corpo">
-        <form action="/busca" method="get" role="search" class="busca" id="busca">
-          <label for="q" class="t-rotulo etiqueta">O que você precisa resolver?</label>
-          <div class="campo">
-            <input
-              id="q"
-              name="q"
-              type="search"
-              autocomplete="off"
-              placeholder="IPTU, coleta de lixo, alvará, licitação…"
-              enterkeyhint="search"
-            />
-            <button type="submit">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="2" />
-                <path d="M13.5 13.5L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-              </svg>
-              <span>Buscar</span>
-            </button>
-          </div>
-        </form>
-
         <nav id="menu" aria-label="Menu principal" class="menu sem-impressao">
           <details class="sanfona">
             <summary>
               <span aria-hidden="true">☰</span> Seções do portal
             </summary>
             <ul>
+              {/* Submenu de "Serviços" DESLIGADO — ver comentário em SECOES,
+                  acima. Lista simples, igual às outras seções, até resolver. */}
               {SECOES.map((s) => (
-                <li class:list={[s.subitens && 'com-subitens']}>
+                <li>
                   <a href={s.destino} aria-current={ehAtual(s.destino) ? 'page' : undefined}>
                     <span class="fio-foco">{s.rotulo}</span>
                   </a>
-                  {s.subitens && (
-                    <ul class="subitens">
-                      {s.subitens.map((sub) => (
-                        <li>
-                          <a href={sub.destino}><span class="fio-foco">{sub.rotulo}</span></a>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
                 </li>
               ))}
             </ul>
           </details>
         </nav>
+
+        <form action="/busca" method="get" role="search" class="busca" id="busca">
+          <label for="q" class="t-rotulo etiqueta">O que você precisa resolver?</label>
+
+          <div class="campo-vidro" id="campo-vidro">
+            <div class="campo">
+              <div class="entrada">
+                <!-- A lupa É o gatilho da busca agora — não enfeite ao lado
+                     de um botão "Buscar" separado. type="submit" já cobre
+                     clique nela E Enter no campo (é o único controle de
+                     envio do formulário, o navegador trata os dois como o
+                     mesmo disparo). -->
+                <button type="submit" class="lupa-gatilho" aria-label="Buscar">
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="2" />
+                    <path d="M13.5 13.5L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                  </svg>
+                </button>
+                <input
+                  id="q"
+                  name="q"
+                  type="search"
+                  autocomplete="off"
+                  placeholder="Digite para pesquisar…"
+                  enterkeyhint="search"
+                />
+              </div>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
   </div>
 </header>
 
 <style>
-  .cabecalho { background: var(--color-neblina); }
+  /* Redesenho de 2026-08-31: cabeçalho escuro, gradiente do preto para o
+     azul institucional — a faixa que fica no ar em toda página, contínua
+     com o degradê maior do hero da home (index.astro). `.sobre-serra`
+     (global.css) já troca o anel de foco pra branco aqui de graça. */
+  .cabecalho {
+    background: linear-gradient(180deg, var(--color-preto), var(--color-serra-noite));
+    color: var(--color-papel);
+  }
   /* Os respiros do cabeçalho pelo mínimo do clamp: a 360px o cabeçalho
      custava 278px, e junto com a barra de acessibilidade consumia 323px
      antes de qualquer conteúdo. Nenhum ELEMENTO encolheu — brasão, faixa da
@@ -139,7 +155,7 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
   .marca img { display: block; }
   .nomes { display: flex; flex-direction: column; line-height: 1.15; }
   .nomes strong { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; }
-  .uf { color: var(--color-musgo); }
+  .uf { color: rgba(255, 255, 255, 0.6); }
 
   /* Os três links da LAI eram texto puro, sem padding: 23px de alvo de toque
      no celular — abaixo do piso de 24px do Lighthouse e muito abaixo dos 44px
@@ -162,63 +178,135 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
   .lai { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; font-size: 0.875rem; font-weight: 600;
          margin-block: -0.55rem; position: relative; z-index: 1; }
   .lai a {
-    color: var(--color-serra);
+    color: var(--color-carmim-brilho);
     text-decoration: none;
     display: inline-flex;
     align-items: center;
     min-height: 2.75rem;
   }
 
-  /* A busca é o maior elemento do cabeçalho. É a tese aplicada: o cidadão
-     chega com uma tarefa. */
-  .busca { margin-top: clamp(0.75rem, 3.5vw, 1.25rem); }
-  .etiqueta { display: block; color: var(--color-musgo); margin-bottom: clamp(0.25rem, 1.2vw, 0.4rem); }
-  .campo { display: flex; gap: 0.5rem; }
+  /* A busca é o maior elemento do cabeçalho — agora abaixo do menu, não
+     acima. É a tese aplicada mesmo assim: o cidadão vê as seções e, logo
+     abaixo, o caminho mais curto até a tarefa. */
+  .busca {
+    margin-top: clamp(0.75rem, 3vw, 1.25rem);
+    padding-bottom: clamp(0.5rem, 2.5vw, 1rem);
+    /* Entrada da faixa ao carregar a página — só uma vez, só aqui (nunca no
+       .campo-vidro: esse elemento já usa `transform` pra inclinação 3D, e uma
+       animação de entrada na MESMA propriedade do MESMO elemento brigaria
+       com o transform que o script escreve depois — o fill-mode da animação
+       ganha da regra normal e trava a inclinação no valor final do keyframe).
+       `prefers-reduced-motion` zera a duração sozinho (regra global). */
+    animation: entrada-busca 550ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: 60ms;
+    text-align: center;
+  }
+  @media (min-width: 48rem) { .busca { margin-top: 1.5rem; } }
+  @keyframes entrada-busca {
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
+  .etiqueta { display: block; color: rgba(255, 255, 255, 0.7); margin-bottom: clamp(0.25rem, 1.2vw, 0.4rem); }
+
+  /* Vidro: fundo translúcido sobre o degradê do cabeçalho (é o próprio
+     degradê, borrado, que dá o efeito — nada por trás foi desenhado só pra
+     isso). O campo de texto em si continua opaco e branco: é onde o
+     contraste tem de ser garantido, e "vidro" nele quebraria a leitura. */
+  .campo-vidro {
+    position: relative;
+    padding: 0.4rem;
+    max-width: 42rem;
+    margin-inline: auto;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--color-papel) 9%, transparent);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    border: 1px solid color-mix(in srgb, var(--color-papel) 20%, transparent);
+    box-shadow: 0 1.5rem 3rem -1.4rem rgba(0, 0, 0, 0.6);
+    transform: perspective(900px) rotateX(var(--inclinacao-x, 0deg)) rotateY(var(--inclinacao-y, 0deg));
+    transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 220ms ease-out, border-color 220ms ease-out;
+  }
+  @media (max-width: 30rem) { .campo-vidro { max-width: none; } }
+  .campo-vidro:focus-within {
+    border-color: color-mix(in srgb, var(--color-carmim-brilho) 55%, transparent);
+    box-shadow: 0 1.5rem 3rem -1.2rem rgba(0, 0, 0, 0.65);
+  }
+  /* Brilho que acompanha o cursor — só a posição muda por script;
+     visibilidade e cor são CSS puro. */
+  .campo-vidro::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(16rem circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+      color-mix(in srgb, var(--color-carmim-brilho) 30%, transparent), transparent 70%);
+    opacity: 0;
+    transition: opacity 200ms ease-out;
+    pointer-events: none;
+  }
+  .campo-vidro:hover::before, .campo-vidro:focus-within::before { opacity: 1; }
+
+  .campo { display: flex; gap: 0.5rem; position: relative; }
+  .entrada { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; }
   .campo input {
-    flex: 1;
-    min-width: 0;
+    width: 100%;
     font: inherit;
     font-size: 1.0625rem;
-    padding: 0.85rem 1rem;
+    padding: 0.85rem 1rem 0.85rem 3.35rem;
     min-height: 3.25rem;
     border: 2px solid var(--color-serra);
-    border-radius: 4px;
+    border-radius: 12px;
     background: var(--color-papel);
     color: var(--color-tinta);
   }
   .campo input::placeholder { color: var(--color-musgo); opacity: 1; }
-  .campo button {
+
+  /* A lupa é o gatilho da busca — ponto focal do campo, não enfeite. Estados,
+     em ordem de prioridade crescente (a ordem no arquivo decide o empate):
+     cor neutra parada → cor+brilho quando pronta pra buscar (foco OU texto
+     digitado — :has(input:not(:placeholder-shown)) cobre o segundo caso sem
+     precisar de JS) → escala/rotação/glow no hover → encolhe no clique. */
+  .lupa-gatilho {
+    position: absolute;
+    left: 0.3rem;
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    font: inherit;
-    font-weight: 600;
-    padding: 0 1.35rem;
-    min-height: 3.25rem;
-    border: 2px solid var(--color-serra);
-    border-radius: 4px;
-    background: var(--color-serra);
-    color: var(--color-papel);
+    justify-content: center;
+    /* 2,75rem = 44px, o alvo de toque padrão do projeto (LinhaTarefa, LAI,
+       sanfona...) — a lupa virou o único jeito de disparar a busca, não dá
+       pra ficar menor do que o resto. */
+    width: 2.75rem;
+    height: 2.75rem;
+    flex: none;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-musgo);
     cursor: pointer;
+    transition: color 200ms ease-out, transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 200ms ease-out;
   }
-  .campo button:hover { background: var(--color-serra-noite); border-color: var(--color-serra-noite); }
-  /* Abaixo de 480px o rótulo sai da vista, mas NÃO do documento: com
-     display:none o botão ficava sem nome acessível e o leitor de tela
-     anunciava só "botão". Pego pelo Lighthouse; a lupa sozinha não é nome. */
-  @media (max-width: 30rem) {
-    .campo button span {
-      position: absolute;
-      width: 1px; height: 1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-    }
-    .campo button { padding-inline: 1rem; }
+  .entrada:focus-within .lupa-gatilho,
+  .entrada:has(input:not(:placeholder-shown)) .lupa-gatilho {
+    color: var(--color-carmim);
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--color-carmim) 14%, transparent);
+  }
+  .lupa-gatilho:hover {
+    transform: scale(1.1) rotate(-8deg);
+    box-shadow: 0 0 0 9px color-mix(in srgb, var(--color-serra) 14%, transparent);
+  }
+  .entrada:focus-within .lupa-gatilho:hover,
+  .entrada:has(input:not(:placeholder-shown)) .lupa-gatilho:hover {
+    box-shadow: 0 0 0 9px color-mix(in srgb, var(--color-carmim) 20%, transparent);
+  }
+  .lupa-gatilho:active {
+    transform: scale(0.9) rotate(-4deg);
+    transition-duration: 90ms;
   }
 
   /* Menu: <details> no celular, lista horizontal no desktop. Sem JavaScript
-     em nenhum dos dois. */
-  .menu { margin-top: clamp(0.5rem, 2.5vw, 1rem); padding-bottom: clamp(0.5rem, 2.5vw, 1rem); }
+     em nenhum dos dois — o clique que abre/fecha o SUBMENU é a única parte
+     com script (mais abaixo); a sanfona em si continua funcionando sem JS. */
+  .menu { margin-top: clamp(0.75rem, 3.5vw, 1.25rem); }
   .sanfona summary {
     list-style: none;
     cursor: pointer;
@@ -230,7 +318,7 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    border-top: 1px solid color-mix(in srgb, var(--color-musgo) 28%, transparent);
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
   }
   .sanfona summary::-webkit-details-marker { display: none; }
   .sanfona ul { list-style: none; margin: 0; padding: 0 0 0.5rem; display: grid; gap: 0.15rem; }
@@ -242,19 +330,43 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
     color: inherit;
     font-weight: 600;
   }
-  .sanfona a[aria-current='page'] { color: var(--color-carmim); }
+  .sanfona a[aria-current='page'] { color: var(--color-carmim-brilho); }
 
-  /* Subitens de "Serviços" no celular: sanfona já os mostra abertos, só
-     recuados e um degrau menores — nada de segundo <details> aninhado. */
+  /* Envolve o link + o botão de seta de quem tem submenu, sem mudar o
+     alcance de toque do link em si. */
+  .item-menu { display: flex; align-items: center; }
+  .item-menu a { flex: 1; }
+  .alterna-submenu {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex: none;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+  .alterna-submenu svg { transition: transform 180ms ease-out; }
+  .alterna-submenu[aria-expanded='true'] svg { transform: rotate(180deg); }
+
+  /* Subitens de "Serviços": ESCONDIDOS por padrão em qualquer tela — só
+     `.com-subitens.aberto` (classe do script, no clique da seta) revela.
+     Antes desta correção só o desktop tinha esse controle; no celular a
+     lista de Casa/Saúde/Educação... aparecia sempre que a sanfona abria,
+     virando um bloco estático sem alternância nenhuma. */
   .subitens {
+    display: none;
     list-style: none;
     margin: 0 0 0.4rem;
     padding-left: 1rem;
-    display: grid;
     gap: 0.1rem;
-    border-left: 2px solid color-mix(in srgb, var(--color-musgo) 28%, transparent);
+    border-left: 2px solid rgba(255, 255, 255, 0.18);
   }
-  .subitens a { font-weight: 400; padding-block: 0.55rem; min-height: 2.5rem; color: var(--color-musgo); }
+  .com-subitens.aberto .subitens { display: grid; }
+  .subitens a { font-weight: 400; padding-block: 0.55rem; min-height: 2.5rem; color: rgba(255, 255, 255, 0.72); }
 
   @media (min-width: 48rem) {
     .sanfona summary { display: none; }
@@ -262,18 +374,18 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
       display: flex;
       flex-wrap: wrap;
       gap: 0 2rem;
-      border-top: 1px solid color-mix(in srgb, var(--color-musgo) 28%, transparent);
+      border-top: 1px solid rgba(255, 255, 255, 0.18);
       padding-top: 0.25rem;
     }
     .sanfona[open] ul, .sanfona ul { display: flex; }
     .menu { margin-top: 1.5rem; }
 
-    /* Coluna suspensa: uma lista estreita, não um mega-painel de cartões. Abre
-       por hover e por foco (:focus-within cobre chegar via Tab no link-pai;
-       sem JavaScript, como o resto do menu). */
+    /* Coluna suspensa: uma lista estreita, não um mega-painel de cartões.
+       Aberta/fechada é sempre a mesma regra acima (.aberto); aqui só entra
+       o que muda a APARÊNCIA no desktop — vira cartão flutuante em vez de
+       lista recuada inline. */
     .com-subitens { position: relative; }
     .com-subitens .subitens {
-      display: none;
       position: absolute;
       top: 100%;
       left: 0;
@@ -286,8 +398,6 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
       background: var(--color-papel);
       box-shadow: 0 0.75rem 1.5rem -0.5rem color-mix(in srgb, var(--color-tinta) 25%, transparent);
     }
-    .com-subitens:hover .subitens,
-    .com-subitens:focus-within .subitens { display: grid; }
     .com-subitens .subitens a {
       padding: 0.6rem 1.1rem;
       color: var(--color-tinta);
@@ -307,4 +417,70 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
   const sincronizar = () => { if (sanfona) sanfona.open = consulta.matches; };
   sincronizar();
   consulta.addEventListener('change', sincronizar);
+
+  /* Submenu do menu principal: abre só no clique da seta, nunca sozinho no
+     hover — era o hover que fazia parecer "estático"/grudado. O botão fica
+     escondido no celular (a sanfona já mostra os subitens abertos), então
+     este bloco só tem efeito visível no desktop. */
+  const itensComSubmenu = document.querySelectorAll<HTMLLIElement>('.com-subitens');
+  function fecharSubmenus(exceto?: HTMLLIElement) {
+    itensComSubmenu.forEach((li) => {
+      if (li === exceto) return;
+      li.classList.remove('aberto');
+      li.querySelector('.alterna-submenu')?.setAttribute('aria-expanded', 'false');
+    });
+  }
+  itensComSubmenu.forEach((li) => {
+    const botaoAlterna = li.querySelector<HTMLButtonElement>('.alterna-submenu');
+    botaoAlterna?.addEventListener('click', () => {
+      const abrindo = !li.classList.contains('aberto');
+      fecharSubmenus();
+      li.classList.toggle('aberto', abrindo);
+      botaoAlterna.setAttribute('aria-expanded', String(abrindo));
+    });
+  });
+  document.addEventListener('click', (e) => {
+    if (!(e.target instanceof Node)) return;
+    const dentroDeAlgumSubmenu = Array.from(itensComSubmenu).some((li) => li.contains(e.target as Node));
+    if (!dentroDeAlgumSubmenu) fecharSubmenus();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') fecharSubmenus();
+  });
+
+  /* Ctrl+K / Cmd+K continua funcionando (foca a busca de qualquer página) —
+     só o selo visual saiu, a pedido do usuário. Atalho sem dica na tela é
+     comum o bastante (é o mesmo de várias ferramentas) pra não custar nada
+     manter pra quem já sabe. */
+  const campoBusca = document.getElementById('q') as HTMLInputElement | null;
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      campoBusca?.focus();
+    }
+  });
+
+  /* Brilho e inclinação 3D seguindo o cursor. Só liga com mouse de verdade
+     (`pointer: fine` — em toque o navegador nunca dispara mousemove aqui,
+     mas a checagem evita o listener à toa) e sem pedido de menos movimento;
+     a inclinação fica em ~3°, o bastante pra sentir profundidade sem virar
+     brinquedo num portal de prefeitura. */
+  const vidro = document.getElementById('campo-vidro');
+  const reduzirMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const temMousePreciso = window.matchMedia('(pointer: fine)').matches;
+  if (vidro && !reduzirMovimento && temMousePreciso) {
+    vidro.addEventListener('mousemove', (e) => {
+      const r = vidro.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width;
+      const y = (e.clientY - r.top) / r.height;
+      vidro.style.setProperty('--mouse-x', `${x * 100}%`);
+      vidro.style.setProperty('--mouse-y', `${y * 100}%`);
+      vidro.style.setProperty('--inclinacao-y', `${(x - 0.5) * 6}deg`);
+      vidro.style.setProperty('--inclinacao-x', `${(0.5 - y) * 6}deg`);
+    });
+    vidro.addEventListener('mouseleave', () => {
+      vidro.style.setProperty('--inclinacao-x', '0deg');
+      vidro.style.setProperty('--inclinacao-y', '0deg');
+    });
+  }
 </script>

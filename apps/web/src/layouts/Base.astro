@@ -10,6 +10,7 @@ import BarraAcessibilidade from '../componentes/BarraAcessibilidade.astro';
 import Cabecalho from '../componentes/Cabecalho.astro';
 import Rodape from '../componentes/Rodape.astro';
 import AvisoCookies from '../componentes/AvisoCookies.astro';
+import AssistenteContatos from '../componentes/AssistenteContatos.astro';
 import { SITE } from '../dados/instituicional';
 import { emDemonstracao } from '../lib/demonstracao';
 
@@ -76,6 +77,7 @@ const canonica = new URL(Astro.url.pathname, SITE.urlPublica).href;
 
     <Rodape />
     <AvisoCookies />
+    <AssistenteContatos />
 
     <script>
       /* Entrada das faixas ao rolar. Uma vez por elemento, e só se a pessoa
