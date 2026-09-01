@@ -1,94 +1,49 @@
 ---
 /**
- * ÍCONE DO ASSISTENTE — "Cambuí está te ouvindo".
+ * ÍCONE DO ASSISTENTE — anel "C" + três pulsos concêntricos, em branco
+ * sólido (2026-09-01, quarta composição).
  *
- * Segunda composição (2026-09-01, mesma sessão da primeira). O "C" agora é
- * um corte geométrico SÓLIDO (disco com uma fatia removida, tipo Pac-Man —
- * não mais um anel/balão com rabicho) e a abertura, em vez de ficar vazia,
- * recebe três chevrons crescentes: a "fala" saindo do C, lida tanto como
- * onda sonora quanto como resposta rápida (">>>"). É o conceito de escuta
- * ativa pedido, sem precisar de olhos/antena de robô — RG mantida (ver
- * `AssistenteContatos.astro`: "não transforme isso em chatbot de IA
- * complexo").
+ * As três versões anteriores tentaram fazer o "C" carregar a paleta pedida
+ * (verde-escuro/marinho/esmeralda) e cada uma esbarrou na mesma parede: o
+ * botão flutuante É verde-escuro→marinho, então qualquer preenchimento nessa
+ * família de tom perde contraste contra o próprio fundo — resolvido antes
+ * com gradientes de compensação, mas gradiente em cima de gradiente é
+ * exatamente a textura que faz um ícone pequeno parecer gerado por IA em vez
+ * de desenhado. A saída, a pedido do cliente: branco sólido, sem gradiente
+ * nenhum. Contraste around resolvido pela cor, não por camada.
  *
- * LIÇÃO DA VERSÃO ANTERIOR, reaplicada aqui: a paleta pedida (verde-escuro,
- * marinho, preto) é toda de tons escuros — igual ao próprio degradê do
- * botão flutuante (turquesa→marinho-noite). Preencher a forma principal com
- * ela faz o ícone sumir dentro do botão ("verde no fundo verde"). Por isso,
- * de novo: o "C" é CLARO (branco → menta → só uma unha de #065F46 na sombra
- * mais profunda) para garantir leitura à distância, e os chevrons — sendo
- * elementos pequenos e já vizinhos de uma forma clara — puderam ficar no
- * esmeralda vivo pedido (#10B981→#065F46) sem perder contraste, porque têm
- * o branco do "C" ao lado servindo de âncora visual. Testar sempre contra o
- * botão de verdade, nunca isolado.
+ * Geometria herdada da versão anterior (mesmos paths, ids sem cor): anel
+ * institucional (r20/r12, abertura de 92° à direita) + três arcos
+ * concêntricos ao mesmo centro, crescendo em raio — a "voz" ganhando
+ * alcance a partir do C. A hierarquia entre eles agora é só OPACIDADE
+ * (0,5 → 0,74 → 1), a mesma linguagem do símbolo de wi-fi/around: nenhuma
+ * cor nova, nenhuma forma decorativa, uma sombra só (drop-shadow único no
+ * grupo inteiro) para dar o mínimo de profundidade sem empilhar camada.
  *
- * Camadas: sombra de oclusão preta (C e chevrons, deslocada) → C sólido com
- * degradê claro→verde-escuro e contorno marinho → friso de luz no topo
- * esquerdo do C → três chevrons em degradê esmeralda, opacidade crescente
- * da mais fraca (mais perto do C) para a mais forte (mais longe) — o gesto
- * de um som ganhando corpo ao se afastar de quem fala.
- *
- * `id` prefixa os ids de gradiente: o ícone aparece 2x na mesma página
- * (botão flutuante + avatar do painel), e ids de <linearGradient>
- * duplicados colidiriam no DOM.
+ * `id` prefixa o id do filtro de sombra: o ícone aparece 2x na mesma página
+ * (botão flutuante + avatar do painel), e ids de <filter> duplicados
+ * colidiriam no DOM.
  */
 interface Props {
   id: string;
   tamanho?: number;
 }
 const { id, tamanho = 24 } = Astro.props;
-
-// Disco com fatia removida (tipo Pac-Man): centro → borda → arco (a volta
-// longa, 292°) → volta ao centro. A fatia que falta (68°, virada pra
-// direita) é a "boca" onde os chevrons entram.
-const C = 'M27 32 L44.41 20.26 A21 21 0 1 0 44.41 43.74 Z';
-const FRISO = 'M8 26 A21 21 0 0 1 27 11';
-
-const CHEVRONS = [
-  { d: 'M36 27 L42 32 L36 37', largura: 4.4, opacidade: 0.55 },
-  { d: 'M43.5 25.2 L51 32 L43.5 38.8', largura: 4.8, opacidade: 0.78 },
-  { d: 'M51.5 23 L60.5 32 L51.5 41', largura: 5.2, opacidade: 1 },
-];
 ---
 
-<svg width={tamanho} height={tamanho} viewBox="0 0 64 64" fill="none" aria-hidden="true">
+<svg width={tamanho} height={tamanho} viewBox="0 0 64 64" role="img" aria-label="Assistente Virtual da Prefeitura de Cambuí">
   <defs>
-    <linearGradient id={`icone-c-${id}`} x1="15%" y1="0%" x2="85%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff" />
-      <stop offset="45%" stop-color="#eafbf3" />
-      <stop offset="80%" stop-color="#bfe8d6" />
-      <stop offset="100%" stop-color="#065F46" />
-    </linearGradient>
-    <linearGradient id={`icone-chevron-${id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#34e0ab" />
-      <stop offset="55%" stop-color="#10B981" />
-      <stop offset="100%" stop-color="#065F46" />
-    </linearGradient>
+    <filter id={`icone-sombra-${id}`} x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="1.4" stdDeviation="1.3" flood-color="#000000" flood-opacity="0.38" />
+    </filter>
   </defs>
 
-  <path d={C} fill="#000000" opacity="0.35" transform="translate(0,2.6)" />
-  <path d={C} fill={`url(#icone-c-${id})`} stroke="#0F172A" stroke-width="1.1" stroke-opacity="0.7" />
-  <path d={FRISO} stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.55" />
-
-  {CHEVRONS.map((c) => (
-    <path
-      d={c.d}
-      stroke="#000000"
-      stroke-width={c.largura + 0.4}
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      opacity="0.28"
-      transform="translate(0.8,2)"
-    />
-  ))}
-  {CHEVRONS.map((c) => (
-    <path
-      d={c.d}
-      stroke={`url(#icone-chevron-${id})`}
-      stroke-width={c.largura}
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      opacity={c.opacidade}
-    />
-  ))}
+  <g filter={`url(#icone-sombra-${id})`}>
+    <!-- C institucional: anel r20/r12, abertura radial de 92° à direita -->
+    <path fill="#ffffff" d="M35.89 17.61A20 20 0 1 0 35.89 46.39L30.34 40.63A12 12 0 1 1 30.34 23.37Z" />
+    <!-- três pulsos concêntricos, mesmo centro — só a opacidade cresce -->
+    <path fill="#ffffff" opacity="0.5" d="M45.46 14.95A29 29 0 0 1 45.46 49.05L41.42 46.11A24 24 0 0 0 41.42 17.89Z" />
+    <path fill="#ffffff" opacity="0.74" d="M54.17 17A35.5 35.5 0 0 1 54.17 47L50.55 45.31A31.5 31.5 0 0 0 50.55 18.69Z" />
+    <path fill="#ffffff" d="M61.3 22.2A40.5 40.5 0 0 1 61.3 41.8L58.39 41.07A37.5 37.5 0 0 0 58.39 22.93Z" />
+  </g>
 </svg>
