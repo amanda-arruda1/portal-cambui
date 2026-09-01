@@ -1,0 +1,31 @@
+---
+/**
+ * "Cadastrar nova obra" — cria o rascunho na hora e leva o servidor ao
+ * editor. Mesmo raciocínio de painel/licitacoes/nova.astro: rascunho no
+ * banco desde o primeiro clique, não localStorage.
+ */
+import { criar, gerarSlug } from '../../../lib/painel/obras.ts';
+
+const sessao = Astro.locals.sessao!;
+const agora = Date.now();
+
+const r = await criar(sessao, {
+  status: 'rascunho',
+  situacao: 'planejada',
+  categoria: 'outra',
+  fonte_recurso: 'municipal',
+  numero_processo: `RASCUNHO-${agora.toString(36).toUpperCase()}`,
+  slug: gerarSlug('nova-obra', agora.toString(36)),
+  objeto_resumo: 'Rascunho — descreva o objeto da obra',
+  data_publicacao: new Date().toISOString(),
+});
+
+if (!r.ok) {
+  return new Response(`Não foi possível criar o rascunho: ${r.motivo}`, {
+    status: r.status, headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  });
+}
+
+console.info(`[obras] ${sessao.usuario.email} abriu o rascunho ${r.dados.id}`);
+return Astro.redirect(`/painel/obras/${r.dados.id}?novo=1`, 303);
+---

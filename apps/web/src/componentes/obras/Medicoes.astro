@@ -1,0 +1,67 @@
+---
+/**
+ * Execução financeira: boletim de medição a boletim de medição.
+ *
+ * É a tabela que responde à pergunta que mais interessa a um órgão
+ * fiscalizador: o dinheiro pago acompanha a obra executada? Uma obra "80%
+ * pronta" sem medição correspondente é o tipo de divergência que este
+ * quadro torna visível ao primeiro olhar — não é preciso cruzar planilha.
+ */
+import { moeda, tamanhoLegivel, type MedicaoObra } from '../../lib/obras';
+import { data as formatarData } from '../../lib/formato';
+
+interface Props { medicoes: MedicaoObra[] }
+const { medicoes } = Astro.props;
+---
+
+{
+  medicoes.length === 0 ? (
+    <p class="vazio">Nenhuma medição registrada até o momento.</p>
+  ) : (
+    <div class="rolagem">
+      <table>
+        <caption class="sr-only">Medições da obra, com percentual executado e valor pago em cada uma</caption>
+        <thead>
+          <tr>
+            <th scope="col">Medição</th>
+            <th scope="col">Referência</th>
+            <th scope="col">% acumulado</th>
+            <th scope="col">Valor medido</th>
+            <th scope="col">Valor acumulado</th>
+            <th scope="col">Boletim</th>
+          </tr>
+        </thead>
+        <tbody>
+          {medicoes.map((m) => (
+            <tr>
+              <th scope="row">{m.numero}ª</th>
+              <td>{formatarData(m.data_referencia)}</td>
+              <td class="numerico">{m.percentual_acumulado !== null ? `${m.percentual_acumulado}%` : '—'}</td>
+              <td class="numerico">{moeda(m.valor_medido)}</td>
+              <td class="numerico">{moeda(m.valor_acumulado)}</td>
+              <td>
+                {m.boletim ? (
+                  <a href={`/assets/${m.boletim.id}?download`} download>
+                    Baixar {m.boletim.filesize ? <span class="tecnico">({tamanhoLegivel(Number(m.boletim.filesize))})</span> : null}
+                  </a>
+                ) : '—'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+<style>
+  .vazio { margin-top: 1.25rem; color: var(--color-musgo); }
+  .rolagem { overflow-x: auto; margin-top: 1.25rem; }
+  table { width: 100%; border-collapse: collapse; min-width: 40rem; }
+  th, td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid color-mix(in srgb, var(--color-musgo) 26%, transparent); }
+  thead th { border-bottom-width: 2px; color: var(--color-azul-escuro); font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .numerico { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tecnico { font-size: 0.8125rem; color: var(--color-musgo); }
+  td a { color: var(--color-serra); font-weight: 600; text-decoration: none; }
+  td a:hover { text-decoration: underline; }
+</style>

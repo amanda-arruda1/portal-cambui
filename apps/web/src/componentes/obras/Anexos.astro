@@ -1,0 +1,71 @@
+---
+/**
+ * Documentos da obra, agrupados por tipo. Mesmo padrão de
+ * licitacoes/Anexos.astro, sem o conceito de versão/superado — obra não
+ * retifica edital, ela ganha aditivo (categoria própria).
+ */
+import { TIPOS_ANEXO, formatoLegivel, tamanhoLegivel, type AnexoObra } from '../../lib/obras';
+import { data as formatarData } from '../../lib/formato';
+
+interface Props { anexos: AnexoObra[] }
+const { anexos } = Astro.props;
+
+const grupos = TIPOS_ANEXO
+  .map((t) => ({ ...t, itens: anexos.filter((a) => a.categoria === t.valor) }))
+  .filter((g) => g.itens.length > 0)
+  .sort((a, b) => a.ordem - b.ordem);
+---
+
+{
+  grupos.length === 0 ? (
+    <p class="vazio">Nenhum documento anexado a esta obra até o momento.</p>
+  ) : (
+    <div class="grupos">
+      {grupos.map((g) => (
+        <section class="grupo">
+          <h3 class="t-rotulo titulo">{g.rotulo}</h3>
+          <ul>
+            {g.itens.map((a) => (
+              <li>
+                {a.arquivo ? (
+                  <a href={`/assets/${a.arquivo.id}?download`} download>
+                    <span class="nome"><span class="fio-foco">{a.titulo}</span></span>
+                    <span class="meta">
+                      <span>{formatarData(a.data_referencia)}</span>
+                      <span class="tecnico">
+                        {formatoLegivel(a.arquivo.type)}
+                        {a.arquivo.filesize ? ` · ${tamanhoLegivel(Number(a.arquivo.filesize))}` : ''}
+                      </span>
+                    </span>
+                    {a.descricao && <span class="descricao">{a.descricao}</span>}
+                  </a>
+                ) : (
+                  <span class="sem-arquivo">{a.titulo} — arquivo não disponível</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  )
+}
+
+<style>
+  .vazio { margin-top: 1.25rem; color: var(--color-musgo); }
+  .grupos { margin-top: 1.5rem; display: grid; gap: 1.75rem; }
+  .titulo { color: var(--color-musgo); }
+  .grupo ul { list-style: none; margin: 0.6rem 0 0; padding: 0; }
+  .grupo li { border-top: 1px solid color-mix(in srgb, var(--color-musgo) 24%, transparent); }
+  .grupo li:last-child { border-bottom: 1px solid color-mix(in srgb, var(--color-musgo) 24%, transparent); }
+  .grupo a {
+    display: flex; flex-direction: column; gap: 0.15rem;
+    padding-block: 0.85rem; min-height: 3rem;
+    text-decoration: none; color: inherit;
+  }
+  .nome { font-weight: 600; }
+  .meta { display: inline-flex; flex-wrap: wrap; gap: 0.5rem 0.9rem; color: var(--color-musgo); font-size: 0.875rem; }
+  .tecnico { font-variant-numeric: tabular-nums; }
+  .descricao { color: var(--color-musgo); font-size: 0.875rem; }
+  .sem-arquivo { display: block; padding-block: 0.85rem; color: var(--color-musgo); }
+</style>

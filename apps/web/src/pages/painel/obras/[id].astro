@@ -1,0 +1,481 @@
+---
+/**
+ * Editor de obra pública — página única, rascunho automático e publicação
+ * validada.
+ *
+ * Diferente do editor de licitações (que usa etapas em abas): aqui os campos
+ * cabem numa rolagem só, então a divisão fica em seções com âncora — mais
+ * simples de manter e igualmente navegável. A validação segue a mesma
+ * separação ERRO/ALERTA: erro impede publicar, alerta deixa passar mas fica
+ * registrado (ex.: obra em execução sem ART/RRT ainda anexada).
+ */
+import Painel from '../../../layouts/Painel.astro';
+import { listarSecretarias } from '../../../lib/painel/cms.ts';
+import {
+  anexosDaObra, atualizar, criarMedicao, gerarSlug, medicoesDaObra, obter, temErro, validar,
+  type DadosObra,
+} from '../../../lib/painel/obras.ts';
+import { CATEGORIAS, FONTES_RECURSO, SITUACOES, TIPOS_ANEXO, moeda, rotuloCategoria } from '../../../lib/obras';
+import { data as formatarData } from '../../../lib/formato';
+
+const sessao = Astro.locals.sessao!;
+const id = Astro.params.id ?? '';
+
+let aviso: { tipo: 'ok' | 'erro'; texto: string } | null = null;
+let problemasDoEnvio: ReturnType<typeof validar> | null = null;
+if (Astro.url.searchParams.get('novo') === '1') {
+  aviso = { tipo: 'ok', texto: 'Rascunho criado e já sendo salvo automaticamente. Ele não aparece no portal enquanto você não publicar.' };
+}
+
+if (Astro.request.method === 'POST') {
+  const f = await Astro.request.formData();
+  const acao = String(f.get('acao') ?? '');
+  const t = (n: string) => { const v = f.get(n); return typeof v === 'string' ? v.trim() : ''; };
+  const dataOuNulo = (n: string) => (t(n) ? new Date(`${t(n)}:00-03:00`).toISOString() : null);
+  const numOuNulo = (n: string) => (t(n) ? Number(t(n).replace(/\./g, '').replace(',', '.')) : null);
+
+  if (acao === 'nova_medicao') {
+    const numero = Number(t('med_numero')) || 1;
+    const dataRef = dataOuNulo('med_data');
+    const valorMedido = numOuNulo('med_valor');
+    const percentual = t('med_percentual') ? Number(t('med_percentual')) : null;
+    if (!dataRef || valorMedido === null) {
+      aviso = { tipo: 'erro', texto: 'Informe ao menos a data e o valor da medição.' };
+    } else {
+      const medicoesAtuais = await medicoesDaObra(sessao, id);
+      const somaAnterior = medicoesAtuais.ok
+        ? medicoesAtuais.dados.reduce((s: number, m: any) => s + (Number(m.valor_medido) || 0), 0) : 0;
+      const r = await criarMedicao(sessao, {
+        obra: id, numero, data_referencia: dataRef,
+        percentual_acumulado: percentual, valor_medido: valorMedido,
+        valor_acumulado: somaAnterior + valorMedido,
+        observacoes: t('med_observacoes') || null,
+      });
+      if (r.ok) {
+        if (percentual !== null) await atualizar(sessao, id, { percentual_execucao: percentual, valor_pago: somaAnterior + valorMedido });
+        aviso = { tipo: 'ok', texto: `Medição ${numero}ª registrada.` };
+      } else aviso = { tipo: 'erro', texto: r.motivo };
+    }
+  } else {
+    const dados: DadosObra = {
+      numero_processo: t('numero_processo'),
+      numero_contrato: t('numero_contrato') || null,
+      categoria: t('categoria'),
+      secretaria: t('secretaria') || null,
+      objeto_resumo: t('objeto_resumo'),
+      objeto: t('objeto') || null,
+      endereco: t('endereco') || null,
+      empresa_executora: t('empresa_executora') || null,
+      empresa_cnpj: t('empresa_cnpj') || null,
+      responsavel_tecnico: t('responsavel_tecnico') || null,
+      art_rrt: t('art_rrt') || null,
+      fonte_recurso: t('fonte_recurso'),
+      numero_convenio: t('numero_convenio') || null,
+      valor_contratado: numOuNulo('valor_contratado'),
+      valor_aditivado: numOuNulo('valor_aditivado') ?? 0,
+      valor_pago: numOuNulo('valor_pago') ?? 0,
+      data_ordem_servico: dataOuNulo('data_ordem_servico'),
+      data_prevista_termino: dataOuNulo('data_prevista_termino'),
+      data_termino_real: dataOuNulo('data_termino_real'),
+      situacao: t('situacao'),
+      motivo_situacao: t('motivo_situacao') || null,
+      percentual_execucao: t('percentual_execucao') ? Number(t('percentual_execucao')) : null,
+      observacoes: t('observacoes') || null,
+    };
+
+    const anexosAgora = await anexosDaObra(sessao, id);
+    const temArtRrt = anexosAgora.ok && anexosAgora.dados.some((a: any) => a.categoria === 'art_rrt');
+    const publicando = acao === 'publicar';
+    const problemas = validar(dados, { publicando, temArtRrt });
+
+    if (publicando && temErro(problemas)) {
+      aviso = { tipo: 'erro', texto: 'A publicação foi bloqueada. Corrija os pontos apontados abaixo.' };
+      problemasDoEnvio = problemas;
+    } else {
+      if (publicando) {
+        dados.status = 'publicado';
+        dados.slug = gerarSlug(dados.objeto_resumo!, id.slice(0, 8));
+      }
+      const r = await atualizar(sessao, id, dados);
+      if (r.ok) {
+        aviso = { tipo: 'ok', texto: publicando ? 'Obra publicada. Já está visível no portal.' : 'Alterações salvas.' };
+        problemasDoEnvio = publicando ? problemas.filter((p) => p.nivel === 'alerta') : null;
+      } else aviso = { tipo: 'erro', texto: r.motivo };
+    }
+  }
+}
+
+/* ── carga ── */
+const r = await obter(sessao, id);
+if (!r.ok) return Astro.rewrite('/painel/obras');
+const o = r.dados;
+
+const [anexosResp, medicoesResp, secretariasResp] = await Promise.all([
+  anexosDaObra(sessao, id), medicoesDaObra(sessao, id), listarSecretarias(sessao),
+]);
+const anexos = anexosResp.ok ? anexosResp.dados : [];
+const medicoes = medicoesResp.ok ? medicoesResp.dados : [];
+const secretarias = secretariasResp.ok ? secretariasResp.dados : [];
+const temArtRrt = anexos.some((a: any) => a.categoria === 'art_rrt');
+
+const problemas = problemasDoEnvio ?? validar(o, { publicando: true, temArtRrt });
+const erros = problemas.filter((p) => p.nivel === 'erro');
+const alertas = problemas.filter((p) => p.nivel === 'alerta');
+const problemaDe = (campo: string) => problemas.find((p) => p.campo === campo);
+const textoDe = (campo: string) => problemaDe(campo)?.texto ?? '';
+
+const paraInput = (iso: string | null) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : new Date(d.getTime() - 3 * 3600000).toISOString().slice(0, 16);
+};
+
+const somaMedicoes = medicoes.reduce((s: number, m: any) => s + (Number(m.valor_medido) || 0), 0);
+const proximaMedicao = (medicoes[medicoes.length - 1]?.numero ?? 0) + 1;
+---
+
+<Painel titulo={o.objeto_resumo?.slice(0, 50) ?? 'Obra'} sessao={sessao}>
+  <nav class="t-micro">
+    <a href="/painel" class="lk">Fila</a> <span aria-hidden="true">›</span>
+    <a href="/painel/obras" class="lk">Obras públicas</a> <span aria-hidden="true">›</span> Editar
+  </nav>
+
+  <div class="cabeca">
+    <div>
+      <h1 class="t-pagina">{rotuloCategoria(o.categoria)}</h1>
+      <p class="estado">
+        {o.status === 'publicado'
+          ? <><strong class="pub">Publicada no portal</strong> · situação: {SITUACOES.find((s) => s.valor === o.situacao)?.rotulo}</>
+          : <><strong class="rasc">Rascunho</strong> — invisível para o cidadão até você publicar</>}
+        <span class="salvo" data-salvo aria-live="polite"></span>
+      </p>
+    </div>
+    {o.status === 'publicado' && (
+      <a href={`/obras/${o.slug}`} target="_blank" rel="noopener noreferrer" class="botao vazado">
+        Ver no portal<span class="sr-only"> — abre em nova aba</span>
+      </a>
+    )}
+  </div>
+
+  {aviso && <div role={aviso.tipo === 'erro' ? 'alert' : 'status'} class:list={['recado', aviso.tipo]}>{aviso.texto}</div>}
+
+  <nav class="indice t-micro">
+    <a href="#identificacao">Identificação</a>
+    <a href="#execucao">Execução técnica</a>
+    <a href="#valores">Recursos e valores</a>
+    <a href="#prazos">Prazos e situação</a>
+    <a href="#anexos">Anexos</a>
+    <a href="#medicoes">Medições</a>
+    <a href="#revisao">Publicação</a>
+  </nav>
+
+  <form method="post" data-form data-id={id} class="form">
+    <section id="identificacao" class="bloco">
+      <h2 class="t-secao">Identificação</h2>
+      <div class="campos">
+        <label>Número do processo administrativo <span class="obr">*</span>
+          <input name="numero_processo" value={o.numero_processo ?? ''} required aria-invalid={problemaDe('numero_processo') ? 'true' : undefined} />
+          {problemaDe('numero_processo') && <span class="erro-campo">{textoDe('numero_processo')}</span>}
+        </label>
+        <label>Número do contrato
+          <input name="numero_contrato" value={o.numero_contrato ?? ''} />
+        </label>
+        <label>Categoria <span class="obr">*</span>
+          <select name="categoria" required aria-invalid={problemaDe('categoria') ? 'true' : undefined}>
+            {CATEGORIAS.map((c) => <option value={c.valor} selected={o.categoria === c.valor}>{c.rotulo}</option>)}
+          </select>
+        </label>
+        <label>Secretaria responsável
+          <select name="secretaria">
+            <option value="">— não informado —</option>
+            {secretarias.map((s: any) => <option value={s.id} selected={o.secretaria?.id === s.id}>{s.nome}</option>)}
+          </select>
+        </label>
+      </div>
+
+      <label class="inteiro">Objeto — resumo de uma linha <span class="obr">*</span>
+        <textarea name="objeto_resumo" rows="2" required aria-invalid={problemaDe('objeto_resumo') ? 'true' : undefined}>{o.objeto_resumo ?? ''}</textarea>
+        <span class="ajuda">É o que aparece na listagem pública. Ex.: "Pavimentação asfáltica da Rua X, Bairro Y".</span>
+        {problemaDe('objeto_resumo') && <span class="erro-campo">{textoDe('objeto_resumo')}</span>}
+      </label>
+      <label class="inteiro">Descrição completa
+        <textarea name="objeto" rows="6" data-editor-rico>{o.objeto ?? ''}</textarea>
+      </label>
+      <label class="inteiro">Endereço / localização
+        <input name="endereco" value={o.endereco ?? ''} placeholder="Rua, bairro ou referência" />
+        <span class="ajuda">Usado para o link "ver no mapa" na página pública.</span>
+      </label>
+    </section>
+
+    <section id="execucao" class="bloco">
+      <h2 class="t-secao">Execução e responsabilidade técnica</h2>
+      <p class="t-micro nota">
+        Obra em execução sem responsável técnico e ART/RRT anexada é a irregularidade mais comum em
+        auditoria de obras públicas — preencha assim que o contrato for assinado.
+      </p>
+      <div class="campos">
+        <label>Empresa executora
+          <input name="empresa_executora" value={o.empresa_executora ?? ''} aria-invalid={problemaDe('empresa_executora') ? 'true' : undefined} />
+          {problemaDe('empresa_executora') && <span class:list={['erro-campo', 'alerta']}>{textoDe('empresa_executora')}</span>}
+        </label>
+        <label>CNPJ da empresa
+          <input name="empresa_cnpj" value={o.empresa_cnpj ?? ''} placeholder="00.000.000/0000-00" />
+        </label>
+        <label>Responsável técnico
+          <input name="responsavel_tecnico" value={o.responsavel_tecnico ?? ''} placeholder="Nome — CREA/CAU nº" aria-invalid={problemaDe('responsavel_tecnico') ? 'true' : undefined} />
+          {problemaDe('responsavel_tecnico') && <span class:list={['erro-campo', 'alerta']}>{textoDe('responsavel_tecnico')}</span>}
+        </label>
+        <label>Número da ART/RRT
+          <input name="art_rrt" value={o.art_rrt ?? ''} />
+        </label>
+      </div>
+    </section>
+
+    <section id="valores" class="bloco">
+      <h2 class="t-secao">Recursos e valores</h2>
+      <div class="campos">
+        <label>Fonte de recurso <span class="obr">*</span>
+          <select name="fonte_recurso" required data-fonte aria-invalid={problemaDe('fonte_recurso') ? 'true' : undefined}>
+            {Object.entries(FONTES_RECURSO).map(([v, r2]) => <option value={v} selected={o.fonte_recurso === v}>{r2}</option>)}
+          </select>
+        </label>
+        <label class="so-convenio" data-so-convenio hidden={!['estadual', 'federal'].includes(o.fonte_recurso)}>
+          Número do convênio <span class="obr">*</span>
+          <input name="numero_convenio" value={o.numero_convenio ?? ''} aria-invalid={problemaDe('numero_convenio') ? 'true' : undefined} />
+          {problemaDe('numero_convenio') && <span class="erro-campo">{textoDe('numero_convenio')}</span>}
+        </label>
+        <label>Valor contratado (R$)
+          <input name="valor_contratado" inputmode="decimal" value={o.valor_contratado ?? ''} placeholder="0,00" />
+        </label>
+        <label>Valor aditivado (R$)
+          <input name="valor_aditivado" inputmode="decimal" value={o.valor_aditivado ?? 0} placeholder="0,00" />
+        </label>
+        <label>Valor pago até o momento (R$)
+          <input name="valor_pago" inputmode="decimal" value={o.valor_pago ?? 0} placeholder="0,00" />
+          <span class="ajuda">Atualizado automaticamente ao registrar uma medição — mas pode ser ajustado aqui.</span>
+        </label>
+      </div>
+    </section>
+
+    <section id="prazos" class="bloco">
+      <h2 class="t-secao">Prazos e situação</h2>
+      <div class="campos">
+        <label>Início (ordem de serviço)
+          <input name="data_ordem_servico" type="datetime-local" value={paraInput(o.data_ordem_servico)} />
+        </label>
+        <label>Previsão de término
+          <input name="data_prevista_termino" type="datetime-local" value={paraInput(o.data_prevista_termino)} />
+        </label>
+        <label>Término efetivo
+          <input name="data_termino_real" type="datetime-local" value={paraInput(o.data_termino_real)} />
+        </label>
+        <label>Situação <span class="obr">*</span>
+          <select name="situacao" required data-situacao>
+            {SITUACOES.map((s) => <option value={s.valor} selected={o.situacao === s.valor}>{s.rotulo}</option>)}
+          </select>
+        </label>
+        <label>Percentual de execução (%)
+          <input name="percentual_execucao" type="number" min="0" max="100" value={o.percentual_execucao ?? 0} />
+        </label>
+      </div>
+      <label class="inteiro so-paralisada" data-so-paralisada hidden={!['paralisada', 'cancelada'].includes(o.situacao)}>
+        Motivo <span class="obr">*</span>
+        <textarea name="motivo_situacao" rows="3" aria-invalid={problemaDe('motivo_situacao') ? 'true' : undefined}>{o.motivo_situacao ?? ''}</textarea>
+        <span class="ajuda">Obrigatório quando paralisada ou cancelada — aparece em destaque na página pública.</span>
+        {problemaDe('motivo_situacao') && <span class="erro-campo">{textoDe('motivo_situacao')}</span>}
+      </label>
+      <label class="inteiro">Observações internas
+        <textarea name="observacoes" rows="3">{o.observacoes ?? ''}</textarea>
+      </label>
+
+      <div class="navegar">
+        <button type="submit" name="acao" value="salvar" class="botao">Salvar</button>
+      </div>
+    </section>
+
+    <section id="anexos" class="bloco">
+      <h2 class="t-secao">Anexos</h2>
+      <p class="t-micro nota">
+        Projeto básico, ART/RRT, contrato, aditivos, ordem de serviço, relatórios de fiscalização e fotos
+        do andamento. Cada arquivo é verificado (formato, conteúdo e antivírus) antes de ser guardado.
+      </p>
+
+      <div class="solta" data-solta tabindex="0" role="button" aria-label="Adicionar documentos: clique ou arraste arquivos para cá">
+        <p><strong>Arraste os documentos aqui</strong></p>
+        <p class="t-micro">ou clique para escolher — PDF, planilha, imagem ou documento, até 25 MB</p>
+        <input type="file" data-arquivos multiple hidden accept=".pdf,.docx,.xlsx,.odt,.ods,.csv,.png,.jpg,.jpeg" />
+      </div>
+      <ul class="fila-envio" data-fila></ul>
+
+      <h3 class="t-sub sub">Documentos já anexados</h3>
+      {anexos.length === 0 ? (
+        <p class="t-micro nota">Nenhum documento anexado ainda.</p>
+      ) : (
+        <ul class="anexos">
+          {anexos.map((a: any) => (
+            <li>
+              <span>
+                <strong>{a.titulo}</strong>
+                <span class="t-micro"> — {TIPOS_ANEXO.find((t) => t.valor === a.categoria)?.rotulo ?? a.categoria}</span>
+              </span>
+              <span class="t-micro">{formatarData(a.data_referencia)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+
+    <section id="medicoes" class="bloco">
+      <h2 class="t-secao">Medições — execução financeira</h2>
+      <p class="t-micro nota">
+        Registre cada boletim de medição: é o que mostra, mês a mês, se o valor pago acompanha a obra
+        executada. Soma paga até agora: <strong>{moeda(somaMedicoes)}</strong>.
+      </p>
+
+      {medicoes.length === 0 ? (
+        <p class="t-micro nota">Nenhuma medição registrada ainda.</p>
+      ) : (
+        <table class="tabela-medicoes">
+          <thead><tr><th>Nº</th><th>Referência</th><th>% acumulado</th><th>Valor medido</th><th>Valor acumulado</th></tr></thead>
+          <tbody>
+            {medicoes.map((m: any) => (
+              <tr>
+                <td>{m.numero}ª</td>
+                <td>{formatarData(m.data_referencia)}</td>
+                <td>{m.percentual_acumulado ?? '—'}%</td>
+                <td>{moeda(m.valor_medido)}</td>
+                <td>{moeda(m.valor_acumulado)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
+  </form>
+
+  <form method="post" class="nova-medicao">
+    <h3 class="t-sub">Registrar nova medição</h3>
+    <input type="hidden" name="acao" value="nova_medicao" />
+    <div class="campos">
+      <label>Nº da medição
+        <input name="med_numero" type="number" min="1" value={proximaMedicao} />
+      </label>
+      <label>Data de referência <span class="obr">*</span>
+        <input name="med_data" type="datetime-local" required />
+      </label>
+      <label>% acumulado até esta medição
+        <input name="med_percentual" type="number" min="0" max="100" />
+      </label>
+      <label>Valor medido (R$) <span class="obr">*</span>
+        <input name="med_valor" inputmode="decimal" placeholder="0,00" required />
+      </label>
+    </div>
+    <label class="inteiro">Observações
+      <textarea name="med_observacoes" rows="2"></textarea>
+    </label>
+    <button type="submit" class="botao">Registrar medição</button>
+  </form>
+
+  <section id="revisao" class="bloco revisao">
+    <h2 class="t-secao">Revisão e publicação</h2>
+
+    {erros.length > 0 && (
+      <div class="bloqueio" role="alert">
+        <p class="t-sub">Não dá para publicar ainda</p>
+        <ul>{erros.map((p) => <li>{p.texto}</li>)}</ul>
+      </div>
+    )}
+    {alertas.length > 0 && (
+      <div class="atencao" role="alert">
+        <p class="t-sub">Atenção</p>
+        <ul>{alertas.map((p) => <li>{p.texto}</li>)}</ul>
+      </div>
+    )}
+
+    <form method="post" class="publicar">
+      <button type="submit" name="acao" value="salvar" class="botao vazado">Salvar rascunho</button>
+      <button type="submit" name="acao" value="publicar" class="botao primario" disabled={erros.length > 0}>
+        {o.status === 'publicado' ? 'Salvar e republicar' : 'Publicar no portal'}
+      </button>
+    </form>
+    <p class="t-micro nota">
+      Os dados completos desta obra também devem constar do Portal da Transparência do município.
+    </p>
+  </section>
+</Painel>
+
+<style>
+  .lk { color: var(--color-azul); }
+  .cabeca { margin-top: 0.5rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1rem; }
+  .estado { margin-top: 0.35rem; color: var(--color-grafite); }
+  .pub { color: var(--color-verde-texto); }
+  .rasc { color: var(--color-trigo); }
+  .salvo { margin-left: 0.75rem; font-size: 0.875rem; }
+  .recado { margin-top: 1rem; padding: 1rem 1.2rem; border-left: 4px solid; border-radius: 0 4px 4px 0; background: var(--color-papel); }
+  .recado.ok { border-color: var(--color-verde); color: var(--color-verde-texto); }
+  .recado.erro { border-color: var(--color-vermelho); color: var(--color-vermelho); }
+
+  .indice { margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; padding-bottom: 0.75rem; border-bottom: 2px solid var(--color-prata); }
+  .indice a { color: var(--color-azul); font-weight: 600; text-decoration: none; }
+  .indice a:hover { text-decoration: underline; }
+
+  .form { margin-top: 0; }
+  .bloco { margin-top: 1.5rem; background: var(--color-papel); border: 1px solid var(--color-prata); border-radius: 6px; padding: 1.5rem; scroll-margin-top: 1rem; }
+  .campos { margin-top: 1.25rem; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+  label { display: block; font-weight: 600; font-size: 0.9375rem; }
+  .inteiro { margin-top: 1.25rem; }
+  .obr { color: var(--color-vermelho); }
+  input, select, textarea {
+    display: block; width: 100%; font: inherit; font-weight: 400; margin-top: 0.3rem;
+    min-height: 2.75rem; padding: 0.55rem 0.75rem; border: 1.5px solid var(--color-prata);
+    border-radius: 4px; background: var(--color-papel); color: var(--color-tinta);
+  }
+  textarea { min-height: 5rem; }
+  .ajuda { display: block; font-weight: 400; font-size: 0.8125rem; color: var(--color-grafite); margin-top: 0.3rem; }
+  .erro-campo { display: block; font-weight: 600; font-size: 0.8125rem; color: var(--color-vermelho); margin-top: 0.3rem; }
+  .erro-campo.alerta { color: var(--color-trigo); }
+  [aria-invalid='true'] { border-color: var(--color-vermelho); border-width: 2px; }
+  .nota { color: var(--color-grafite); margin-top: 0.35rem; }
+
+  .navegar { margin-top: 1.75rem; }
+  .botao { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem;
+    padding: 0.6rem 1.3rem; border-radius: 4px; font: inherit; font-weight: 600; cursor: pointer;
+    border: 2px solid var(--color-azul); background: var(--color-azul); color: var(--color-papel); text-decoration: none; }
+  .botao.vazado { background: var(--color-papel); color: var(--color-azul); }
+  .botao.primario { background: var(--color-verde); border-color: var(--color-verde); }
+  .botao:disabled { opacity: 0.45; cursor: not-allowed; }
+  .botao:not(:disabled):hover { filter: brightness(0.9); }
+
+  .solta { margin-top: 1rem; border: 2px dashed var(--color-prata); border-radius: 8px; padding: 2rem 1rem;
+    text-align: center; cursor: pointer; background: var(--color-papel-suave); }
+  .solta:hover, .solta.sobre { border-color: var(--color-azul); background: var(--color-azul-claro); }
+  .fila-envio { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
+  .fila-envio li { border: 1px solid var(--color-prata); border-radius: 4px; padding: 0.6rem 0.8rem; font-size: 0.9375rem; }
+  .barra { height: 6px; background: var(--color-prata); border-radius: 3px; margin-top: 0.4rem; overflow: hidden; }
+  .barra i { display: block; height: 100%; background: var(--color-azul); width: 0; transition: width 0.2s ease-out; }
+
+  .sub { margin-top: 2rem; }
+  .anexos { list-style: none; margin: 0.75rem 0 0; padding: 0; }
+  .anexos li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem 1rem;
+    padding: 0.6rem 0; border-top: 1px solid var(--color-prata); }
+
+  .tabela-medicoes { margin-top: 1rem; width: 100%; border-collapse: collapse; }
+  .tabela-medicoes th, .tabela-medicoes td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--color-prata); font-size: 0.9375rem; }
+  .tabela-medicoes thead { color: var(--color-grafite); font-size: 0.8125rem; text-transform: uppercase; }
+
+  .nova-medicao { margin-top: 1.5rem; background: var(--color-papel); border: 1px solid var(--color-prata);
+    border-left: 4px solid var(--color-azul); border-radius: 6px; padding: 1.25rem 1.5rem; }
+  .nova-medicao .botao { margin-top: 1.25rem; }
+
+  .revisao { border-left: 4px solid var(--color-verde); }
+  .bloqueio, .atencao { margin-top: 1.25rem; padding: 1rem 1.2rem; border-left: 5px solid; border-radius: 0 4px 4px 0; }
+  .bloqueio { border-color: var(--color-vermelho); background: color-mix(in srgb, var(--color-vermelho) 8%, transparent); }
+  .atencao { border-color: var(--color-trigo); background: color-mix(in srgb, var(--color-trigo) 10%, transparent); }
+  .bloqueio ul, .atencao ul { margin: 0.5rem 0 0 1.2rem; }
+  .bloqueio li, .atencao li { margin-top: 0.35rem; }
+  .publicar { margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem; }
+</style>
+
+<script>
+  import '../../../scripts/painel-obras.ts';
+</script>

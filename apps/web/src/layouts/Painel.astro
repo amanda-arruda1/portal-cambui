@@ -63,6 +63,11 @@ const { titulo, sessao } = Astro.props;
                   Licitações
                 </a>
               )}
+              {['Administrator', 'Setor de obras', 'Leitor de obras', 'Publicador', 'Revisor'].includes(sessao.usuario.papel ?? '') && (
+                <a href="/painel/obras" class="underline underline-offset-4 hover:text-azul-claro">
+                  Obras públicas
+                </a>
+              )}
               {sessao.usuario.papel === 'Administrator' && (
                 <a href="/painel/usuarios" class="underline underline-offset-4 hover:text-azul-claro">
                   Pessoas

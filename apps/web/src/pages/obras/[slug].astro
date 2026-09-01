@@ -1,0 +1,212 @@
+---
+/**
+ * Página de uma obra.
+ *
+ * A primeira dobra responde, sem rolagem: O QUE É, EM QUE SITUAÇÃO, QUANTO
+ * CUSTA e QUEM EXECUTA. O resto — objeto completo, documentos, execução
+ * financeira — vem depois.
+ *
+ * URL permanente: /obras/<slug>. Não muda depois de publicada.
+ */
+import Base from '../../layouts/Base.astro';
+import Etiqueta from '../../componentes/obras/Etiqueta.astro';
+import NotaLegal from '../../componentes/obras/NotaLegal.astro';
+import Anexos from '../../componentes/obras/Anexos.astro';
+import Medicoes from '../../componentes/obras/Medicoes.astro';
+import { limpar } from '../../lib/sanitizar';
+import { data as formatarData } from '../../lib/formato';
+import {
+  FONTES_RECURSO, anexosDe, documentoPublico, medicoesDe, moeda, porSlug,
+  rotuloCategoria, situacaoDe, urlMapa, valorAtual,
+} from '../../lib/obras';
+
+const slug = Astro.params.slug ?? '';
+const o = await porSlug(slug);
+if (!o) return Astro.rewrite('/404');
+
+const [anexos, medicoes] = await Promise.all([anexosDe(o.id), medicoesDe(o.id)]);
+const situacao = situacaoDe(o.situacao);
+const endereco = new URL(Astro.url.pathname, Astro.site ?? 'https://www.prefeituradecambui.mg.gov.br').href;
+
+const ficha: Array<[string, string]> = [
+  ['Processo administrativo', o.numero_processo],
+  ...(o.numero_contrato ? ([['Contrato', o.numero_contrato]] as Array<[string, string]>) : []),
+  ['Categoria', rotuloCategoria(o.categoria)],
+  ['Secretaria responsável', o.secretaria?.nome ?? 'Não informado'],
+  ...(o.endereco ? ([['Localização', o.endereco]] as Array<[string, string]>) : []),
+  ['Fonte de recurso', FONTES_RECURSO[o.fonte_recurso] ?? o.fonte_recurso],
+  ...(o.numero_convenio ? ([['Número do convênio', o.numero_convenio]] as Array<[string, string]>) : []),
+  ...(o.empresa_executora ? ([['Empresa executora', `${o.empresa_executora} — CNPJ ${documentoPublico(o.empresa_cnpj)}`]] as Array<[string, string]>) : []),
+  ...(o.responsavel_tecnico ? ([['Responsável técnico', o.responsavel_tecnico]] as Array<[string, string]>) : []),
+  ...(o.art_rrt ? ([['ART/RRT', o.art_rrt]] as Array<[string, string]>) : []),
+];
+
+const valores: Array<[string, string]> = [
+  ['Valor contratado', o.valor_contratado ? moeda(o.valor_contratado) : 'Não divulgado'],
+  ...(Number(o.valor_aditivado) > 0 ? ([['Valor aditivado', moeda(o.valor_aditivado)]] as Array<[string, string]>) : []),
+  ['Valor atual do contrato', valorAtual(o) ? moeda(valorAtual(o)) : 'Não divulgado'],
+  ['Valor pago até o momento', moeda(o.valor_pago)],
+];
+
+const prazos: Array<[string, string]> = [
+  ...(o.data_ordem_servico ? ([['Início (ordem de serviço)', formatarData(o.data_ordem_servico)]] as Array<[string, string]>) : []),
+  ...(o.data_prevista_termino ? ([['Previsão de término', formatarData(o.data_prevista_termino)]] as Array<[string, string]>) : []),
+  ...(o.data_termino_real ? ([['Término efetivo', formatarData(o.data_termino_real)]] as Array<[string, string]>) : []),
+];
+
+const compartilhar = `Obra pública da Prefeitura de Cambuí — ${o.objeto_resumo}. ${endereco}`;
+---
+
+<Base titulo={`${o.objeto_resumo} — Obras públicas`} descricao={o.objeto_resumo.slice(0, 180)}>
+  <article>
+    <div class="carreira topo">
+      <div class="ourela">
+        <span class="fio fio-ourela" aria-hidden="true"></span>
+        <div class="corpo">
+          <nav aria-label="Você está aqui" class="trilha t-micro">
+            <ol>
+              <li><a href="/">Início</a></li>
+              <li><span aria-hidden="true">›</span> <a href="/obras">Obras públicas</a></li>
+            </ol>
+          </nav>
+
+          <div class="identificacao">
+            <p class="t-rotulo categoria">{rotuloCategoria(o.categoria)} · processo {o.numero_processo}</p>
+            <Etiqueta situacao={o.situacao} grande />
+          </div>
+
+          <h1 class="t-pagina objeto">{o.objeto_resumo}</h1>
+
+          {o.motivo_situacao && situacao.tom === 'alerta' && (
+            <div class="alerta" role="alert">
+              <p class="t-sub">{situacao.rotulo}</p>
+              <p>{o.motivo_situacao}</p>
+            </div>
+          )}
+
+          <div class="acao">
+            {o.percentual_execucao !== null && !['planejada', 'em_licitacao'].includes(o.situacao) && (
+              <div class="progresso">
+                <div class="barra"><i style={`width:${o.percentual_execucao}%`}></i></div>
+                <p class="t-micro">{o.percentual_execucao}% executado</p>
+              </div>
+            )}
+            <div class="botoes">
+              {o.endereco && (
+                <a class="botao" href={urlMapa(o.endereco)} target="_blank" rel="noopener noreferrer">
+                  Ver localização no mapa<span class="sr-only"> — abre em nova aba</span>
+                </a>
+              )}
+            </div>
+            <p class="compartilhar t-micro">
+              <a href={`https://wa.me/?text=${encodeURIComponent(compartilhar)}`} target="_blank" rel="noopener noreferrer">Compartilhar no WhatsApp</a>
+              <span aria-hidden="true"> · </span>
+              <button type="button" data-copiar={endereco}>Copiar o link</button>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="regua-tricô" aria-hidden="true"></div>
+
+    <div class="carreira miolo">
+      <div class="ourela">
+        <span class="fio fio-ourela" aria-hidden="true"></span>
+        <div class="corpo">
+          <section>
+            <h2 class="t-secao">Dados da contratação</h2>
+            <dl class="ficha">{ficha.map(([r, v]) => (<div><dt class="t-rotulo">{r}</dt><dd>{v}</dd></div>))}</dl>
+          </section>
+
+          <section>
+            <h2 class="t-secao">Valores</h2>
+            <dl class="ficha">{valores.map(([r, v]) => (<div><dt class="t-rotulo">{r}</dt><dd class="numerico">{v}</dd></div>))}</dl>
+          </section>
+
+          {prazos.length > 0 && (
+            <section>
+              <h2 class="t-secao">Prazos</h2>
+              <dl class="ficha">{prazos.map(([r, v]) => (<div><dt class="t-rotulo">{r}</dt><dd>{v}</dd></div>))}</dl>
+            </section>
+          )}
+
+          {o.objeto && (
+            <section>
+              <h2 class="t-secao">Objeto</h2>
+              <div class="conteudo-rico" set:html={limpar(o.objeto)} />
+            </section>
+          )}
+
+          <section>
+            <h2 class="t-secao">Execução financeira</h2>
+            <p class="t-micro nota">Medição a medição: o que já foi pago e o percentual físico correspondente.</p>
+            <Medicoes medicoes={medicoes} />
+          </section>
+
+          <section>
+            <h2 class="t-secao">Documentos</h2>
+            <Anexos anexos={anexos} />
+          </section>
+
+          <section>
+            <h2 class="t-secao">Mais obras</h2>
+            <ul class="oficiais">
+              <li><a href="/obras"><span class="fio-foco">Todas as obras públicas</span></a></li>
+              {o.licitacao && <li><a href="/licitacoes"><span class="fio-foco">Ver a licitação de origem</span></a></li>}
+            </ul>
+            <NotaLegal />
+          </section>
+        </div>
+      </div>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .fio { min-height: 4rem; }
+  .trilha ol { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; padding: 0; color: var(--color-musgo); }
+  .trilha a { color: var(--color-serra); text-decoration: none; }
+  .identificacao { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1rem; margin-top: 1.25rem; }
+  .categoria { color: var(--color-musgo); }
+  .objeto { margin-top: 0.6rem; max-width: 30ch; }
+  .alerta { margin-top: 1.5rem; padding: 1rem 1.25rem; border-left: 5px solid var(--color-carmim);
+    background: color-mix(in srgb, var(--color-carmim) 9%, transparent); border-radius: 0 4px 4px 0; max-width: var(--container-leitura); }
+  .alerta p:first-child { color: var(--color-carmim); }
+  .alerta p + p { margin-top: 0.4rem; }
+  .acao { margin-top: 2rem; }
+  .progresso { max-width: 26rem; }
+  .barra { height: 10px; background: color-mix(in srgb, var(--color-musgo) 20%, transparent); border-radius: 999px; overflow: hidden; }
+  .barra i { display: block; height: 100%; background: var(--color-serra); border-radius: 999px; }
+  .progresso p { margin-top: 0.35rem; color: var(--color-musgo); }
+  .botoes { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; }
+  .botao { display: inline-flex; align-items: center; justify-content: center;
+    min-height: 3rem; padding: 0.6rem 1.3rem; border-radius: 4px; border: 2px solid var(--color-serra);
+    color: var(--color-serra); background: var(--color-papel); text-decoration: none; font-weight: 600; }
+  .botao:hover { background: var(--color-serra-noite); border-color: var(--color-serra-noite); color: var(--color-papel); }
+  .compartilhar { margin-top: 1rem; color: var(--color-musgo); }
+  .compartilhar a, .compartilhar button { color: var(--color-serra); font: inherit; font-weight: 600;
+    background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+  .miolo { padding-block: 2.5rem clamp(3rem, 7vw, 5rem); }
+  .miolo section + section { margin-top: 3rem; }
+  .ficha { margin-top: 1.25rem; display: grid; gap: 1rem 2.5rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); max-width: 58rem; }
+  .ficha dt { color: var(--color-musgo); }
+  .ficha dd { margin: 0.2rem 0 0; }
+  .numerico { font-variant-numeric: tabular-nums; }
+  .nota { color: var(--color-musgo); margin-top: 0.25rem; }
+  .oficiais { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: 0.6rem; }
+  .oficiais a { color: var(--color-serra); text-decoration: none; font-weight: 600; }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copiar]').forEach((b) => {
+    b.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(b.dataset.copiar!);
+        const antes = b.textContent;
+        b.textContent = 'Link copiado';
+        setTimeout(() => { b.textContent = antes; }, 2200);
+      } catch { /* sem permissão: a URL segue visível na barra de endereço */ }
+    });
+  });
+</script>

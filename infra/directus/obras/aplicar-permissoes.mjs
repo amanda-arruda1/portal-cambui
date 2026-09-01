@@ -1,57 +1,49 @@
 #!/usr/bin/env node
 /**
- * Permissões do módulo de licitações.
+ * Permissões do módulo de obras públicas.
  *
- * Separado do papeis.json geral porque o setor de licitações NÃO segue o
- * escopo por secretaria do resto do portal: ele publica para todas as pastas,
- * e o fluxo editorial de notícia (redator → revisor → publicador) não se
- * aplica a edital, que tem prazo legal e um responsável só.
+ * Mesmo padrão de infra/directus/licitacoes/aplicar-permissoes.mjs, e pela
+ * mesma razão: obra pública não segue o fluxo editorial de notícia (redator
+ * → revisor → publicador) — tem um setor responsável e prazo de fiscalização
+ * legal, não uma redação a revisar.
  *
- * DECISÃO QUE IMPORTA: anexos, lotes e eventos NÃO têm visibilidade própria —
- * são visíveis se, e somente se, a licitação-pai estiver publicada. O filtro é
- * relacional (`{ licitacao: { status: { _eq: 'publicado' } } }`). A alternativa
- * seria gerenciar `status` em cada anexo, e um anexo publicado por engano numa
- * licitação em rascunho é exatamente o vazamento que não pode acontecer.
+ * DECISÃO QUE IMPORTA: anexos e medições NÃO têm visibilidade própria — são
+ * visíveis se, e somente se, a obra-mãe estiver publicada. Filtro relacional
+ * (`{ obra: { status: { _eq: 'publicado' } } }`), igual licitação_anexos.
  */
 const BASE = (process.env.DIRECTUS_INTERNAL_URL || 'http://127.0.0.1:8055').replace(/\/+$/, '');
 const NOME_POLITICA_PUBLICA = '$t:public_label';
 const SIMULAR = process.argv.includes('--simular');
 
-/** Campos que o portal público pode ler. Lista fechada: `motivo_situacao` e
- *  `valor_estimado` entram porque são informação pública; nada de
- *  `user_created` ou `date_updated`, que expõem a rotina interna. */
 const CAMPOS_PUBLICOS = {
-  licitacoes: [
-    'id', 'status', 'numero_processo', 'numero', 'ano', 'slug', 'modalidade', 'forma',
-    'justificativa_presencial', 'criterio_julgamento', 'modo_disputa', 'registro_precos',
-    'secretaria', 'objeto_resumo', 'objeto', 'valor_estimado', 'orcamento_sigiloso',
-    'data_publicacao', 'data_abertura_propostas', 'data_sessao', 'prazo_impugnacao',
-    'prazo_esclarecimentos', 'situacao', 'motivo_situacao', 'pncp_id', 'pncp_url',
-    'sistema_sessao_url', 'demonstracao', 'date_updated',
+  obras: [
+    'id', 'status', 'numero_processo', 'numero_contrato', 'licitacao', 'slug', 'categoria', 'secretaria',
+    'objeto_resumo', 'objeto', 'endereco', 'empresa_executora', 'empresa_cnpj', 'responsavel_tecnico', 'art_rrt',
+    'fonte_recurso', 'numero_convenio', 'valor_contratado', 'valor_aditivado', 'valor_pago',
+    'data_ordem_servico', 'data_prevista_termino', 'data_termino_real',
+    'situacao', 'motivo_situacao', 'percentual_execucao', 'observacoes', 'data_publicacao', 'demonstracao', 'date_updated',
   ],
-  licitacao_anexos: ['id', 'licitacao', 'titulo', 'tipo', 'arquivo', 'url_externa', 'data_publicacao', 'versao', 'substitui', 'superado', 'ordem'],
-  licitacao_lotes: ['id', 'licitacao', 'numero', 'descricao', 'valor_estimado', 'situacao', 'vencedor_razao_social', 'vencedor_cnpj', 'valor_homologado'],
-  licitacao_eventos: ['id', 'licitacao', 'data', 'tipo', 'descricao', 'anexo'],
+  obra_anexos: ['id', 'obra', 'titulo', 'categoria', 'arquivo', 'data_referencia', 'descricao', 'ordem'],
+  obra_medicoes: ['id', 'obra', 'numero', 'data_referencia', 'percentual_acumulado', 'valor_medido', 'valor_acumulado', 'boletim', 'observacoes'],
 };
 
 const COLECOES = Object.keys(CAMPOS_PUBLICOS);
 
-/* A política pública lê licitação publicada; os filhos seguem o pai. */
 function permissoesPublicas() {
   return COLECOES.map((colecao) => ({
     collection: colecao,
     action: 'read',
-    permissions: colecao === 'licitacoes'
+    permissions: colecao === 'obras'
       ? { status: { _eq: 'publicado' } }
-      : { licitacao: { status: { _eq: 'publicado' } } },
+      : { obra: { status: { _eq: 'publicado' } } },
     validation: null,
     presets: null,
     fields: CAMPOS_PUBLICOS[colecao].join(','),
   }));
 }
 
-/* O setor de licitações escreve tudo, em qualquer situação, e não apaga:
-   licitação nunca é excluída, só muda de estado. */
+/* O setor de obras escreve tudo, em qualquer situação, e não apaga: obra
+   nunca é excluída, só muda de situação (planejada → … → concluída/cancelada). */
 function permissoesDoSetor() {
   const linhas = [];
   for (const colecao of COLECOES) {
@@ -59,14 +51,14 @@ function permissoesDoSetor() {
       linhas.push({ collection: colecao, action: acao, permissions: {}, validation: null, presets: null, fields: '*' });
     }
   }
-  // Precisa enxergar as secretarias para escolher o órgão demandante.
+  // Precisa enxergar secretarias e licitações (para vincular a obra à
+  // licitação de origem, quando existir).
   linhas.push({ collection: 'secretarias', action: 'read', permissions: {}, validation: null, presets: null, fields: '*' });
+  linhas.push({ collection: 'licitacoes', action: 'read', permissions: {}, validation: null, presets: null, fields: 'id,numero_processo,numero,ano,objeto_resumo' });
   linhas.push(...permissaoAutoLeitura());
   return linhas;
 }
 
-/* Leitor: acompanha sem poder mexer. Serve para controladoria interna e para
-   quem só precisa conferir o que foi publicado. */
 function permissoesDoLeitor() {
   return [
     ...[...COLECOES, 'secretarias'].map((colecao) => ({
@@ -77,16 +69,17 @@ function permissoesDoLeitor() {
 }
 
 /**
- * ARMADILHA PAGA (2026-09-01, achada construindo o módulo de obras públicas
- * — o mesmo defeito estava aqui e nunca tinha sido testado por login de
- * verdade): sem permissão de leitura em `directus_users` (mesmo só do
- * próprio registro), `/users/me?fields=...,role.name,secretaria.id,...` —
- * que `lib/painel/sessao.ts` chama logo após autenticar — devolve a
- * projeção cortada para `{id}` (campo relacional fora da política = projeção
- * inteira descartada, mesma armadilha do Diário Oficial). `role.name` some,
- * `usuario.papel` fica nulo, e o LOGIN é recusado com "Sua conta não tem
- * função definida no portal" mesmo com credenciais corretas. Restrito à
- * própria linha — não abre a base de usuários. */
+ * ARMADILHA PAGA (2026-09-01): sem isto, o LOGIN no painel fica quebrado para
+ * qualquer papel deste módulo. `lib/painel/sessao.ts` lê o próprio perfil em
+ * `/users/me?fields=...,role.name,secretaria.id,secretaria.nome` logo após
+ * autenticar — e `secretaria` é um campo de `directus_users`, não de
+ * `secretarias`. Sem permissão de LEITURA em `directus_users` (mesmo só do
+ * próprio registro), o Directus não erra: devolve a projeção inteira cortada
+ * para `{id}` (mesma armadilha de "campo relacional fora da política" já
+ * documentada para o Diário Oficial) — `role.name` some, `usuario.papel` fica
+ * nulo, e a entrada é recusada com "Sua conta não tem função definida no
+ * portal", mesmo com e-mail e senha corretos. Restrito à própria linha
+ * (`id = $CURRENT_USER`) e a só dois campos — não abre a base de usuários. */
 function permissaoAutoLeitura() {
   return [{
     collection: 'directus_users', action: 'read',
@@ -97,14 +90,14 @@ function permissaoAutoLeitura() {
 
 const POLITICAS = [
   {
-    nome: 'Portal — Setor de licitações',
-    icone: 'gavel',
-    descricao: 'Publica e mantém licitações e contratações diretas. Não apaga: licitação muda de estado.',
+    nome: 'Portal — Setor de obras',
+    icone: 'construction',
+    descricao: 'Publica e mantém o andamento das obras públicas — valores, prazos, situação e medições.',
     app_access: true, admin_access: false, enforce_tfa: false,
     permissoes: permissoesDoSetor(),
   },
   {
-    nome: 'Portal — Leitor de licitações',
+    nome: 'Portal — Leitor de obras',
     icone: 'visibility',
     descricao: 'Acompanha o que o setor publicou, sem poder alterar.',
     app_access: true, admin_access: false, enforce_tfa: false,
@@ -113,8 +106,8 @@ const POLITICAS = [
 ];
 
 const PAPEIS = [
-  { nome: 'Setor de licitações', icone: 'gavel', descricao: 'Publica editais e mantém o andamento das licitações.', politicas: ['Portal — Setor de licitações'] },
-  { nome: 'Leitor de licitações', icone: 'visibility', descricao: 'Somente leitura do módulo de licitações.', politicas: ['Portal — Leitor de licitações'] },
+  { nome: 'Setor de obras', icone: 'construction', descricao: 'Publica e mantém obras públicas, valores e medições.', politicas: ['Portal — Setor de obras'] },
+  { nome: 'Leitor de obras', icone: 'visibility', descricao: 'Somente leitura do módulo de obras públicas.', politicas: ['Portal — Leitor de obras'] },
 ];
 
 if (SIMULAR) {
@@ -195,4 +188,4 @@ console.log('\nPermissões:');
 for (const p of POLITICAS) await aplicar(idPorPolitica.get(p.nome), p.nome, p.permissoes);
 await aplicar(idPorPolitica.get(NOME_POLITICA_PUBLICA), 'acesso público', permissoesPublicas());
 
-console.log('\nPermissões de licitações aplicadas.\n');
+console.log('\nPermissões de obras públicas aplicadas.\n');
