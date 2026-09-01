@@ -41,6 +41,11 @@
           "tipo": "string"
         },
         {
+          "campo": "palavras_chave",
+          "tipo": "string",
+          "nota": "Termos que o cidadão pode digitar na busca e que o nome oficial não cobre — sinônimos, siglas informais, nome popular do setor. Ex.: 'RH, recursos humanos, pessoal' na Secretaria de Administração. Usado pelo assistente de contatos; não aparece em página nenhuma."
+        },
+        {
           "campo": "descricao",
           "tipo": "text",
           "interface": "input-rich-text-html"

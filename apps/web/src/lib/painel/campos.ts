@@ -163,6 +163,13 @@ export const CAMPOS: Record<ColecaoEditavel, Campo[]> = {
     { nome: 'nome', rotulo: 'Nome', tipo: 'texto', obrigatorio: true, largura: 'inteira' },
     { nome: 'slug', rotulo: 'Endereço da página', tipo: 'slug', obrigatorio: true, derivadoDe: 'nome', largura: 'inteira' },
     { nome: 'sigla', rotulo: 'Sigla', tipo: 'texto', maximo: 20, largura: 'metade' },
+    {
+      nome: 'palavras_chave',
+      rotulo: 'Palavras-chave para busca',
+      tipo: 'texto',
+      ajuda: 'Termos que o cidadão pode digitar e que o nome oficial não cobre. Ex.: "RH, recursos humanos, pessoal". Usado só pelo assistente de contatos do site — não aparece em nenhuma página.',
+      largura: 'inteira',
+    },
     { nome: 'ordem', rotulo: 'Ordem na listagem', tipo: 'numero', ajuda: 'Menor aparece primeiro. Vazio vai para o fim.', largura: 'metade' },
     { nome: 'descricao', rotulo: 'Descrição', tipo: 'rico', largura: 'inteira' },
     { nome: 'responsavel', rotulo: 'Responsável', tipo: 'texto', largura: 'metade' },

@@ -30,6 +30,9 @@ export interface Secretaria {
   nome: string;
   slug: string;
   sigla: string | null;
+  /** Termos de busca adicionais (sinônimos, siglas informais) — usados só
+   *  pelo assistente de contatos, nunca exibidos numa página. */
+  palavras_chave: string | null;
   descricao: string | null;
   responsavel: string | null;
   cargo_responsavel: string | null;
