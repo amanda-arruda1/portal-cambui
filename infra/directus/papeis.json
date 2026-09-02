@@ -175,6 +175,30 @@
           "situacoes_visiveis": [
             "publicado"
           ]
+        },
+        "perguntas_frequentes": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "secretaria",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao"
+          ]
         }
       },
       "_comentario_paginas": [
@@ -353,6 +377,32 @@
           ]
         },
         "selos": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ]
+        },
+        "perguntas_frequentes": {
           "acoes": [
             "create",
             "read",
@@ -564,6 +614,30 @@
             "publicado",
             "arquivado"
           ]
+        },
+        "perguntas_frequentes": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_destino": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ]
         }
       }
     }
@@ -698,6 +772,15 @@
         "imagem",
         "data_concessao",
         "url_comprovacao",
+        "ordem"
+      ],
+      "perguntas_frequentes": [
+        "id",
+        "status",
+        "pergunta",
+        "resposta",
+        "categoria",
+        "secretaria",
         "ordem"
       ]
     },

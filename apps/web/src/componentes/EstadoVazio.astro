@@ -13,12 +13,15 @@
 interface Props {
   indisponivel?: boolean;
   assunto: string;
+  /** 'documentos publicados' é o padrão; 'perguntas frequentes publicadas'
+   *  precisa da concordância no feminino. */
+  feminino?: boolean;
 }
-const { indisponivel = false, assunto } = Astro.props;
+const { indisponivel = false, assunto, feminino = false } = Astro.props;
 ---
 <div class="vazio">
   <p class="t-sub titulo">
-    {indisponivel ? 'Conteúdo temporariamente indisponível' : `Ainda não há ${assunto} publicados`}
+    {indisponivel ? 'Conteúdo temporariamente indisponível' : `Ainda não há ${assunto} publicad${feminino ? 'as' : 'os'}`}
   </p>
   <p class="t-lead texto">
     {

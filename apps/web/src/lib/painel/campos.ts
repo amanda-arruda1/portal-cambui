@@ -209,6 +209,20 @@ export const CAMPOS: Record<ColecaoEditavel, Campo[]> = {
     { nome: 'url_comprovacao', rotulo: 'Link de comprovação', tipo: 'url', largura: 'inteira', ajuda: 'Página oficial do órgão emissor ou PDF do certificado, se houver.' },
     { nome: 'ordem', rotulo: 'Ordem', tipo: 'numero', largura: 'metade' },
   ],
+
+  perguntas_frequentes: [
+    { nome: 'pergunta', rotulo: 'Pergunta', tipo: 'texto', obrigatorio: true, maximo: 200, largura: 'inteira', ajuda: 'Escreva como o cidadão perguntaria. Ex.: "Como tirar segunda via do IPTU?".' },
+    { nome: 'resposta', rotulo: 'Resposta', tipo: 'rico', obrigatorio: true, largura: 'inteira' },
+    {
+      nome: 'categoria',
+      rotulo: 'Categoria',
+      tipo: 'texto',
+      ajuda: 'Agrupa a listagem na página de perguntas frequentes. Ex.: Tributos, Saúde, Documentos.',
+      largura: 'metade',
+    },
+    SECRETARIA,
+    { nome: 'ordem', rotulo: 'Ordem dentro da categoria', tipo: 'numero', ajuda: 'Menor aparece primeiro. Vazio vai para o fim.', largura: 'metade' },
+  ],
 };
 
 /** Campos que guardam HTML e precisam passar pelo sanitizador na gravação. */
@@ -218,7 +232,8 @@ export function camposRicos(colecao: ColecaoEditavel): string[] {
 
 /** Campo que dá nome ao item nas listagens e no título da tela. */
 export function campoRotulo(colecao: ColecaoEditavel): string {
-  return CAMPOS[colecao].some((c) => c.nome === 'titulo') ? 'titulo' : 'nome';
+  const nomes = CAMPOS[colecao].map((c) => c.nome);
+  return ['titulo', 'nome', 'pergunta'].find((c) => nomes.includes(c)) ?? 'nome';
 }
 
 /**

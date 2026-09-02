@@ -7,7 +7,7 @@
  * vaze rascunho de secretaria.
  */
 import { listar, umPor } from './directus';
-import type { Documento, LinkUtil, Noticia, Pagina, Secretaria, Selo, Servico } from './tipos';
+import type { Documento, LinkUtil, Noticia, Pagina, PerguntaFrequente, Secretaria, Selo, Servico } from './tipos';
 
 const PUBLICADO = JSON.stringify({ status: { _eq: 'publicado' } });
 
@@ -104,6 +104,16 @@ export function selos() {
     filter: PUBLICADO,
     sort: 'ordem,nome',
     limit: 50,
+  });
+}
+
+/** Perguntas frequentes, agrupadas por categoria na própria página. */
+export function perguntasFrequentes() {
+  return listar<PerguntaFrequente>('perguntas_frequentes', {
+    fields: 'id,status,pergunta,resposta,categoria,ordem,secretaria.nome,secretaria.slug',
+    filter: PUBLICADO,
+    sort: 'categoria,ordem,pergunta',
+    limit: 300,
   });
 }
 

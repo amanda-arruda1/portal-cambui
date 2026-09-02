@@ -34,6 +34,21 @@ const canonica = new URL(Astro.url.pathname, SITE.urlPublica).href;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Decide o tema ANTES da primeira pintura — só assim quem prefere
+         escuro não vê um flash de branco a cada carregamento. Não pode
+         esperar o <script> normal do fim do body: aquele já roda depois do
+         primeiro paint. `is:inline` é obrigatório aqui (Astro não pode
+         processar/adiar isto sem reabrir a janela do flash). Escolha
+         explícita da pessoa (localStorage) vence; sem escolha, segue a
+         preferência do sistema operacional. -->
+    <script is:inline>
+      try {
+        var t = localStorage.getItem('cambui:tema');
+        if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'escuro' : 'claro';
+        if (t === 'escuro') document.documentElement.dataset.tema = 'escuro';
+      } catch (e) { /* modo privado: segue no padrão claro */ }
+    </script>
     <title>{tituloCompleto}</title>
     <meta name="description" content={descricao} />
     <link rel="canonical" href={canonica} />

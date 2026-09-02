@@ -59,6 +59,16 @@
   --color-musgo: #545b66;        /* cinza-pedra; texto secundário — esfriado junto com a neblina */
   --color-papel: #ffffff;        /* superfície, não cor de marca */
 
+  /* Texto/ícone sobre uma superfície que É ESCURA NOS DOIS TEMAS — cabeçalho,
+     rodapé, barra de acessibilidade, o hero fotográfico, o assistente de
+     contatos (que já tem o próprio "-noite" fixo como âncora do gradiente).
+     --color-papel NÃO serve pra isto: ela é a superfície clara que o modo
+     escuro precisa escurecer, e viraria texto escuro sobre fundo escuro
+     nesses lugares específicos. Introduzido em 2026-09-02 junto do modo
+     escuro — antes disso os dois papéis coincidiam por acidente (papel
+     também era #fff). */
+  --color-sobre-escuro: #ffffff;
+
   /* O verde do brasão (#0c5430) fica fora do sistema agora — é o inverso da
      decisão anterior, tomada quando a tese ainda evitava o azul. */
 
@@ -174,6 +184,13 @@ h1, h2, h3, .display {
   outline-offset: 3px;
   border-radius: 2px;
 }
+/* --color-papel de propósito, não --color-sobre-escuro: `.sobre-serra`
+   também marca a faixa "f-serra" de Carreira.astro, cujo fundo É
+   --color-serra — essa MUDA de tom no modo escuro, e o foco precisa mudar
+   junto (é o mesmo raciocínio de "cor sobre acento" que --color-papel já
+   resolve em qualquer botão serra/carmim). Cabeçalho, rodapé e a barra de
+   acessibilidade — cujo fundo NÃO muda — têm a própria regra local de
+   foco com --color-sobre-escuro, que vence esta por especificidade. */
 .sobre-serra :focus-visible { outline-color: var(--color-papel); }
 
 /* ── O ponto: motivo do sistema ──────────────────────────────────────────
@@ -294,6 +311,56 @@ a:focus-visible .fio-foco,
   border-bottom: 1px solid color-mix(in srgb, var(--color-musgo) 30%, transparent);
   padding: 0.5rem 0.75rem;
   text-align: left;
+}
+
+/* ── Modo escuro ─────────────────────────────────────────────────────────
+   --color-serra-noite e --color-preto NÃO mudam — já são a âncora escura do
+   sistema (cabeçalho, rodapé, hero) e continuam servindo os mesmos lugares.
+   O que muda é a superfície clara (papel/neblina, agora escuras) e os tons
+   pensados para TEXTO/ícone sobre superfície clara (tinta, musgo, serra,
+   carmim, turquesa) — esses precisam clarear para continuar legíveis
+   sobre o fundo agora escuro. --color-carmim e --color-turquesa reaproveitam
+   o valor "cru" que --color-carmim-brilho/--color-turquesa-brilho já
+   guardavam justamente para uso "sobre fundo escuro" (ver a nota da paleta,
+   acima) — não são cores novas, são as mesmas já pensadas pra isto.
+   Contrastes conferidos à mão (todos ≥6,7:1, bem acima do AA de 4,5:1):
+   tinta/musgo/serra/carmim sobre neblina e papel escuros.
+
+   PEGADINHA que este arquivo já pagou uma vez: cabeçalho/rodapé/barra usam
+   `color: var(--color-papel)` para o texto branco deles, sobre um fundo que
+   É --color-serra-noite/--color-preto e NÃO muda de tom. Escurecer
+   --color-papel aqui apagaria esse texto (escuro sobre escuro). Por isso
+   existe --color-sobre-escuro — um branco que nunca muda de tema — e esses
+   três componentes (mais o hero e o assistente de contatos) usam ELE, não
+   --color-papel, para o próprio texto. Ver a nota ao lado da declaração do
+   token, acima.
+
+   Vem ANTES do bloco de alto contraste de propósito: se as duas
+   preferências estiverem ligadas ao mesmo tempo, quem "ganha" na cascata é
+   o alto contraste (regra mais abaixo no arquivo) — é a exigência mais
+   forte do eMAG, puro preto e branco, e não pode amolecer por causa do
+   tema escuro. */
+[data-tema='escuro'] {
+  --color-neblina: #0b0f1a;
+  --color-papel: #141a2c;
+  --color-tinta: #e9ebee;
+  --color-musgo: #9aa2b1;
+  --color-serra: #93a5e6;
+  --color-carmim: #10b981;
+  --color-prata: #2a3145;
+  /* O texto do assistente de contatos (--color-turquesa) também foi pensado
+     só para fundo claro — mesma troca pelo tom "brilho", já pensado para
+     fundo escuro. */
+  --color-turquesa: #22d3c5;
+  color-scheme: dark;
+}
+/* Fotos com moldura clara "pesam" demais sobre fundo escuro — mesmo
+   tratamento que o alto contraste já dá à foto do hero, só que sem
+   dessaturar (aqui é conforto visual, não exigência do eMAG). */
+[data-tema='escuro'] .hero {
+  background-image:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.72) 100%),
+    url('/imagens/hero-cambui-neblina.webp');
 }
 
 /* ── Modo de alto contraste ─────────────────────────────────────────────

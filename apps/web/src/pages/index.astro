@@ -12,6 +12,7 @@ import LinhaTarefa from '../componentes/LinhaTarefa.astro';
 import ChamadaLicitacoes from '../componentes/licitacoes/ChamadaHome.astro';
 import ChamadaObras from '../componentes/obras/ChamadaHome.astro';
 import InstagramFeed from '../componentes/InstagramFeed.astro';
+import IndicadoresEconomicos from '../componentes/IndicadoresEconomicos.astro';
 import { noticiasRecentes } from '../lib/conteudo';
 import { arquivo } from '../lib/directus';
 import { data, iso, recorte } from '../lib/formato';
@@ -130,6 +131,9 @@ const [lider, ...demais] = noticias;
   <!-- ── Obras públicas ────────────────────────────────────────────────── -->
   <ChamadaObras />
 
+  <!-- ── Indicadores econômicos: IPCA, Selic, CDI, Dólar ─────────────────── -->
+  <IndicadoresEconomicos />
+
   <!-- ── 04 · A cidade ─────────────────────────────────────────────────── -->
   <Carreira numero="04" rotulo="A cidade" fundo="serra" titulo={A_CIDADE.chamada}>
     <div class="cidade entra">
@@ -203,16 +207,19 @@ const [lider, ...demais] = noticias;
       url('/imagens/hero-cambui-neblina-mobile.webp');
     }
   }
+  /* --color-sobre-escuro nos quatro, daqui até .sub: o fundo do hero é uma
+     foto com véu escuro fixo (acima) — não muda de tom no modo escuro, então
+     o texto por cima também não pode. */
   .selo {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     margin-top: clamp(1rem, 4vw, 2rem);
     padding: 0.4rem 0.9rem;
-    border: 1px solid color-mix(in srgb, var(--color-papel) 45%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-sobre-escuro) 45%, transparent);
     border-radius: 999px;
-    background: color-mix(in srgb, var(--color-papel) 12%, transparent);
-    color: var(--color-papel);
+    background: color-mix(in srgb, var(--color-sobre-escuro) 12%, transparent);
+    color: var(--color-sobre-escuro);
     font-size: 0.8125rem;
     font-weight: 600;
     letter-spacing: 0.06em;
@@ -221,9 +228,12 @@ const [lider, ...demais] = noticias;
   .selo svg { width: 0.8rem; height: 0.8rem; flex: none; }
   .frase {
     margin-top: clamp(0.6rem, 3vw, 1.25rem);
-    color: var(--color-papel);
+    color: var(--color-sobre-escuro);
   }
-  .sub { margin-top: clamp(0.6rem, 3vw, 1.25rem); max-width: 52ch; color: color-mix(in srgb, var(--color-papel) 78%, transparent); }
+  .sub { margin-top: clamp(0.6rem, 3vw, 1.25rem); max-width: 52ch; color: color-mix(in srgb, var(--color-sobre-escuro) 78%, transparent); }
+  /* Vence a regra global `.sobre-serra :focus-visible` (--color-papel, que
+     muda de tom) — o fundo do hero não muda, o foco também não pode. */
+  .hero :focus-visible { outline-color: var(--color-sobre-escuro); }
 
   /* A primeira carreira paga o topo da faixa duas vezes: o respiro da secao
      mais a margem da lista. No celular ela e a unica secao cujo topo disputa

@@ -1,0 +1,24 @@
+# /etc/systemd/system/portal-indicadores.timer
+# A cada 30 minutos.
+#
+# Por que 30 e não 5 (como portal-avisos): IPCA e Selic mudam no máximo uma
+# vez por mês/a cada Copom, CDI é diário, e até o dólar — o mais "vivo" dos
+# quatro — não precisa parecer atualizado ao segundo num portal de
+# prefeitura. 30 minutos já é mais fresco do que qualquer visitante vai notar,
+# e poupa as duas APIs públicas de tráfego que ninguém está usando.
+
+[Unit]
+Description=Atualizacao dos indicadores economicos a cada 30 minutos
+Documentation=file:///opt/portal-cambui/ARQUITETURA.md
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=30min
+# Espalha o disparo para não coincidir com outros timers do sistema.
+RandomizedDelaySec=90
+AccuracySec=1min
+Persistent=true
+Unit=portal-indicadores.service
+
+[Install]
+WantedBy=timers.target

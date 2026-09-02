@@ -58,6 +58,7 @@ const { dados: selos } = await selosDoCms();
                 <li><a href="/transparencia"><span class="fio-foco">Portal da Transparência</span></a></li>
                 <li><a href="http://cambui.eouve.com.br/" target="_blank" rel="noopener noreferrer"><span class="fio-foco">Ouvidoria e e-SIC</span></a></li>
                 <li><a href="/documentos"><span class="fio-foco">Editais e licitações</span></a></li>
+                <li><a href="/perguntas-frequentes"><span class="fio-foco">Perguntas frequentes</span></a></li>
               </ul>
             </div>
 
@@ -118,10 +119,15 @@ const { dados: selos } = await selosDoCms();
 <style>
   .rodape {
     background: var(--color-serra-noite);
-    color: var(--color-papel);
+    /* --color-sobre-escuro, não --color-papel: este fundo não muda com o
+       tema (ver a nota em global.css), então o texto também não pode. */
+    color: var(--color-sobre-escuro);
     padding-block: clamp(2.5rem, 6vw, 4rem);
     margin-top: auto;
   }
+  /* Vence a regra global `.sobre-serra :focus-visible` — precisa, porque o
+     fundo daqui não muda de tom no modo escuro. */
+  .rodape :focus-visible { outline-color: var(--color-sobre-escuro); }
   .rodape a { color: inherit; text-decoration: none; }
   .fio { filter: invert(1) brightness(2); opacity: 0.45; min-height: 4rem; }
 
@@ -144,24 +150,24 @@ const { dados: selos } = await selosDoCms();
   .selos {
     margin-top: 2.5rem;
     padding-top: 1.75rem;
-    border-top: 1px solid color-mix(in srgb, var(--color-papel) 18%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--color-sobre-escuro) 18%, transparent);
   }
   .selos h2 { opacity: 0.75; }
   .selos ul { list-style: none; margin: 0.9rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 1rem; }
   .selos a {
     display: flex; align-items: center; justify-content: center;
     width: 3.5rem; height: 3.5rem; border-radius: 8px;
-    background: color-mix(in srgb, var(--color-papel) 10%, transparent);
+    background: color-mix(in srgb, var(--color-sobre-escuro) 10%, transparent);
     padding: 0.5rem;
   }
-  .selos a:hover { background: color-mix(in srgb, var(--color-papel) 18%, transparent); }
+  .selos a:hover { background: color-mix(in srgb, var(--color-sobre-escuro) 18%, transparent); }
   .selos img { max-width: 100%; max-height: 100%; display: block; }
   .selos .sem-imagem { font-size: 0.6875rem; text-align: center; line-height: 1.2; opacity: 0.85; }
 
   .rodape-fim {
     margin-top: 2.5rem;
     padding-top: 1.25rem;
-    border-top: 1px solid color-mix(in srgb, var(--color-papel) 25%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--color-sobre-escuro) 25%, transparent);
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;

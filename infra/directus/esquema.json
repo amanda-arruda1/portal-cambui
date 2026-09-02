@@ -357,6 +357,44 @@
           "tipo": "integer"
         }
       ]
+    },
+    {
+      "nome": "perguntas_frequentes",
+      "rotulo": {
+        "singular": "Pergunta frequente",
+        "plural": "Perguntas frequentes"
+      },
+      "icone": "quiz",
+      "nota": "Dúvidas mais comuns dos cidadãos, com resposta oficial. Cada secretaria mantém as suas.",
+      "campos": [
+        {
+          "campo": "pergunta",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "resposta",
+          "tipo": "text",
+          "obrigatorio": true,
+          "interface": "input-rich-text-html"
+        },
+        {
+          "campo": "categoria",
+          "tipo": "string",
+          "nota": "Agrupa a listagem. Ex.: Tributos, Saúde, Documentos."
+        },
+        {
+          "campo": "secretaria",
+          "tipo": "relacao",
+          "para": "secretarias",
+          "nota": "Secretaria responsável pela resposta. Define quem pode editar no painel."
+        },
+        {
+          "campo": "ordem",
+          "tipo": "integer",
+          "nota": "Ordem de exibição dentro da categoria."
+        }
+      ]
     }
   ]
 }

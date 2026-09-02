@@ -103,3 +103,13 @@ export interface Selo {
   url_comprovacao: string | null;
   ordem: number | null;
 }
+
+export interface PerguntaFrequente {
+  id: string;
+  status: Situacao;
+  pergunta: string;
+  resposta: string;
+  categoria: string | null;
+  secretaria: { nome: string; slug: string } | null;
+  ordem: number | null;
+}

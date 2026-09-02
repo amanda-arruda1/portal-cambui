@@ -22,7 +22,7 @@ export type Saida<T> = { ok: true; dados: T } | { ok: false; motivo: string; sta
 
 /** Coleções que o painel edita. Lista fechada: caminho de coleção não vem da
  *  URL sem passar por aqui, senão vira leitura arbitrária do CMS. */
-export const COLECOES_EDITAVEIS = ['noticias', 'documentos', 'servicos', 'paginas', 'links_uteis', 'secretarias', 'selos'] as const;
+export const COLECOES_EDITAVEIS = ['noticias', 'documentos', 'servicos', 'paginas', 'links_uteis', 'secretarias', 'selos', 'perguntas_frequentes'] as const;
 export type ColecaoEditavel = (typeof COLECOES_EDITAVEIS)[number];
 
 export function colecaoValida(nome: string): nome is ColecaoEditavel {
@@ -44,6 +44,7 @@ export const ROTULO: Record<ColecaoEditavel, string> = {
   links_uteis: 'Links úteis',
   secretarias: 'Secretarias',
   selos: 'Selos e certificações',
+  perguntas_frequentes: 'Perguntas frequentes',
 };
 
 async function chamar<T>(sessao: Sessao, caminho: string, opcoes: RequestInit = {}): Promise<Saida<T>> {
@@ -97,8 +98,9 @@ export interface ItemDaFila {
   user_updated: string | null;
 }
 
-/** Coleções cujo campo de identificação é 'nome' e não 'titulo'. */
-const CAMPO_ROTULO: Record<ColecaoEditavel, 'titulo' | 'nome'> = {
+/** Campo de identificação de cada coleção — 'titulo' e 'nome' na maioria,
+ *  'pergunta' nas perguntas frequentes (não têm nem um nem outro). */
+const CAMPO_ROTULO: Record<ColecaoEditavel, 'titulo' | 'nome' | 'pergunta'> = {
   noticias: 'titulo',
   documentos: 'titulo',
   paginas: 'titulo',
@@ -106,6 +108,7 @@ const CAMPO_ROTULO: Record<ColecaoEditavel, 'titulo' | 'nome'> = {
   links_uteis: 'nome',
   secretarias: 'nome',
   selos: 'nome',
+  perguntas_frequentes: 'pergunta',
 };
 
 export async function listarFila(

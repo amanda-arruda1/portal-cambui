@@ -149,7 +149,9 @@ const dadosJson = JSON.stringify(dados).replace(/</g, '\\u003c');
     border: none;
     border-radius: 50%;
     background: radial-gradient(120% 120% at 30% 20%, var(--color-turquesa-brilho) 0%, var(--color-turquesa) 42%, var(--color-turquesa-noite) 100%);
-    color: var(--color-papel);
+    /* --color-sobre-escuro: --color-turquesa-noite ancora o degradê e não
+       muda de tom no modo escuro (mesmo raciocínio de --color-serra-noite). */
+    color: var(--color-sobre-escuro);
     cursor: pointer;
     box-shadow: 0 0.6rem 1.4rem -0.5rem color-mix(in srgb, var(--color-turquesa-noite) 70%, transparent);
     transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 250ms ease-out;
@@ -248,7 +250,9 @@ const dadosJson = JSON.stringify(dados).replace(/</g, '\\u003c');
     flex: none;
     padding: 0.9rem 0.9rem 0.75rem 1.1rem;
     background: linear-gradient(135deg, var(--color-turquesa-noite), var(--color-turquesa));
-    color: var(--color-papel);
+    /* --color-sobre-escuro nesta cabeça inteira: --color-turquesa-noite
+       ancora o degradê e não muda de tom no modo escuro. */
+    color: var(--color-sobre-escuro);
   }
   .identidade { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
   .avatar {
@@ -259,9 +263,9 @@ const dadosJson = JSON.stringify(dados).replace(/</g, '\\u003c');
     height: 2rem;
     flex: none;
     border-radius: 50%;
-    background: color-mix(in srgb, var(--color-papel) 16%, transparent);
+    background: color-mix(in srgb, var(--color-sobre-escuro) 16%, transparent);
   }
-  .cabeca h2 { color: var(--color-papel); }
+  .cabeca h2 { color: var(--color-sobre-escuro); }
   .fechar {
     display: inline-flex;
     align-items: center;
@@ -272,10 +276,10 @@ const dadosJson = JSON.stringify(dados).replace(/</g, '\\u003c');
     border: none;
     border-radius: 8px;
     background: transparent;
-    color: var(--color-papel);
+    color: var(--color-sobre-escuro);
     cursor: pointer;
   }
-  .fechar:hover { background: color-mix(in srgb, var(--color-papel) 18%, transparent); }
+  .fechar:hover { background: color-mix(in srgb, var(--color-sobre-escuro) 18%, transparent); }
 
   /* ── Conversa ─────────────────────────────────────────────────────────── */
   .mensagens {
@@ -311,7 +315,8 @@ const dadosJson = JSON.stringify(dados).replace(/</g, '\\u003c');
   .msg-usuario {
     align-self: flex-end;
     background: linear-gradient(135deg, var(--color-turquesa), var(--color-turquesa-noite));
-    color: var(--color-papel);
+    /* --color-sobre-escuro: --color-turquesa-noite ancora o degradê. */
+    color: var(--color-sobre-escuro);
     border-bottom-right-radius: 4px;
   }
   .msg :global(.telefone) {
@@ -429,7 +434,7 @@ const dadosJson = JSON.stringify(dados).replace(/</g, '\\u003c');
     cursor: pointer;
     transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1), background 150ms ease-out;
   }
-  .enviar:hover { transform: scale(1.08); background: var(--color-turquesa-noite); }
+  .enviar:hover { transform: scale(1.08); background: var(--color-turquesa-noite); color: var(--color-sobre-escuro); }
   .enviar:active { transform: scale(0.92); }
 
   .aviso-indisponivel { flex: none; margin: 0 1rem 0.75rem; color: var(--color-musgo); }
