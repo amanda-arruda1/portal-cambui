@@ -153,6 +153,7 @@ export const NECESSIDADES: Necessidade[] = [
     chamada: 'Acompanhar pedido, achar uma lei, ler o Diário Oficial.',
     tarefas: [
       { rotulo: 'Acompanhar meu protocolo', detalhe: 'Consulta pelo número do processo', destino: 'https://protocolo.sgpcloud.net:9056/sseweb/sseweb.dll', externo: true },
+      { rotulo: 'Abrir um atendimento com a Prefeitura', detalhe: 'Sistema Atende Cidadão, para cidadãos e empresas', destino: 'https://atendecidadao.cambui.mg.gov.br/', externo: true },
       { rotulo: 'Ler o Diário Oficial', detalhe: 'Plataforma da AMM-MG', destino: 'https://www.diariomunicipal.com.br/amm-mg/', externo: true },
       { rotulo: 'Procurar uma lei municipal', detalhe: 'Leis, decretos e códigos', destino: 'https://leismunicipais.com.br/prefeitura/mg/cambui', externo: true },
     ],
