@@ -10,9 +10,18 @@
  * datas relativas, idempotente, tudo marcado `demonstracao: true`, PDFs de
  * verdade com marca d'água, CNPJ sintaticamente válido e claramente fictício.
  */
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { CATEGORIAS, FONTES_RECURSO } from './enums.mjs';
 import { OBRAS, EMPRESAS, RESPONSAVEIS_TECNICOS } from './dados-demo.mjs';
 import { gerarPdf } from '../licitacoes/pdf.mjs';
+
+const AQUI = dirname(fileURLToPath(import.meta.url));
+/* Fotos de "andamento" GERADAS (degradê + traço tipo planta baixa), não
+   fotos de verdade — mesmo raciocínio das miniaturas do Instagram: uma foto
+   de mentira pareceria registro real de obra. */
+const FOTOS_DEMO = [1, 2, 3, 4].map((n) => readFileSync(join(AQUI, 'fotos-demo', `andamento-${n}.webp`)));
 
 const BASE = (process.env.DIRECTUS_INTERNAL_URL || 'http://127.0.0.1:8055').replace(/\/+$/, '');
 const RESET = process.argv.includes('--reset');
@@ -168,12 +177,34 @@ for (const [i, O] of OBRAS.entries()) {
     anexosCriados++;
   }
 
+  async function anexarFoto({ titulo, quando, ordem = 0 }) {
+    const foto = FOTOS_DEMO[(i + ordem) % FOTOS_DEMO.length];
+    const forma = new FormData();
+    forma.append('folder', pasta.id);
+    forma.append('title', `DEMO-OBRA ${O.resumo} — ${titulo}`);
+    forma.append('file', new Blob([foto], { type: 'image/webp' }), `${slug}-foto-${ordem}.webp`);
+    const arquivo = await api('/files', { method: 'POST', body: forma });
+    await api('/items/obra_anexos', { method: 'POST', body: JSON.stringify({
+      status: 'publicado', demonstracao: true, obra: criada.id, titulo, categoria: 'foto',
+      arquivo: arquivo.id, data_referencia: quando.toISOString(),
+      descricao: titulo, ordem,
+    }) });
+    anexosCriados++;
+  }
+
   await anexar({ titulo: 'Projeto básico', categoria: 'projeto_basico', quando: inicioOS, ordem: 1 });
   if (!['planejada', 'em_licitacao'].includes(situacao)) {
     await anexar({ titulo: 'ART/RRT do responsável técnico', categoria: 'art_rrt', quando: inicioOS, ordem: 2 });
     await anexar({ titulo: 'Contrato', categoria: 'contrato', quando: inicioOS, ordem: 3 });
     await anexar({ titulo: 'Ordem de serviço', categoria: 'ordem_servico', quando: inicioOS, ordem: 4 });
     if (temAditivo) await anexar({ titulo: 'Termo aditivo de prazo e valor', categoria: 'aditivo', quando: dias(-inteiro(10, 60)), ordem: 5 });
+  }
+
+  /* ---- fotos do andamento: só faz sentido para quem já começou a obra ---- */
+  if (['em_execucao', 'paralisada', 'concluida'].includes(situacao)) {
+    await anexarFoto({ titulo: 'Canteiro de obras — início dos trabalhos', quando: inicioOS, ordem: 1 });
+    await anexarFoto({ titulo: 'Vista geral do andamento', quando: dias(inteiro(-60, -20)), ordem: 2 });
+    if (concluida) await anexarFoto({ titulo: 'Obra concluída', quando: terminoReal ?? dias(-10), ordem: 3 });
   }
 
   /* ---- medições: execução financeira, mês a mês ---- */

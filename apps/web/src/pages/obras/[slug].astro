@@ -12,6 +12,7 @@ import Base from '../../layouts/Base.astro';
 import Etiqueta from '../../componentes/obras/Etiqueta.astro';
 import NotaLegal from '../../componentes/obras/NotaLegal.astro';
 import Anexos from '../../componentes/obras/Anexos.astro';
+import Fotos from '../../componentes/obras/Fotos.astro';
 import Medicoes from '../../componentes/obras/Medicoes.astro';
 import { limpar } from '../../lib/sanitizar';
 import { data as formatarData } from '../../lib/formato';
@@ -24,7 +25,9 @@ const slug = Astro.params.slug ?? '';
 const o = await porSlug(slug);
 if (!o) return Astro.rewrite('/404');
 
-const [anexos, medicoes] = await Promise.all([anexosDe(o.id), medicoesDe(o.id)]);
+const [todosAnexos, medicoes] = await Promise.all([anexosDe(o.id), medicoesDe(o.id)]);
+const fotos = todosAnexos.filter((a) => a.categoria === 'foto');
+const anexos = todosAnexos.filter((a) => a.categoria !== 'foto');
 const situacao = situacaoDe(o.situacao);
 const endereco = new URL(Astro.url.pathname, Astro.site ?? 'https://www.prefeituradecambui.mg.gov.br').href;
 
@@ -143,6 +146,13 @@ const compartilhar = `Obra pública da Prefeitura de Cambuí — ${o.objeto_resu
             <p class="t-micro nota">Medição a medição: o que já foi pago e o percentual físico correspondente.</p>
             <Medicoes medicoes={medicoes} />
           </section>
+
+          {fotos.length > 0 && (
+            <section>
+              <h2 class="t-secao">Fotos do andamento</h2>
+              <Fotos fotos={fotos} />
+            </section>
+          )}
 
           <section>
             <h2 class="t-secao">Documentos</h2>

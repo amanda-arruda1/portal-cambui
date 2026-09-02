@@ -1,0 +1,65 @@
+---
+/**
+ * FOTOS DO ANDAMENTO — galeria da obra.
+ *
+ * Separada de Anexos.astro de propósito: foto é a categoria de anexo que o
+ * cidadão quer VER, não baixar como se fosse um PDF de contrato. Miniatura
+ * gerada pelo Directus (mesmo `arquivo()` que as notícias já usam), link
+ * abre o arquivo original em tamanho cheio — sem lightbox em JavaScript,
+ * que era o que faltava para o "sem JS o site continua inteiro" valer aqui
+ * também.
+ */
+import { arquivo } from '../../lib/directus';
+import { data as formatarData } from '../../lib/formato';
+import type { AnexoObra } from '../../lib/obras';
+
+interface Props { fotos: AnexoObra[] }
+const { fotos } = Astro.props;
+---
+
+{
+  fotos.length > 0 && (
+    <ul class="grade">
+      {fotos.map((f) => {
+        const miniatura = f.arquivo && arquivo(f.arquivo.id, { width: 480, height: 360, fit: 'cover', quality: 72, format: 'webp' });
+        const original = f.arquivo && `/assets/${f.arquivo.id}`;
+        return (
+          <li>
+            {miniatura && original ? (
+              <a href={original} target="_blank" rel="noopener noreferrer" class="foto">
+                <img src={miniatura} alt={f.descricao ?? f.titulo} width="480" height="360" loading="lazy" decoding="async" />
+                <span class="legenda">
+                  <span class="titulo">{f.titulo}</span>
+                  <span class="t-micro data">{formatarData(f.data_referencia)}</span>
+                </span>
+              </a>
+            ) : (
+              <span class="sem-arquivo t-micro">{f.titulo} — imagem não disponível</span>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  )
+}
+
+<style>
+  .grade {
+    list-style: none; margin: 1.25rem 0 0; padding: 0;
+    display: grid; gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  }
+  .foto {
+    display: block; text-decoration: none; color: inherit;
+    border-radius: 8px; overflow: hidden;
+    border: 1.5px solid color-mix(in srgb, var(--color-musgo) 25%, transparent);
+    background: var(--color-neblina);
+    transition: border-color 150ms ease-out;
+  }
+  .foto:hover { border-color: var(--color-serra); }
+  .foto img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+  .legenda { display: block; padding: 0.6rem 0.75rem; }
+  .titulo { display: block; font-weight: 600; font-size: 0.9375rem; }
+  .data { color: var(--color-musgo); }
+  .sem-arquivo { display: block; padding: 0.85rem; color: var(--color-musgo); }
+</style>

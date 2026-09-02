@@ -11,6 +11,7 @@
  */
 import Painel from '../../../layouts/Painel.astro';
 import { listarSecretarias } from '../../../lib/painel/cms.ts';
+import { arquivo } from '../../../lib/directus.ts';
 import {
   anexosDaObra, atualizar, criarMedicao, gerarSlug, medicoesDaObra, obter, temErro, validar,
   type DadosObra,
@@ -314,7 +315,10 @@ const proximaMedicao = (medicoes[medicoes.length - 1]?.numero ?? 0) + 1;
         <ul class="anexos">
           {anexos.map((a: any) => (
             <li>
-              <span>
+              {a.arquivo?.type?.startsWith('image/') && (
+                <img class="miniatura" src={arquivo(a.arquivo.id, { width: 96, height: 72, fit: 'cover', quality: 65, format: 'webp' })!} alt="" width="48" height="36" loading="lazy" />
+              )}
+              <span class="info">
                 <strong>{a.titulo}</strong>
                 <span class="t-micro"> — {TIPOS_ANEXO.find((t) => t.valor === a.categoria)?.rotulo ?? a.categoria}</span>
               </span>
@@ -456,8 +460,10 @@ const proximaMedicao = (medicoes[medicoes.length - 1]?.numero ?? 0) + 1;
 
   .sub { margin-top: 2rem; }
   .anexos { list-style: none; margin: 0.75rem 0 0; padding: 0; }
-  .anexos li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem 1rem;
+  .anexos li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem;
     padding: 0.6rem 0; border-top: 1px solid var(--color-prata); }
+  .anexos .miniatura { width: 3rem; height: 2.25rem; object-fit: cover; border-radius: 4px; flex: none; }
+  .anexos .info { flex: 1; min-width: 10rem; }
 
   .tabela-medicoes { margin-top: 1rem; width: 100%; border-collapse: collapse; }
   .tabela-medicoes th, .tabela-medicoes td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--color-prata); font-size: 0.9375rem; }
