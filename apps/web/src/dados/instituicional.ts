@@ -34,11 +34,8 @@ export const SITE = {
   urlPublica: process.env.PUBLIC_SITE_URL || 'https://www.prefeituradecambui.mg.gov.br',
 } as const;
 
-/**
- * TODO(cliente): CNPJ da Prefeitura Municipal de Cambuí. É o único dado de
- * identificação institucional que a auditoria do portal atual não expôs.
- */
-export const CNPJ: string | null = null;
+/** Fornecido pela prefeitura em 2026-09-01. */
+export const CNPJ: string | null = '18.675.975/0001-85';
 
 /** Fornecido pela prefeitura no briefing de redesign. */
 export const ENDERECO: Endereco | null = {
@@ -51,7 +48,7 @@ export const ENDERECO: Endereco | null = {
 };
 
 export const TELEFONES: Array<{ rotulo: string; numero: string }> = [
-  { rotulo: 'Prefeitura', numero: '(35) 3431-1666' },
+  { rotulo: 'Prefeitura', numero: '(35) 99825-5156' },
 ];
 
 /** TODO(cliente): e-mail institucional de contato ao cidadão. */
