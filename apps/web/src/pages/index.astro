@@ -9,7 +9,6 @@
 import Base from '../layouts/Base.astro';
 import Carreira from '../componentes/Carreira.astro';
 import LinhaTarefa from '../componentes/LinhaTarefa.astro';
-import Coleta from '../componentes/Coleta.astro';
 import ChamadaLicitacoes from '../componentes/licitacoes/ChamadaHome.astro';
 import ChamadaObras from '../componentes/obras/ChamadaHome.astro';
 import InstagramFeed from '../componentes/InstagramFeed.astro';
@@ -59,11 +58,6 @@ const [lider, ...demais] = noticias;
       Não achou? <a href="/servicos"><span class="fio-foco">Veja todos os serviços por necessidade</span></a> —
       organizados pelo que você precisa, não por secretaria.
     </p>
-  </Carreira>
-
-  <!-- ── 02 · Coleta ───────────────────────────────────────────────────── -->
-  <Carreira numero="02" rotulo="Coleta no meu bairro" id="coleta">
-    <Coleta />
   </Carreira>
 
   <!-- ── 03 · Notícias ─────────────────────────────────────────────────── -->
