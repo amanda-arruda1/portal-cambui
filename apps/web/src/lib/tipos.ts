@@ -91,3 +91,15 @@ export interface LinkUtil {
   grupo: string | null;
   ordem: number | null;
 }
+
+export interface Selo {
+  id: string;
+  status: Situacao;
+  nome: string;
+  orgao_emissor: string;
+  descricao: string | null;
+  imagem: string | null;
+  data_concessao: string | null;
+  url_comprovacao: string | null;
+  ordem: number | null;
+}

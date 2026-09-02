@@ -8,8 +8,15 @@
  * legal e é o que o cidadão procura aqui. Navegação já existe no cabeçalho.
  */
 import { CNPJ, ENDERECO, EMAIL_CONTATO, HORARIO_ATENDIMENTO, MUNICIPIO, TELEFONES, AUTARQUIAS } from '../dados/instituicional';
+import { selos as selosDoCms } from '../lib/conteudo';
+import { arquivo } from '../lib/directus';
 
 const ano = new Date().getFullYear();
+
+/* Faixa de confiança: some inteira sem selo cadastrado, nunca aparece com um
+   texto de "em publicação" — rodapé não é lugar de placeholder pedindo
+   desculpa por um dado que ainda não existe. */
+const { dados: selos } = await selosDoCms();
 ---
 
 <footer id="rodape" class="rodape sobre-serra">
@@ -69,6 +76,32 @@ const ano = new Date().getFullYear();
           </div>
         </div>
 
+        {selos.length > 0 && (
+          <div class="selos">
+            <h2 class="t-rotulo">Selos e certificações</h2>
+            <ul>
+              {selos.map((s) => (
+                <li>
+                  <a href="/transparencia#selos" title={`${s.nome} — ${s.orgao_emissor}`}>
+                    {s.imagem ? (
+                      <img
+                        src={arquivo(s.imagem, { width: 96, height: 96, fit: 'contain', format: 'webp' })!}
+                        alt={s.nome}
+                        width="48"
+                        height="48"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <span class="sem-imagem">{s.nome}</span>
+                    )}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div class="rodape-fim">
           <p>© {ano} {MUNICIPIO.nomeCompleto}</p>
           <nav aria-label="Informações legais">
@@ -107,6 +140,23 @@ const ano = new Date().getFullYear();
   .colunas ul { list-style: none; margin: 0.7rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
   .colunas li { line-height: 1.4; }
   .secundario { opacity: 0.7; font-size: 0.875rem; }
+
+  .selos {
+    margin-top: 2.5rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-papel) 18%, transparent);
+  }
+  .selos h2 { opacity: 0.75; }
+  .selos ul { list-style: none; margin: 0.9rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 1rem; }
+  .selos a {
+    display: flex; align-items: center; justify-content: center;
+    width: 3.5rem; height: 3.5rem; border-radius: 8px;
+    background: color-mix(in srgb, var(--color-papel) 10%, transparent);
+    padding: 0.5rem;
+  }
+  .selos a:hover { background: color-mix(in srgb, var(--color-papel) 18%, transparent); }
+  .selos img { max-width: 100%; max-height: 100%; display: block; }
+  .selos .sem-imagem { font-size: 0.6875rem; text-align: center; line-height: 1.2; opacity: 0.85; }
 
   .rodape-fim {
     margin-top: 2.5rem;

@@ -166,6 +166,15 @@
           "situacoes_visiveis": [
             "publicado"
           ]
+        },
+        "selos": {
+          "acoes": [
+            "read"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "publicado"
+          ]
         }
       },
       "_comentario_paginas": [
@@ -318,6 +327,32 @@
           ]
         },
         "links_uteis": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ]
+        },
+        "selos": {
           "acoes": [
             "create",
             "read",
@@ -505,6 +540,30 @@
             "publicado",
             "arquivado"
           ]
+        },
+        "selos": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_destino": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ]
         }
       }
     }
@@ -628,6 +687,17 @@
         "url",
         "descricao",
         "grupo",
+        "ordem"
+      ],
+      "selos": [
+        "id",
+        "status",
+        "nome",
+        "orgao_emissor",
+        "descricao",
+        "imagem",
+        "data_concessao",
+        "url_comprovacao",
         "ordem"
       ]
     },

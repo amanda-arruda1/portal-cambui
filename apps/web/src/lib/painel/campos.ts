@@ -200,6 +200,15 @@ export const CAMPOS: Record<ColecaoEditavel, Campo[]> = {
     { nome: 'grupo', rotulo: 'Grupo', tipo: 'texto', ajuda: 'Agrupa os links na página. Ex.: Transparência, Serviços online.', largura: 'metade' },
     { nome: 'ordem', rotulo: 'Ordem', tipo: 'numero', largura: 'metade' },
   ],
+  selos: [
+    { nome: 'nome', rotulo: 'Nome do selo', tipo: 'texto', obrigatorio: true, maximo: 80, largura: 'inteira', ajuda: 'Ex.: Selo Transparência Pública, Selo Educação.' },
+    { nome: 'orgao_emissor', rotulo: 'Órgão emissor', tipo: 'texto', obrigatorio: true, largura: 'metade', ajuda: 'Quem concedeu o selo. Ex.: Tribunal de Contas do Estado de Minas Gerais.' },
+    { nome: 'data_concessao', rotulo: 'Data da concessão', tipo: 'data', largura: 'metade' },
+    { nome: 'imagem', rotulo: 'Imagem do selo', tipo: 'imagem', obrigatorio: true, largura: 'inteira', ajuda: 'A logo/emblema do selo, em fundo transparente se possível.' },
+    { nome: 'descricao', rotulo: 'Descrição', tipo: 'texto_longo', largura: 'inteira', ajuda: 'O que o selo reconhece, em uma ou duas frases.' },
+    { nome: 'url_comprovacao', rotulo: 'Link de comprovação', tipo: 'url', largura: 'inteira', ajuda: 'Página oficial do órgão emissor ou PDF do certificado, se houver.' },
+    { nome: 'ordem', rotulo: 'Ordem', tipo: 'numero', largura: 'metade' },
+  ],
 };
 
 /** Campos que guardam HTML e precisam passar pelo sanitizador na gravação. */

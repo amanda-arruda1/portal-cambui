@@ -313,6 +313,50 @@
           "tipo": "integer"
         }
       ]
+    },
+    {
+      "nome": "selos",
+      "rotulo": {
+        "singular": "Selo",
+        "plural": "Selos e certificações"
+      },
+      "icone": "verified",
+      "nota": "Certificações e selos recebidos pela Prefeitura (Transparência Pública, Educação etc.), exibidos no rodapé de todo o site e detalhados em Transparência.",
+      "campos": [
+        {
+          "campo": "nome",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "orgao_emissor",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "descricao",
+          "tipo": "text"
+        },
+        {
+          "campo": "imagem",
+          "tipo": "uuid",
+          "interface": "file-image",
+          "arquivo": true,
+          "obrigatorio": true
+        },
+        {
+          "campo": "data_concessao",
+          "tipo": "date"
+        },
+        {
+          "campo": "url_comprovacao",
+          "tipo": "string"
+        },
+        {
+          "campo": "ordem",
+          "tipo": "integer"
+        }
+      ]
     }
   ]
 }

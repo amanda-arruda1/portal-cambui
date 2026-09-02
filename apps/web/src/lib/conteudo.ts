@@ -7,7 +7,7 @@
  * vaze rascunho de secretaria.
  */
 import { listar, umPor } from './directus';
-import type { Documento, LinkUtil, Noticia, Pagina, Secretaria, Servico } from './tipos';
+import type { Documento, LinkUtil, Noticia, Pagina, Secretaria, Selo, Servico } from './tipos';
 
 const PUBLICADO = JSON.stringify({ status: { _eq: 'publicado' } });
 
@@ -93,6 +93,17 @@ export function linksUteis() {
     filter: PUBLICADO,
     sort: 'grupo,ordem,nome',
     limit: 100,
+  });
+}
+
+/** Selos e certificações institucionais — exibidos no rodapé (todas as
+ *  páginas) e em detalhe na página de Transparência. */
+export function selos() {
+  return listar<Selo>('selos', {
+    fields: '*',
+    filter: PUBLICADO,
+    sort: 'ordem,nome',
+    limit: 50,
   });
 }
 
