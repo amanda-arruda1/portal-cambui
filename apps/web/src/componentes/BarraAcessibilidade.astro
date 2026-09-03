@@ -26,15 +26,33 @@
 
     <div class="controles">
       <div class="grupo" role="group" aria-label="Tamanho do texto">
-        <button type="button" data-fonte="menor" aria-label="Diminuir o tamanho do texto">A−</button>
-        <button type="button" data-fonte="normal" aria-label="Voltar o texto ao tamanho normal">A</button>
-        <button type="button" data-fonte="maior" aria-label="Aumentar o tamanho do texto">A+</button>
+        <button type="button" data-fonte="menor" class="com-icone" title="Diminuir o tamanho do texto">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M3 16L7 4L11 16M4.6 11.5H9.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M13.5 10H18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <span class="sr-only">Diminuir o tamanho do texto</span>
+        </button>
+        <button type="button" data-fonte="maior" class="com-icone" title="Aumentar o tamanho do texto">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M3 16L7 4L11 16M4.6 11.5H9.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M15.75 7.5V12.5M13.5 10H18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <span class="sr-only">Aumentar o tamanho do texto</span>
+        </button>
       </div>
-      <button type="button" data-contraste aria-pressed="false" class="grupo unico">
-        Alto contraste
+      <button type="button" data-contraste aria-pressed="false" class="grupo unico com-icone" title="Alto contraste">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="2" />
+          <path d="M10 3a7 7 0 0 1 0 14V3z" fill="currentColor" />
+        </svg>
+        <span class="sr-only">Alto contraste</span>
       </button>
-      <button type="button" data-tema-alternar aria-pressed="false" class="grupo unico">
-        Modo escuro
+      <button type="button" data-tema-alternar aria-pressed="false" class="grupo unico com-icone" title="Modo escuro">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M17 12.3A7 7 0 0 1 7.7 3 7 7 0 1 0 17 12.3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span class="sr-only">Modo escuro</span>
       </button>
     </div>
   </div>
@@ -73,16 +91,21 @@
   .grupo { display: flex; border: 1px solid color-mix(in srgb, currentColor 45%, transparent); border-radius: 4px; overflow: hidden; }
   .grupo button, .grupo.unico {
     background: none;
-    border: 0;
     color: inherit;
     font: inherit;
     padding: 0.3rem 0.6rem;
     cursor: pointer;
     min-height: 2rem;
   }
+  /* Só os botões DENTRO do grupo de fonte não têm borda própria — a borda
+     do par inteiro já vem do .grupo pai. O botão único (contraste, tema) É
+     o .grupo: precisa manter a borda de 1px herdada dessa regra. */
+  .grupo button { border: 0; }
   .grupo button + button { border-left: 1px solid color-mix(in srgb, currentColor 45%, transparent); }
   .grupo button:hover, .grupo.unico:hover { background: color-mix(in srgb, currentColor 18%, transparent); }
   .grupo.unico[aria-pressed='true'] { background: var(--color-carmim); border-color: var(--color-carmim); }
+  .com-icone { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .com-icone svg { flex: none; }
   /* A barra é escura: o foco branco é o que enxerga sobre ela. */
   .barra :focus-visible { outline-color: var(--color-sobre-escuro); }
 
