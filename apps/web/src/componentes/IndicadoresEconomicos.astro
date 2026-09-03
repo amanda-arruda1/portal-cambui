@@ -12,26 +12,9 @@
  * faixa de licitações rola porque pode ter dezenas; aqui cabe tudo junto em
  * qualquer tela.
  */
-import { indicadoresEconomicos } from '../lib/indicadores';
+import { indicadoresEconomicos, valorFormatado, variacaoFormatada } from '../lib/indicadores';
 
 const indicadores = await indicadoresEconomicos();
-
-const formatoPercentual = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const formatoMoeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-
-function valorFormatado(i: (typeof indicadores)[number]): string {
-  if (i.valor === null) return '—';
-  return i.unidade === 'moeda' ? formatoMoeda.format(i.valor) : `${formatoPercentual.format(i.valor)}%`;
-}
-
-/** IPCA/Selic/CDI comparam ponto contra ponto (pontos percentuais); o dólar
- *  já vem da fonte como variação percentual do próprio dia. */
-function variacaoFormatada(i: (typeof indicadores)[number]): string | null {
-  if (i.variacao === null) return null;
-  const sinal = i.variacao > 0 ? '+' : '';
-  const unidade = i.chave === 'dolar' ? '%' : ' p.p.';
-  return `${sinal}${formatoPercentual.format(i.variacao)}${unidade}`;
-}
 ---
 
 <section class="indicadores" aria-labelledby="titulo-indicadores">
