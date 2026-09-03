@@ -53,8 +53,8 @@ const SECOES: Secao[] = [
     /* Sem destino próprio: é só um agrupador de sistemas externos (ponto,
        SIP e webmail), todos em outro domínio — abrem em nova aba. */
     subitens: [
-      { rotulo: 'Ponto eletrônico (SispontoWeb)', destino: 'http://sistemas14.sisponto.com.br/Sispontoweb/open.do?sys=SPW' },
-      { rotulo: 'SIP Web — Trabalhador', destino: 'https://cce.sgpcloud.net:9155/sipweb/trabalhador/login/login.xhtml' },
+      { rotulo: 'Ponto eletrônico', destino: 'http://sistemas14.sisponto.com.br/Sispontoweb/open.do?sys=SPW' },
+      { rotulo: 'Holerite eletrônico', destino: 'https://cce.sgpcloud.net:9155/sipweb/trabalhador/login/login.xhtml' },
       /* URL de webmail enviada pelo usuário era de LOGOUT com um token de
          sessão embutido (?_task=logout&_token=...) — publicar isso no código
          (repositório público) vazaria o token de outra pessoa e, de todo
@@ -344,7 +344,12 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
     border-top: 1px solid rgba(255, 255, 255, 0.18);
   }
   .sanfona summary::-webkit-details-marker { display: none; }
-  .sanfona ul { list-style: none; margin: 0; padding: 0 0 0.5rem; display: grid; gap: 0.15rem; }
+  /* `>` e não descendente: mesma armadilha da regra do desktop, logo abaixo
+     — "ul" sozinho também bateria em `.subitens` (é uma <ul> aninhada
+     dentro de `.sanfona`) com mais especificidade que `.subitens
+     {display:none}`, MANTENDO o submenu sempre visível mesmo fechado
+     também no celular. */
+  .sanfona > ul { list-style: none; margin: 0; padding: 0 0 0.5rem; display: grid; gap: 0.15rem; }
   .sanfona a {
     display: block;
     padding: 0.7rem 0;
@@ -410,14 +415,19 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
 
   @media (min-width: 48rem) {
     .sanfona summary { display: none; }
-    .sanfona ul {
+    /* `>` e não descendente: "ul" sozinho também bateria em `.subitens`
+       (é uma <ul> dentro de `.sanfona`) e essa regra tem mais especificidade
+       que `.subitens { display:none }` — o submenu ficava sempre visível no
+       desktop, ignorando a classe `.aberto` que o script alterna. Bug real,
+       achado testando clique de verdade (Chromium headless via CDP), não só
+       lendo o CSS. */
+    .sanfona > ul {
       display: flex;
       flex-wrap: wrap;
       gap: 0 2rem;
       border-top: 1px solid rgba(255, 255, 255, 0.18);
       padding-top: 0.25rem;
     }
-    .sanfona[open] ul, .sanfona ul { display: flex; }
     .menu { margin-top: 1.5rem; }
 
     /* Coluna suspensa: uma lista estreita, não um mega-painel de cartões.
