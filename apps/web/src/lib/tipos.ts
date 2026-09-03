@@ -104,6 +104,23 @@ export interface Selo {
   ordem: number | null;
 }
 
+export type CategoriaPatrimonio = 'livro' | 'dossie' | 'inventario' | 'legislacao' | 'outro';
+
+export interface DocumentoPatrimonio {
+  id: string;
+  status: Situacao;
+  titulo: string;
+  categoria: CategoriaPatrimonio;
+  /** Ano ou período como aparece na fonte — ex.: "2012–2013". Texto livre, não
+   *  data: metade do acervo é biênio, não um dia específico. */
+  periodo: string | null;
+  descricao: string | null;
+  arquivo: string | null;
+  url_externa: string | null;
+  secretaria: { nome: string; slug: string } | null;
+  ordem: number | null;
+}
+
 export interface PerguntaFrequente {
   id: string;
   status: Situacao;

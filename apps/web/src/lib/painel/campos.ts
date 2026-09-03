@@ -223,6 +223,36 @@ export const CAMPOS: Record<ColecaoEditavel, Campo[]> = {
     SECRETARIA,
     { nome: 'ordem', rotulo: 'Ordem dentro da categoria', tipo: 'numero', ajuda: 'Menor aparece primeiro. Vazio vai para o fim.', largura: 'metade' },
   ],
+
+  patrimonio_documentos: [
+    { nome: 'titulo', rotulo: 'Título', tipo: 'texto', obrigatorio: true, maximo: 160, largura: 'inteira', ajuda: 'Ex.: "Dossiê de Tombamento – Praça Coronel Justiniano".' },
+    {
+      nome: 'categoria',
+      rotulo: 'Categoria',
+      tipo: 'selecao',
+      obrigatorio: true,
+      largura: 'metade',
+      opcoes: [
+        { valor: 'livro', rotulo: 'Livro do Patrimônio' },
+        { valor: 'dossie', rotulo: 'Dossiê de Tombamento' },
+        { valor: 'inventario', rotulo: 'Inventário' },
+        { valor: 'legislacao', rotulo: 'Legislação' },
+        { valor: 'outro', rotulo: 'Outros arquivos' },
+      ],
+    },
+    { nome: 'periodo', rotulo: 'Ano ou período', tipo: 'texto', maximo: 20, largura: 'metade', ajuda: 'Como aparece no documento. Ex.: "2012–2013" ou "2025" — não precisa ser uma data exata.' },
+    SECRETARIA,
+    { nome: 'descricao', rotulo: 'Descrição', tipo: 'texto_longo', largura: 'inteira' },
+    { nome: 'arquivo', rotulo: 'Arquivo', tipo: 'arquivo', largura: 'inteira' },
+    {
+      nome: 'url_externa',
+      rotulo: 'Endereço externo',
+      tipo: 'url',
+      ajuda: 'Preencha SÓ quando o documento vive em outro sistema e não será anexado aqui.',
+      largura: 'inteira',
+    },
+    { nome: 'ordem', rotulo: 'Ordem dentro da categoria', tipo: 'numero', ajuda: 'Menor aparece primeiro. Vazio vai para o fim.', largura: 'metade' },
+  ],
 };
 
 /** Campos que guardam HTML e precisam passar pelo sanitizador na gravação. */

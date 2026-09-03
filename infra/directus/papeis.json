@@ -176,6 +176,30 @@
             "publicado"
           ]
         },
+        "patrimonio_documentos": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "secretaria",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao"
+          ]
+        },
         "perguntas_frequentes": {
           "acoes": [
             "create",
@@ -377,6 +401,32 @@
           ]
         },
         "selos": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ]
+        },
+        "patrimonio_documentos": {
           "acoes": [
             "create",
             "read",
@@ -615,6 +665,30 @@
             "arquivado"
           ]
         },
+        "patrimonio_documentos": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_destino": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ]
+        },
         "perguntas_frequentes": {
           "acoes": [
             "read",
@@ -772,6 +846,18 @@
         "imagem",
         "data_concessao",
         "url_comprovacao",
+        "ordem"
+      ],
+      "patrimonio_documentos": [
+        "id",
+        "status",
+        "titulo",
+        "categoria",
+        "periodo",
+        "descricao",
+        "arquivo",
+        "url_externa",
+        "secretaria",
         "ordem"
       ],
       "perguntas_frequentes": [

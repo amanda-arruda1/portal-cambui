@@ -22,7 +22,7 @@ export type Saida<T> = { ok: true; dados: T } | { ok: false; motivo: string; sta
 
 /** Coleções que o painel edita. Lista fechada: caminho de coleção não vem da
  *  URL sem passar por aqui, senão vira leitura arbitrária do CMS. */
-export const COLECOES_EDITAVEIS = ['noticias', 'documentos', 'servicos', 'paginas', 'links_uteis', 'secretarias', 'selos', 'perguntas_frequentes'] as const;
+export const COLECOES_EDITAVEIS = ['noticias', 'documentos', 'servicos', 'paginas', 'links_uteis', 'secretarias', 'selos', 'perguntas_frequentes', 'patrimonio_documentos'] as const;
 export type ColecaoEditavel = (typeof COLECOES_EDITAVEIS)[number];
 
 export function colecaoValida(nome: string): nome is ColecaoEditavel {
@@ -45,6 +45,7 @@ export const ROTULO: Record<ColecaoEditavel, string> = {
   secretarias: 'Secretarias',
   selos: 'Selos e certificações',
   perguntas_frequentes: 'Perguntas frequentes',
+  patrimonio_documentos: 'Patrimônio Cultural',
 };
 
 async function chamar<T>(sessao: Sessao, caminho: string, opcoes: RequestInit = {}): Promise<Saida<T>> {
@@ -109,6 +110,7 @@ const CAMPO_ROTULO: Record<ColecaoEditavel, 'titulo' | 'nome' | 'pergunta'> = {
   secretarias: 'nome',
   selos: 'nome',
   perguntas_frequentes: 'pergunta',
+  patrimonio_documentos: 'titulo',
 };
 
 export async function listarFila(

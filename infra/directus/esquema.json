@@ -395,6 +395,65 @@
           "nota": "Ordem de exibição dentro da categoria."
         }
       ]
+    },
+    {
+      "nome": "patrimonio_documentos",
+      "rotulo": {
+        "singular": "Documento do patrimônio",
+        "plural": "Patrimônio Cultural"
+      },
+      "icone": "account_balance",
+      "nota": "Livros do Patrimônio, Dossiês de Tombamento, Inventários, Legislação e outros arquivos do patrimônio cultural de Cambuí.",
+      "campos": [
+        {
+          "campo": "titulo",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "categoria",
+          "tipo": "string",
+          "obrigatorio": true,
+          "opcoes": [
+            "livro",
+            "dossie",
+            "inventario",
+            "legislacao",
+            "outro"
+          ]
+        },
+        {
+          "campo": "periodo",
+          "tipo": "string",
+          "nota": "Ano ou período do documento, como aparece na fonte. Ex.: \"2012–2013\" ou \"2025\"."
+        },
+        {
+          "campo": "descricao",
+          "tipo": "text"
+        },
+        {
+          "campo": "arquivo",
+          "tipo": "uuid",
+          "interface": "file",
+          "arquivo": true
+        },
+        {
+          "campo": "url_externa",
+          "tipo": "string",
+          "nota": "Quando o documento vive em outro sistema e não será anexado aqui."
+        },
+        {
+          "campo": "secretaria",
+          "tipo": "relacao",
+          "para": "secretarias",
+          "nota": "Secretaria responsável pelo documento. Define quem pode editá-lo no painel de contribuição."
+        },
+        {
+          "campo": "ordem",
+          "tipo": "integer",
+          "nota": "Ordem de exibição dentro da categoria. Menor aparece primeiro."
+        }
+      ]
     }
   ]
 }
