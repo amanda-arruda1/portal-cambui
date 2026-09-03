@@ -21,14 +21,16 @@
  */
 import { MUNICIPIO } from '../dados/instituicional';
 import { indicadoresEconomicos, valorFormatado } from '../lib/indicadores';
+import { previsaoTempo, categoriaTempo, condicaoTexto, temperaturaFormatada } from '../lib/tempo';
+import IconeTempo from './IconeTempo.astro';
 // import { NECESSIDADES } from '../dados/cidade'; // volta junto com o submenu, ver abaixo
 
-/* Versão compacta dos mesmos 4 indicadores do cartão "Economia" da home
-   (IndicadoresEconomicos.astro) — mesma fonte de dado e mesma formatação,
-   só que discreta, na faixa do brasão, em toda página (não só na home). Sem
-   cor de alta/baixa aqui de propósito: o card completo já entrega esse
-   detalhe; aqui é só um resumo pra quem já sabe o que está olhando. */
-const indicadores = await indicadoresEconomicos();
+/* Único lugar do portal que mostra os 4 indicadores desde 2026-09-03 (o
+   cartão "Economia" saiu da home, a pedido do usuário) — discreta, na faixa
+   do brasão, em toda página. Sem cor de alta/baixa aqui de propósito: é só
+   um resumo pra quem já sabe o que está olhando; quem quiser o detalhe
+   completo (variação, fonte, referência) segue direto para o Banco Central. */
+const [indicadores, tempo] = await Promise.all([indicadoresEconomicos(), previsaoTempo()]);
 const rotuloCompacto = (chave: string, rotulo: string) => (chave === 'dolar' ? 'Dólar' : rotulo);
 
 type Secao = {
@@ -51,6 +53,7 @@ const SECOES: Secao[] = [
   },
   { rotulo: 'A cidade', destino: '/a-cidade' },
   { rotulo: 'A Prefeitura', destino: '/secretarias' },
+  { rotulo: 'Patrimônio Cultural', destino: '/patrimonio-cultural' },
   /* O Diário Oficial entra no menu principal, e não num canto: é onde os atos
      do município produzem efeito, e quem procura um ato precisa achá-lo em um
      passo. Entra antes de Transparência porque é destino mais específico. */
@@ -100,16 +103,38 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
           <span class="sr-only">— ir para a página inicial</span>
         </a>
 
-        <a href="/#titulo-indicadores" class="indicadores-topo" aria-label="Indicadores econômicos — ver detalhes">
-          <ul>
-            {indicadores.map((i) => (
-              <li>
-                <span class="rotulo-ind">{rotuloCompacto(i.chave, i.rotulo)}</span>
-                <span class="valor-ind">{valorFormatado(i)}</span>
-              </li>
-            ))}
-          </ul>
-        </a>
+        <div class="extras-topo">
+          {tempo && (
+            <div
+              class="tempo-topo"
+              title={`Cambuí/MG — ${condicaoTexto(tempo.codigo_tempo)}${tempo.sensacao_termica !== null ? `, sensação de ${temperaturaFormatada(tempo.sensacao_termica)}` : ''}`}
+            >
+              <IconeTempo categoria={categoriaTempo(tempo.codigo_tempo)} tamanho={22} />
+              <span class="valor-tempo" aria-hidden="true">{temperaturaFormatada(tempo.temperatura)}</span>
+              <span class="sr-only">
+                Tempo agora em Cambuí: {condicaoTexto(tempo.codigo_tempo)}, {temperaturaFormatada(tempo.temperatura)}
+                {tempo.sensacao_termica !== null && `, sensação de ${temperaturaFormatada(tempo.sensacao_termica)}`}
+              </span>
+            </div>
+          )}
+
+          <a
+            href="https://www.bcb.gov.br/estatisticas/indicadoreseconomicos"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="indicadores-topo"
+            aria-label="Indicadores econômicos — mais detalhes no Banco Central (abre em uma nova aba)"
+          >
+            <ul>
+              {indicadores.map((i) => (
+                <li>
+                  <span class="rotulo-ind">{rotuloCompacto(i.chave, i.rotulo)}</span>
+                  <span class="valor-ind">{valorFormatado(i)}</span>
+                </li>
+              ))}
+            </ul>
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -231,13 +256,21 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
   .nomes strong { font-family: var(--font-display); font-size: clamp(1.3rem, 2.6vw, 1.6rem); font-weight: 700; letter-spacing: -0.02em; }
   .uf { color: rgba(255, 255, 255, 0.6); font-size: 0.9375rem; }
 
-  /* Faixa compacta dos indicadores econômicos — mesma linha do brasão,
-     empurrada pra direita pelo `justify-content: space-between` de
+  /* Faixa compacta do tempo + indicadores econômicos — mesma linha do
+     brasão, empurrada pra direita pelo `justify-content: space-between` de
      `.linha-topo`. Deliberadamente discreta (fonte pequena, cor apagada,
      sem cartão/borda): o detalhe colorido de alta/baixa já mora no cartão
-     "Economia" da home, pra onde este link leva. Escondida no celular —
-     não cabe do lado do brasão a essa largura, e é um extra, não essencial. */
-  .indicadores-topo { display: none; text-decoration: none; color: inherit; }
+     "Economia" da home, pra onde o link de indicadores leva. Escondida no
+     celular — não cabe do lado do brasão a essa largura, e é um extra, não
+     essencial (mesmo raciocínio já medido para os indicadores). */
+  .extras-topo { display: none; align-items: center; gap: 1.25rem; }
+  @media (min-width: 60rem) { .extras-topo { display: flex; } }
+
+  .tempo-topo { display: flex; align-items: center; gap: 0.35rem; color: rgba(255, 255, 255, 0.8); cursor: default; }
+  .tempo-topo :global(svg) { flex: none; opacity: 0.85; }
+  .valor-tempo { font-size: 0.9375rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .indicadores-topo { text-decoration: none; color: inherit; }
   .indicadores-topo ul { display: flex; align-items: baseline; gap: 1.1rem; margin: 0; padding: 0; list-style: none; }
   .indicadores-topo li { display: flex; align-items: baseline; gap: 0.3rem; white-space: nowrap; }
   .indicadores-topo .rotulo-ind {
@@ -254,7 +287,6 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
   }
   .indicadores-topo:hover .valor-ind,
   .indicadores-topo:focus-visible .valor-ind { color: var(--color-sobre-escuro); }
-  @media (min-width: 60rem) { .indicadores-topo { display: block; } }
 
   /* A busca é o maior elemento do cabeçalho — agora abaixo do menu, não
      acima. É a tese aplicada mesmo assim: o cidadão vê as seções e, logo

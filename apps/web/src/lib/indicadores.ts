@@ -59,22 +59,13 @@ export async function indicadoresEconomicos(): Promise<Indicador[]> {
   }).map((i) => (indisponivel ? { ...i, valor: null, variacao: null, referencia: null } : i));
 }
 
-/* Formatação compartilhada entre o cartão completo da home
-   (IndicadoresEconomicos.astro) e a faixa compacta do cabeçalho
-   (Cabecalho.astro) — mesma regra, um lugar só. */
+/* Formatação usada pela faixa compacta do cabeçalho (Cabecalho.astro) —
+   único lugar que mostra os indicadores desde que o cartão "Economia" saiu
+   da home (2026-09-03, a pedido do usuário). */
 const formatoPercentual = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const formatoMoeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
 export function valorFormatado(i: Indicador): string {
   if (i.valor === null) return '—';
   return i.unidade === 'moeda' ? formatoMoeda.format(i.valor) : `${formatoPercentual.format(i.valor)}%`;
-}
-
-/** IPCA/Selic/CDI comparam ponto contra ponto (pontos percentuais); o dólar
- *  já vem da fonte como variação percentual do próprio dia. */
-export function variacaoFormatada(i: Indicador): string | null {
-  if (i.variacao === null) return null;
-  const sinal = i.variacao > 0 ? '+' : '';
-  const unidade = i.chave === 'dolar' ? '%' : ' p.p.';
-  return `${sinal}${formatoPercentual.format(i.variacao)}${unidade}`;
 }

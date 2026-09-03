@@ -12,7 +12,6 @@ import LinhaTarefa from '../componentes/LinhaTarefa.astro';
 import ChamadaLicitacoes from '../componentes/licitacoes/ChamadaHome.astro';
 import ChamadaObras from '../componentes/obras/ChamadaHome.astro';
 import InstagramFeed from '../componentes/InstagramFeed.astro';
-import IndicadoresEconomicos from '../componentes/IndicadoresEconomicos.astro';
 import { noticiasRecentes } from '../lib/conteudo';
 import { arquivo } from '../lib/directus';
 import { data, iso, recorte } from '../lib/formato';
@@ -130,9 +129,6 @@ const [lider, ...demais] = noticias;
 
   <!-- ── Obras públicas ────────────────────────────────────────────────── -->
   <ChamadaObras />
-
-  <!-- ── Indicadores econômicos: IPCA, Selic, CDI, Dólar ─────────────────── -->
-  <IndicadoresEconomicos />
 
   <!-- ── 04 · A cidade ─────────────────────────────────────────────────── -->
   <Carreira numero="04" rotulo="A cidade" fundo="serra" titulo={A_CIDADE.chamada}>
