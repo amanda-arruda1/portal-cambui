@@ -180,6 +180,27 @@ export const NECESSIDADES: Necessidade[] = [
 export const A_CIDADE = {
   chamada: 'Malha, serra e inverno',
   texto:
-    'Cambuí fica a mais de mil metros de altitude, na Serra da Mantiqueira, na divisa de Minas com São Paulo. É cidade de estrada — a BR-459 corta o município e a Fernão Dias passa ao lado —, de inverno de verdade e de malharia: o comércio de confecção traz visitantes de toda a região o ano inteiro.',
+    'Cambuí fica na Serra da Mantiqueira, na divisa de Minas com São Paulo — a sede está a 860 m de altitude, e a serra sobe a mais de 2 mil metros nos pontos mais altos. É cidade de estrada — a BR-459 corta o município e a Fernão Dias passa ao lado —, de inverno de verdade e de malharia: o comércio de confecção traz visitantes de toda a região o ano inteiro.',
   portalTuristico: 'https://cambuitur.com.br/',
+} as const;
+
+/**
+ * A história de Cambuí, resumida a partir do relato de João Eiras (publicado
+ * originalmente pela Prefeitura) e conferida em cambuitur.com.br/historia e
+ * na Wikipédia — o texto da própria página de história do portal atual
+ * (prefeituradecambui.mg.gov.br/o-municipio/a-historia-de-cambui) não pôde
+ * ser lido: é renderizado por JavaScript atrás de Cloudflare, sem versão
+ * arquivada acessível.
+ *
+ * TODO(cliente): confirmar este resumo com a Secretaria de Cultura e Turismo
+ * antes de tratar como texto oficial — foi reconstruído de fontes externas,
+ * não copiado do portal atual.
+ */
+export const HISTORIA = {
+  paragrafos: [
+    'Bandeirantes vindos de Itapira, em São Paulo, atravessavam a Serra da Mantiqueira em busca de ouro, pedras preciosas e mão de obra indígena para as fazendas quando se formou aqui um povoado, na antiga estrada para a atual Senador Amaral. A região pertencia então ao município de Campanha e, mais tarde, ao de Jaguari — hoje Camanducaia.',
+    'No século XIX, o Capitão Francisco Soares de Figueiredo e Joaquim José de Moraes buscaram autorização civil e eclesiástica para erguer uma capela no povoado, então chamado Cambuhy. O visitador diocesano Cônego José Bento Leite Ferreira de Melo propôs a mudança para um terreno com melhor topografia, a 2 km do povoado original — doado pelo próprio Capitão Soares. Ali, em 1834, foi erguida a capela de Nossa Senhora do Carmo, padroeira da cidade ao lado de São Francisco de Assis.',
+    'O nome Cambuí vem do tupi antigo kambuʼi: a mesma árvore, a Myrciaria tenella, abundante na região. O município foi emancipado em 24 de maio de 1892 — data em que se comemora o aniversário da cidade.',
+  ],
+  fonte: 'Com base no relato de João Eiras (Prefeitura de Cambuí) e em cambuitur.com.br/historia.',
 } as const;

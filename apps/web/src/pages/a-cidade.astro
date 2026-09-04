@@ -15,10 +15,11 @@ import Base from '../layouts/Base.astro';
 import Carreira from '../componentes/Carreira.astro';
 import SerraTecida from '../componentes/SerraTecida.astro';
 import LinhaTarefa from '../componentes/LinhaTarefa.astro';
-import { A_CIDADE } from '../dados/cidade';
+import { A_CIDADE, HISTORIA } from '../dados/cidade';
 
 const NUMEROS = [
-  { valor: '1.030 m', rotulo: 'de altitude', nota: 'na Serra da Mantiqueira' },
+  { valor: '244,6 km²', rotulo: 'de área', nota: 'IBGE' },
+  { valor: '860–2.050 m', rotulo: 'de altitude', nota: 'sede a 860 m; serra até 2.050 m' },
   { valor: 'BR-459', rotulo: 'corta o município', nota: 'a Fernão Dias passa ao lado' },
   { valor: 'MG / SP', rotulo: 'na divisa', nota: 'Sul de Minas' },
 ];
@@ -42,7 +43,7 @@ const PARA_QUEM_CHEGA = [
 
 <Base
   titulo="A cidade"
-  descricao="Cambuí fica a mais de mil metros de altitude, na Serra da Mantiqueira, na divisa de Minas com São Paulo. Cidade de malharia, de estrada e de inverno de verdade."
+  descricao="Cambuí fica na Serra da Mantiqueira, na divisa de Minas com São Paulo, entre 860 m na sede e mais de 2 mil metros nos pontos mais altos. Cidade de malharia, de estrada e de inverno de verdade."
   colado
 >
   <div class="abertura">
@@ -79,7 +80,8 @@ const PARA_QUEM_CHEGA = [
       ))}
     </dl>
     <p class="t-micro fonte">
-      TODO(cliente): confirmar a altitude oficial e a área do município com o setor de planejamento.
+      Área e altitude: IBGE/Wikipédia. TODO(cliente): confirmar com o setor de planejamento se
+      houver número oficial diferente.
     </p>
 
     <div class="mapa">
@@ -102,7 +104,14 @@ const PARA_QUEM_CHEGA = [
     </div>
   </Carreira>
 
-  <Carreira numero="02" rotulo="A malha" fundo="serra" titulo="A cidade que se faz por carreiras">
+  <Carreira numero="02" rotulo="História" titulo="De povoado a cidade">
+    <div class="texto-historia entra">
+      {HISTORIA.paragrafos.map((p) => <p class="t-lead">{p}</p>)}
+      <p class="t-micro fonte">{HISTORIA.fonte}</p>
+    </div>
+  </Carreira>
+
+  <Carreira numero="03" rotulo="A malha" fundo="serra" titulo="A cidade que se faz por carreiras">
     <div class="texto-serra entra">
       <p class="t-lead">
         A malharia é o que sustenta Cambuí e o que traz visitante de toda a região o ano inteiro. É
@@ -116,7 +125,7 @@ const PARA_QUEM_CHEGA = [
     </div>
   </Carreira>
 
-  <Carreira numero="03" rotulo="Para quem chega">
+  <Carreira numero="04" rotulo="Para quem chega">
     <ul class="lista entra">
       {PARA_QUEM_CHEGA.map((t) => <li><LinhaTarefa tarefa={t} /></li>)}
     </ul>
@@ -132,7 +141,8 @@ const PARA_QUEM_CHEGA = [
   .sub { margin-top: 1.25rem; max-width: var(--container-leitura); color: var(--color-musgo); }
 
   .numeros { margin-top: 1.5rem; display: grid; gap: 1.75rem; }
-  @media (min-width: 44rem) { .numeros { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2.5rem; } }
+  @media (min-width: 30rem) { .numeros { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.5rem; } }
+  @media (min-width: 60rem) { .numeros { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
   .valor { font-family: var(--font-display); font-size: clamp(2rem, 4.5vw, 2.9rem); font-weight: 700; letter-spacing: -0.03em; color: var(--color-serra); line-height: 1; }
   .numero dd { margin: 0.5rem 0 0; display: flex; flex-direction: column; gap: 0.15rem; }
   .rotulo { font-weight: 600; }
@@ -151,5 +161,8 @@ const PARA_QUEM_CHEGA = [
   .credito a { color: var(--color-serra); text-decoration: none; font-weight: 600; }
 
   .texto-serra { margin-top: 1.25rem; max-width: var(--container-leitura); display: grid; gap: 1.1rem; }
+
+  .texto-historia { margin-top: 1.25rem; max-width: var(--container-leitura); display: grid; gap: 1.1rem; }
+  .texto-historia .fonte { margin-top: 0.5rem; color: var(--color-musgo); }
   .lista { list-style: none; margin: 1.25rem 0 0; padding: 0; }
 </style>
