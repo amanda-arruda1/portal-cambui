@@ -90,7 +90,7 @@ export interface Obra {
   observacoes: string | null; data_publicacao: string; demonstracao: boolean; date_updated: string | null;
 }
 
-/* ─────────────────────────  carga com cache  ───────────────────────── */
+/* ─────────────────────────  carga  ───────────────────────── */
 
 const CAMPOS = [
   'id', 'numero_processo', 'numero_contrato', 'licitacao.id', 'licitacao.numero', 'licitacao.ano',
@@ -101,22 +101,13 @@ const CAMPOS = [
   'data_publicacao', 'demonstracao', 'date_updated',
 ].join(',');
 
-const VALIDADE_MS = 60_000;
-let cache: { em: number; dados: Obra[] } | null = null;
-
 export async function todas(): Promise<{ dados: Obra[]; indisponivel: boolean }> {
-  if (cache && Date.now() - cache.em < VALIDADE_MS) return { dados: cache.dados, indisponivel: false };
-
-  const r = await listar<Obra>('obras', {
+  return listar<Obra>('obras', {
     fields: CAMPOS,
     filter: JSON.stringify({ status: { _eq: 'publicado' } }),
     sort: '-data_publicacao',
     limit: 2000,
   });
-  if (r.indisponivel) return { dados: cache?.dados ?? [], indisponivel: cache === null };
-
-  cache = { em: Date.now(), dados: r.dados };
-  return { dados: r.dados, indisponivel: false };
 }
 
 export async function porSlug(slug: string): Promise<Obra | null> {

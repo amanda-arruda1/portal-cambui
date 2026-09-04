@@ -24,7 +24,12 @@ import type { Veiculo, Caderno, Edicao, Materia, MateriaCompleta } from './tipos
 import { TIPOS_ATO, rotuloTipoAto } from './vocabulario';
 import { normalizar, textoDe, reconhecerAto, referenciaCitacao } from './dominio.mjs';
 
-const VALIDADE_MS = 60_000;
+/* Curto de propósito: só o suficiente para colapsar um pico de acessos
+ * simultâneos na mesma carga (ver `acervo()` abaixo). Uma edição publicada ou
+ * corrigida pelo painel precisa aparecer praticamente na hora — 60s como
+ * antes deixava a atualização perceptivelmente lenta para quem está
+ * revisando o próprio texto. */
+const VALIDADE_MS = 5_000;
 
 const CAMPOS_EDICAO = [
   'id', 'numero', 'ano', 'volume', 'tipo', 'situacao', 'data_disponibilizacao',
