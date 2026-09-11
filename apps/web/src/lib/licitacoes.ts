@@ -100,7 +100,7 @@ export const deSlug = (s: string) => s.replace(/-/g, '_');
 
 /* ─────────────────────────  tipos  ───────────────────────── */
 
-export interface ArquivoAnexo { id: string; type: string | null; filesize: number | null; filename_download: string | null }
+export interface ArquivoAnexo { id: string; type: string | null; filesize: number | null }
 export interface Anexo {
   id: string; titulo: string; tipo: string; arquivo: ArquivoAnexo | null; url_externa: string | null;
   data_publicacao: string; versao: number; substitui: string | null; superado: boolean; ordem: number | null;
@@ -155,7 +155,11 @@ export async function anexosDe(id: string): Promise<Anexo[]> {
   const r = await listar<Anexo>('licitacao_anexos', {
     // tamanho e formato vêm junto: quem consulta do celular em 4G de serra
     // precisa saber se são 200 KB ou 40 MB ANTES de tocar no link.
-    fields: 'id,titulo,tipo,arquivo.id,arquivo.type,arquivo.filesize,arquivo.filename_download,url_externa,data_publicacao,versao,substitui,superado,ordem',
+    // NUNCA pedir arquivo.filename_download aqui: o papel público não tem
+    // permissão de leitura nesse campo em directus_files, e o Directus
+    // recusa a consulta INTEIRA (não só o campo) — a lista inteira de
+    // anexos sumia da página pública por causa disso, para toda licitação.
+    fields: 'id,titulo,tipo,arquivo.id,arquivo.type,arquivo.filesize,url_externa,data_publicacao,versao,substitui,superado,ordem',
     filter: JSON.stringify({ licitacao: { _eq: id } }),
     sort: 'ordem,data_publicacao',
     limit: 200,

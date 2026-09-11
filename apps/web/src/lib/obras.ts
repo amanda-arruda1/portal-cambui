@@ -64,7 +64,7 @@ export const deSlugCategoria = (s: string) => s.replace(/-/g, '_');
 
 /* ─────────────────────────  tipos  ───────────────────────── */
 
-export interface ArquivoAnexo { id: string; type: string | null; filesize: number | null; filename_download: string | null }
+export interface ArquivoAnexo { id: string; type: string | null; filesize: number | null }
 export interface AnexoObra {
   id: string; titulo: string; categoria: string; arquivo: ArquivoAnexo | null;
   data_referencia: string; descricao: string | null; ordem: number | null;
@@ -117,7 +117,11 @@ export async function porSlug(slug: string): Promise<Obra | null> {
 
 export async function anexosDe(id: string): Promise<AnexoObra[]> {
   const r = await listar<AnexoObra>('obra_anexos', {
-    fields: 'id,titulo,categoria,arquivo.id,arquivo.type,arquivo.filesize,arquivo.filename_download,data_referencia,descricao,ordem',
+    // NUNCA pedir arquivo.filename_download: o papel público não tem
+    // permissão nesse campo de directus_files, e o Directus recusa a
+    // consulta INTEIRA (não só o campo) — via lib/licitacoes.ts, que tinha
+    // o mesmo pedido e sumia com a lista inteira de anexos da licitação.
+    fields: 'id,titulo,categoria,arquivo.id,arquivo.type,arquivo.filesize,data_referencia,descricao,ordem',
     filter: JSON.stringify({ obra: { _eq: id } }),
     sort: 'ordem,data_referencia',
     limit: 200,
