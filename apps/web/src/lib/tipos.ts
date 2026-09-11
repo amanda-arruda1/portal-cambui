@@ -144,3 +144,14 @@ export interface TelefoneUtil {
   email: string | null;
   ordem: number | null;
 }
+
+export interface ColetaLixo {
+  id: string;
+  status: Situacao;
+  /** Bairro ou região. */
+  nome: string;
+  /** Dias da semana, texto livre como aparece na fonte — ex.: "Segunda-feira, Quarta-feira, Sexta-feira". */
+  dias: string;
+  /** Ex.: "A partir das 06:00 horas - Diurno". */
+  horario: string;
+}

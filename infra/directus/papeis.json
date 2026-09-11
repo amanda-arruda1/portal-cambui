@@ -176,6 +176,24 @@
             "publicado"
           ]
         },
+        "telefones_uteis": {
+          "acoes": [
+            "read"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "publicado"
+          ]
+        },
+        "coleta_lixo": {
+          "acoes": [
+            "read"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "publicado"
+          ]
+        },
         "patrimonio_documentos": {
           "acoes": [
             "create",
@@ -226,8 +244,9 @@
         }
       },
       "_comentario_paginas": [
-        "'paginas' e 'links_uteis' são conteúdo institucional do município, não",
-        "de uma pasta: quem escreve são revisor e publicador. Redator só lê."
+        "'paginas', 'links_uteis', 'telefones_uteis' e 'coleta_lixo' são conteúdo",
+        "institucional do município, não de uma pasta: quem escreve são revisor e",
+        "publicador. Redator só lê."
       ]
     },
     {
@@ -401,6 +420,58 @@
           ]
         },
         "selos": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ]
+        },
+        "telefones_uteis": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ]
+        },
+        "coleta_lixo": {
           "acoes": [
             "create",
             "read",
@@ -665,6 +736,54 @@
             "arquivado"
           ]
         },
+        "telefones_uteis": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_destino": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ]
+        },
+        "coleta_lixo": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_destino": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ]
+        },
         "patrimonio_documentos": {
           "acoes": [
             "read",
@@ -868,6 +987,23 @@
         "categoria",
         "secretaria",
         "ordem"
+      ],
+      "telefones_uteis": [
+        "id",
+        "status",
+        "nome",
+        "categoria",
+        "endereco",
+        "telefone",
+        "email",
+        "ordem"
+      ],
+      "coleta_lixo": [
+        "id",
+        "status",
+        "nome",
+        "dias",
+        "horario"
       ]
     },
     "arquivos": {

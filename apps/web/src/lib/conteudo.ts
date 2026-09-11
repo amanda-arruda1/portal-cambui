@@ -7,7 +7,7 @@
  * vaze rascunho de secretaria.
  */
 import { listar, umPor } from './directus';
-import type { CategoriaPatrimonio, Documento, DocumentoPatrimonio, LinkUtil, Noticia, Pagina, PerguntaFrequente, Secretaria, Selo, Servico, TelefoneUtil } from './tipos';
+import type { CategoriaPatrimonio, ColetaLixo, Documento, DocumentoPatrimonio, LinkUtil, Noticia, Pagina, PerguntaFrequente, Secretaria, Selo, Servico, TelefoneUtil } from './tipos';
 
 const PUBLICADO = JSON.stringify({ status: { _eq: 'publicado' } });
 
@@ -141,6 +141,16 @@ export function documentosPatrimonio(categoria?: CategoriaPatrimonio) {
     fields: '*',
     filter: JSON.stringify(filtro),
     sort: 'ordem,-periodo,titulo',
+    limit: 300,
+  });
+}
+
+/** Cronograma de coleta de lixo por bairro/região. */
+export function coletaLixo() {
+  return listar<ColetaLixo>('coleta_lixo', {
+    fields: 'id,status,nome,dias,horario',
+    filter: PUBLICADO,
+    sort: 'nome',
     limit: 300,
   });
 }

@@ -253,6 +253,41 @@ export const CAMPOS: Record<ColecaoEditavel, Campo[]> = {
     },
     { nome: 'ordem', rotulo: 'Ordem dentro da categoria', tipo: 'numero', ajuda: 'Menor aparece primeiro. Vazio vai para o fim.', largura: 'metade' },
   ],
+
+  telefones_uteis: [
+    { nome: 'nome', rotulo: 'Nome', tipo: 'texto', obrigatorio: true, largura: 'inteira', ajuda: 'Ex.: "CRAS Centro", "Corpo de Bombeiros".' },
+    {
+      nome: 'categoria',
+      rotulo: 'Categoria',
+      tipo: 'selecao',
+      obrigatorio: true,
+      largura: 'metade',
+      opcoes: [
+        { valor: 'emergencias', rotulo: 'Emergências' },
+        { valor: 'escolas_creches', rotulo: 'Escolas e Creches' },
+        { valor: 'unidades_saude', rotulo: 'Unidades de Saúde' },
+        { valor: 'assistencia_social', rotulo: 'Assistência Social' },
+        { valor: 'departamentos', rotulo: 'Departamentos' },
+        { valor: 'diversos', rotulo: 'Diversos' },
+      ],
+    },
+    { nome: 'ordem', rotulo: 'Ordem dentro da categoria', tipo: 'numero', ajuda: 'Menor aparece primeiro. Vazio vai para o fim.', largura: 'metade' },
+    { nome: 'endereco', rotulo: 'Endereço', tipo: 'texto', largura: 'inteira' },
+    {
+      nome: 'telefone',
+      rotulo: 'Telefone',
+      tipo: 'telefone',
+      largura: 'metade',
+      ajuda: 'Mais de um número? Separe com " / ". Ex.: "(35) 3431-1234 / (35) 99733-6816". Número de celular vira link de WhatsApp automaticamente; para impedir isso em um número específico, anote "(somente ligação)" depois dele.',
+    },
+    { nome: 'email', rotulo: 'E-mail', tipo: 'email', largura: 'metade' },
+  ],
+
+  coleta_lixo: [
+    { nome: 'nome', rotulo: 'Bairro ou região', tipo: 'texto', obrigatorio: true, largura: 'inteira' },
+    { nome: 'dias', rotulo: 'Dias da coleta', tipo: 'texto', obrigatorio: true, largura: 'metade', ajuda: 'Ex.: "Segunda-feira, Quarta-feira, Sexta-feira".' },
+    { nome: 'horario', rotulo: 'Horário', tipo: 'texto', obrigatorio: true, largura: 'metade', ajuda: 'Ex.: "A partir das 06:00 horas - Diurno".' },
+  ],
 };
 
 /** Campos que guardam HTML e precisam passar pelo sanitizador na gravação. */

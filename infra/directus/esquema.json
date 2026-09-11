@@ -500,6 +500,35 @@
           "nota": "Ordem de exibição dentro da categoria."
         }
       ]
+    },
+    {
+      "nome": "coleta_lixo",
+      "rotulo": {
+        "singular": "Coleta de lixo",
+        "plural": "Coleta de lixo"
+      },
+      "icone": "delete",
+      "nota": "Dias e horário da coleta de lixo por bairro/região. Migrado do site antigo em 2026-09-11.",
+      "campos": [
+        {
+          "campo": "nome",
+          "tipo": "string",
+          "obrigatorio": true,
+          "nota": "Nome do bairro ou região."
+        },
+        {
+          "campo": "dias",
+          "tipo": "string",
+          "obrigatorio": true,
+          "nota": "Dias da semana da coleta, como aparecem na página. Ex.: \"Segunda-feira, Quarta-feira, Sexta-feira\"."
+        },
+        {
+          "campo": "horario",
+          "tipo": "string",
+          "obrigatorio": true,
+          "nota": "Ex.: \"A partir das 06:00 horas - Diurno\"."
+        }
+      ]
     }
   ]
 }

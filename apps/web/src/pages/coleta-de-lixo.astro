@@ -1,0 +1,113 @@
+---
+/**
+ * Coleta de lixo por bairro/região.
+ *
+ * Migrada do site antigo em 2026-09-11, dado real, sem inventar nada — 57
+ * bairros/regiões. Lista simples com filtro por nome, mesmo padrão de
+ * /telefones (mas sem agrupamento por categoria: aqui não há categoria, só
+ * bairro).
+ */
+import Base from '../layouts/Base.astro';
+import Carreira from '../componentes/Carreira.astro';
+import EstadoVazio from '../componentes/EstadoVazio.astro';
+import TituloPagina from '../componentes/TituloPagina.astro';
+import { coletaLixo } from '../lib/conteudo';
+
+const { dados, indisponivel } = await coletaLixo();
+---
+
+<Base
+  titulo="Coleta de lixo"
+  descricao="Dias e horários de coleta de lixo por bairro em Cambuí."
+>
+  <TituloPagina
+    rotulo="Serviços"
+    titulo="Coleta de lixo"
+    chamada="Dia da semana e horário da coleta em cada bairro ou região de Cambuí."
+    trilha={[{ rotulo: 'Coleta de lixo' }]}
+  />
+
+  {
+    dados.length === 0 ? (
+      <Carreira numero="01" rotulo="Coleta" fundo="papel">
+        <EstadoVazio indisponivel={indisponivel} assunto="cronograma de coleta de lixo" />
+      </Carreira>
+    ) : (
+      <Carreira numero="01" rotulo={`${dados.length} bairro${dados.length === 1 ? '' : 's'}`} fundo="papel">
+        <div class="busca sem-impressao">
+          <label for="filtro-bairro" class="t-rotulo etiqueta">Filtrar por bairro</label>
+          <input
+            type="search"
+            id="filtro-bairro"
+            autocomplete="off"
+            placeholder="Digite o nome do bairro, ex.: Centro, Água Branca…"
+          />
+        </div>
+
+        <div id="bairro-sem-resultado" class="vazio-filtro" hidden>
+          <p class="t-sub">Nenhum bairro encontrado.</p>
+          <p class="t-lead">Tente outra palavra ou limpe o filtro.</p>
+        </div>
+
+        <ul class="lista">
+          {dados.map((c) => (
+            <li class="item-bairro" data-nome={c.nome.toLowerCase()}>
+              <p class="t-sub nome">{c.nome}</p>
+              <p class="dias">{c.dias}</p>
+              <p class="horario">{c.horario}</p>
+            </li>
+          ))}
+        </ul>
+      </Carreira>
+    )
+  }
+</Base>
+
+<script>
+  const campo = document.getElementById('filtro-bairro') as HTMLInputElement | null;
+  const itens = Array.from(document.querySelectorAll<HTMLElement>('.item-bairro'));
+  const semResultado = document.getElementById('bairro-sem-resultado');
+
+  campo?.addEventListener('input', () => {
+    const termo = campo.value.trim().toLowerCase();
+
+    let algumVisivel = false;
+    itens.forEach((item) => {
+      const visivel = !termo || (item.dataset.nome ?? '').includes(termo);
+      item.hidden = !visivel;
+      if (visivel) algumVisivel = true;
+    });
+
+    if (semResultado) semResultado.hidden = algumVisivel || !termo;
+  });
+</script>
+
+<style>
+  .busca { max-width: 28rem; margin-bottom: 1.75rem; }
+  .etiqueta { display: block; color: var(--color-musgo); margin-bottom: 0.4rem; }
+  .busca input {
+    width: 100%;
+    font: inherit;
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+    min-height: 2.75rem;
+    border: 2px solid var(--color-serra);
+    border-radius: 10px;
+    background: var(--color-papel);
+    color: var(--color-tinta);
+  }
+
+  .vazio-filtro { padding: 1.5rem 0; color: var(--color-musgo); }
+  .vazio-filtro .t-sub { color: var(--color-serra); }
+
+  .lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
+  .item-bairro {
+    border: 1px solid var(--color-prata);
+    border-radius: 12px;
+    background: var(--color-papel);
+    padding: 1rem 1.25rem;
+  }
+  .nome { font-family: var(--font-display); letter-spacing: -0.01em; }
+  .dias { margin-top: 0.3rem; color: var(--color-serra); font-size: 0.9375rem; }
+  .horario { margin-top: 0.15rem; color: var(--color-musgo); font-size: 0.875rem; }
+</style>
