@@ -57,7 +57,9 @@ if (Astro.request.method === 'POST') {
   }
 }
 
-const resultado = await listarFila(sessao, colecao, ORDEM_DA_FILA);
+const busca = Astro.url.searchParams.get('busca') ?? '';
+
+const resultado = await listarFila(sessao, colecao, ORDEM_DA_FILA, busca);
 const itens = resultado.ok ? resultado.dados : [];
 const indisponivel = resultado.ok ? null : resultado.motivo;
 
@@ -87,6 +89,26 @@ const grupos = ORDEM_DA_FILA.map((situacao) => ({
     }
   </div>
 
+  <form method="get" class="mt-4 flex max-w-sm gap-2">
+    <label class="sr-only" for="busca">Buscar em {ROTULO[colecao]}</label>
+    <input
+      type="search"
+      id="busca"
+      name="busca"
+      value={busca}
+      placeholder="Buscar por nome..."
+      class="w-full rounded-md border border-prata px-3 py-1.5 text-sm"
+    />
+    <button type="submit" class="rounded-md border border-prata px-3 py-1.5 text-sm font-semibold text-grafite hover:border-azul hover:text-azul">
+      Buscar
+    </button>
+    {busca && (
+      <a href={`/painel/${colecao}`} class="rounded-md border border-prata px-3 py-1.5 text-sm font-semibold text-grafite hover:border-azul hover:text-azul">
+        Limpar
+      </a>
+    )}
+  </form>
+
   {
     aviso && (
       <div
@@ -111,7 +133,7 @@ const grupos = ORDEM_DA_FILA.map((situacao) => ({
   {
     !indisponivel && grupos.length === 0 && (
       <p class="mt-6 rounded-lg border border-prata bg-papel p-5 text-grafite">
-        Nenhum item nesta coleção ainda.
+        {busca ? `Nada encontrado para "${busca}".` : 'Nenhum item nesta coleção ainda.'}
       </p>
     )
   }

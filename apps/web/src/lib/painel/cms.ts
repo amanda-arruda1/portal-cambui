@@ -123,15 +123,23 @@ export async function listarFila(
   sessao: Sessao,
   colecao: ColecaoEditavel,
   situacoes: Situacao[],
-  limite = 50,
+  busca = '',
+  limite = 1000,
 ): Promise<Saida<ItemDaFila[]>> {
   const rotulo = CAMPO_ROTULO[colecao];
   const parametros = new URLSearchParams({
     fields: `id,status,${rotulo},date_updated,user_created,user_updated`,
-    sort: '-date_updated',
+    // Ordem alfabética pelo rótulo, não por 'date_updated': a maioria dos
+    // itens foi importada de uma vez e nunca mais editada, então o campo vem
+    // nulo — e nulo ordenado decrescente aparece PRIMEIRO no Postgres. Isso
+    // empurrava pra fora da tela (que só busca um lote fixo) justamente os
+    // itens editados de verdade. Ordem alfabética é previsível e não depende
+    // de metadado que boa parte do acervo nunca teve.
+    sort: rotulo,
     limit: String(limite),
     'filter[status][_in]': situacoes.join(','),
   });
+  if (busca.trim()) parametros.set(`filter[${rotulo}][_icontains]`, busca.trim());
 
   const r = await chamar<Array<Record<string, any>>>(sessao, `/items/${colecao}?${parametros}`);
   if (!r.ok) return r;
