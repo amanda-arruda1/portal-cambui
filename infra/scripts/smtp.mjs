@@ -117,7 +117,7 @@ function montarMensagem(msg) {
     `To: ${msg.para}`,
     `Subject: ${codificarCabecalho(msg.assunto)}`,
     `Date: ${new Date().toUTCString()}`,
-    `Message-ID: <${limite}@prefeituradecambui.mg.gov.br>`,
+    `Message-ID: <${limite}@cambui.mg.gov.br>`,
     'MIME-Version: 1.0',
     // Diz aos filtros que isto é envio automático — evita resposta automática
     // de férias voltando para a fila.

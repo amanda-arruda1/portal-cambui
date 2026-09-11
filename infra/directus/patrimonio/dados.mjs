@@ -73,6 +73,6 @@ export const PAGINAS = [
     conteudo:
       '<p><strong>Conselho do Patrimônio Histórico e Cultural de Cambuí</strong></p>' +
       '<p>Praça Coronel Justiniano, 164 – Centro – Cambuí/MG</p>' +
-      '<p>E-mail: <a href="mailto:patrimonio@prefeituradecambui.mg.gov.br">patrimonio@prefeituradecambui.mg.gov.br</a></p>',
+      '<p>E-mail: <a href="mailto:patrimonio@cambui.mg.gov.br">patrimonio@cambui.mg.gov.br</a></p>',
   },
 ];
