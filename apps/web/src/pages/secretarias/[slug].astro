@@ -20,14 +20,14 @@ if (!sec) return Astro.rewrite('/404');
 const { dados: noticias } = await noticiasRecentes(20);
 const daSecretaria = noticias.filter((n) => n.secretaria?.slug === sec.slug).slice(0, 4);
 
+// Quando o telefone é celular de verdade (DDD + 9 dígitos), o próprio número
+// já linka pro WhatsApp — não faz sentido um segundo link "WhatsApp" logo
+// abaixo repetindo o mesmo número. Fixo continua indo para tel:.
 const whatsapp = sec.telefone && linkWhatsapp(sec.telefone);
 
 const contatos = [
   sec.endereco && { rotulo: 'Endereço', valor: sec.endereco, href: null, externo: false },
-  sec.telefone && { rotulo: 'Telefone', valor: sec.telefone, href: linkTelefone(sec.telefone), externo: false },
-  // Só aparece quando o telefone é celular de verdade (DDD + 9 dígitos) —
-  // fixo não tem WhatsApp, o link quebraria ou abriria conversa errada.
-  whatsapp && { rotulo: 'WhatsApp', valor: sec.telefone!, href: whatsapp, externo: true },
+  sec.telefone && { rotulo: 'Telefone', valor: sec.telefone, href: whatsapp || linkTelefone(sec.telefone), externo: !!whatsapp },
   sec.email && { rotulo: 'E-mail', valor: sec.email, href: `mailto:${sec.email}`, externo: false },
   sec.horario_atendimento && { rotulo: 'Atendimento', valor: sec.horario_atendimento, href: null, externo: false },
 ].filter(Boolean) as Array<{ rotulo: string; valor: string; href: string | null; externo: boolean }>;
