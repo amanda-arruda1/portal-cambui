@@ -1,0 +1,93 @@
+---
+/**
+ * Estrutura administrativa.
+ *
+ * Migrado do site antigo em 2026-09-11, dado real: o organograma
+ * institucional (documento, coleção `documentos`) e as competências legais
+ * de cada secretaria/órgão (texto, coleção `paginas`) — as duas sub-páginas
+ * que o site antigo tinha em /prefeitura/estrutura-administrativa.
+ */
+import Base from '../layouts/Base.astro';
+import Carreira from '../componentes/Carreira.astro';
+import LinhaTarefa from '../componentes/LinhaTarefa.astro';
+import TituloPagina from '../componentes/TituloPagina.astro';
+import { documentoPorId, paginaPorSlug } from '../lib/conteudo';
+import { arquivo } from '../lib/directus';
+import { limpar } from '../lib/sanitizar';
+
+const ID_ORGANOGRAMA = '1c86b430-e1be-429e-a1cc-16b6857c35c9';
+
+const [{ dado: organograma }, { dado: competencias }] = await Promise.all([
+  documentoPorId(ID_ORGANOGRAMA),
+  paginaPorSlug('competencias-estrutura-administrativa'),
+]);
+
+const linkOrganograma = organograma ? arquivo(organograma.arquivo) : null;
+---
+
+<Base
+  titulo="Estrutura administrativa"
+  descricao="Organograma institucional e as competências legais de cada secretaria e órgão da Prefeitura de Cambuí."
+>
+  <TituloPagina
+    rotulo="A Prefeitura"
+    titulo="Estrutura administrativa"
+    chamada="O organograma institucional e as competências legais de cada secretaria e órgão, conforme a lei municipal que institui suas diretrizes."
+    trilha={[{ rotulo: 'A Prefeitura', destino: '/secretarias' }, { rotulo: 'Estrutura administrativa' }]}
+  />
+
+  <Carreira numero="01" rotulo="Organograma institucional" fundo="papel">
+    {
+      linkOrganograma ? (
+        <p class="organograma">
+          {organograma?.descricao && <span class="descricao">{organograma.descricao}</span>}
+          <a href={linkOrganograma} class="baixar" target="_blank" rel="noopener noreferrer">
+            <svg width="17" height="17" viewBox="0 0 17 17" fill="none" aria-hidden="true"><path d="M3 1h7l4 4v9a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 14V2.5A1.5 1.5 0 0 1 3.5 1Z" stroke="currentColor" stroke-width="1.4"/><path d="M10 1v4h4" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+            <span class="fio-foco">Baixar organograma institucional (PDF)</span>
+          </a>
+        </p>
+      ) : (
+        <p class="pendente">O organograma institucional está sendo publicado.</p>
+      )
+    }
+  </Carreira>
+
+  <Carreira numero="02" rotulo="Competências" titulo="O que cada órgão faz, por lei">
+    {
+      competencias?.conteudo ? (
+        <div class="conteudo-rico texto entra" set:html={limpar(competencias.conteudo)} />
+      ) : (
+        <p class="pendente">As competências de cada órgão estão sendo publicadas.</p>
+      )
+    }
+  </Carreira>
+
+  <Carreira numero="03" rotulo="Veja também" fundo="papel">
+    <ul class="lista entra">
+      <li><LinhaTarefa tarefa={{ rotulo: 'Conselhos municipais', detalhe: 'Leis, portarias e atas de cada conselho', destino: '/conselhos-municipais' }} /></li>
+      <li><LinhaTarefa tarefa={{ rotulo: 'Secretarias municipais', detalhe: 'Endereço, telefone e horário de atendimento', destino: '/secretarias' }} /></li>
+    </ul>
+  </Carreira>
+</Base>
+
+<style>
+  .organograma { max-width: var(--container-leitura); }
+  .descricao { display: block; color: var(--color-musgo); margin-bottom: 1rem; }
+  .baixar {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    border: 2px solid var(--color-serra);
+    border-radius: 8px;
+    color: var(--color-serra);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .baixar:hover { background: var(--color-serra); color: var(--color-papel); }
+
+  .texto { margin-top: 1.25rem; }
+  .pendente { margin-top: 1.25rem; color: var(--color-musgo); max-width: var(--container-leitura); }
+
+  .lista { list-style: none; margin: 1.25rem 0 0; padding: 0; }
+</style>

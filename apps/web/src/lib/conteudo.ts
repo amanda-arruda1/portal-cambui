@@ -7,7 +7,7 @@
  * vaze rascunho de secretaria.
  */
 import { listar, umPor } from './directus';
-import type { CategoriaPatrimonio, ColetaLixo, Documento, DocumentoPatrimonio, LinkUtil, Noticia, Pagina, PerguntaFrequente, Secretaria, Selo, Servico, TelefoneUtil } from './tipos';
+import type { CategoriaPatrimonio, ColetaLixo, ConselhoMunicipal, Documento, DocumentoPatrimonio, LinkUtil, Noticia, Pagina, PerguntaFrequente, Secretaria, Selo, Servico, TelefoneUtil } from './tipos';
 
 const PUBLICADO = JSON.stringify({ status: { _eq: 'publicado' } });
 
@@ -87,6 +87,16 @@ export function paginaPorSlug(slug: string) {
   });
 }
 
+/** Um documento por id — usado quando a página precisa de UM documento
+ *  específico (ex.: o Organograma Institucional em /estrutura-administrativa),
+ *  não uma listagem. */
+export function documentoPorId(id: string) {
+  return umPor<Documento>('documentos', {
+    fields: '*',
+    filter: JSON.stringify({ status: { _eq: 'publicado' }, id: { _eq: id } }),
+  });
+}
+
 export function linksUteis() {
   return listar<LinkUtil>('links_uteis', {
     fields: '*',
@@ -152,6 +162,17 @@ export function coletaLixo() {
     filter: PUBLICADO,
     sort: 'nome',
     limit: 300,
+  });
+}
+
+/** Conselhos municipais e a base legal de cada um, agrupados por categoria na
+ *  própria página — mesmo padrão de 'perguntasFrequentes' e 'telefonesUteis'. */
+export function conselhosMunicipais() {
+  return listar<ConselhoMunicipal>('conselhos_municipais', {
+    fields: 'id,status,nome,categoria,conteudo,ordem',
+    filter: PUBLICADO,
+    sort: 'categoria,ordem,nome',
+    limit: 100,
   });
 }
 

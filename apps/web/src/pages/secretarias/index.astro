@@ -62,16 +62,23 @@ const { dados, indisponivel } = await secretarias();
   </Carreira>
 
   <Carreira numero="03" rotulo="Organograma e estrutura" fundo="papel">
-    <p class="pendente">
-      <strong>TODO(cliente):</strong> organograma institucional, competências de cada secretaria e a
-      relação dos conselhos municipais. O portal atual publica esse material; ele será migrado para
-      o CMS pela própria administração.
-    </p>
+    <ul class="lista entra">
+      <li>
+        <LinhaTarefa
+          tarefa={{ rotulo: 'Estrutura administrativa', detalhe: 'Organograma institucional e competências de cada órgão', destino: '/estrutura-administrativa' }}
+        />
+      </li>
+      <li>
+        <LinhaTarefa
+          tarefa={{ rotulo: 'Conselhos municipais', detalhe: 'Leis, portarias e atas de cada conselho', destino: '/conselhos-municipais' }}
+        />
+      </li>
+    </ul>
   </Carreira>
 </Base>
 
 <style>
   .lista { list-style: none; margin: 1.25rem 0 0; padding: 0; }
-  .vazio, .pendente { margin-top: 1.25rem; color: var(--color-musgo); max-width: var(--container-leitura); }
+  .vazio { margin-top: 1.25rem; color: var(--color-musgo); max-width: var(--container-leitura); }
   .vazio a { color: var(--color-serra); font-weight: 600; text-decoration: none; }
 </style>

@@ -157,3 +157,15 @@ export interface ColetaLixo {
   /** Ex.: "A partir das 06:00 horas - Diurno". */
   horario: string;
 }
+
+export type CategoriaConselho = 'assistencia_social' | 'educacao' | 'saude';
+
+export interface ConselhoMunicipal {
+  id: string;
+  status: Situacao;
+  nome: string;
+  categoria: CategoriaConselho;
+  /** Leis, portarias e atas do conselho — cada uma como um link de documento. */
+  conteudo: string | null;
+  ordem: number | null;
+}

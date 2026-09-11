@@ -536,6 +536,39 @@
           "nota": "Ex.: \"A partir das 06:00 horas - Diurno\"."
         }
       ]
+    },
+    {
+      "nome": "conselhos_municipais",
+      "rotulo": {
+        "singular": "Conselho municipal",
+        "plural": "Conselhos municipais"
+      },
+      "icone": "groups",
+      "nota": "Conselhos municipais e a base legal de cada um (leis, portarias, atas). Migrado do site antigo em 2026-09-11.",
+      "campos": [
+        {
+          "campo": "nome",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "categoria",
+          "tipo": "string",
+          "obrigatorio": true,
+          "opcoes": ["assistencia_social", "educacao", "saude"]
+        },
+        {
+          "campo": "conteudo",
+          "tipo": "text",
+          "interface": "input-rich-text-html",
+          "nota": "Leis, portarias e atas do conselho — cada uma como um link de documento."
+        },
+        {
+          "campo": "ordem",
+          "tipo": "integer",
+          "nota": "Ordem de exibição dentro da categoria."
+        }
+      ]
     }
   ]
 }

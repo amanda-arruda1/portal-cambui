@@ -194,6 +194,15 @@
             "publicado"
           ]
         },
+        "conselhos_municipais": {
+          "acoes": [
+            "read"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "publicado"
+          ]
+        },
         "patrimonio_documentos": {
           "acoes": [
             "create",
@@ -472,6 +481,32 @@
           ]
         },
         "coleta_lixo": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ]
+        },
+        "conselhos_municipais": {
           "acoes": [
             "create",
             "read",
@@ -784,6 +819,30 @@
             "arquivado"
           ]
         },
+        "conselhos_municipais": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_destino": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ]
+        },
         "patrimonio_documentos": {
           "acoes": [
             "read",
@@ -1005,6 +1064,14 @@
         "nome",
         "dias",
         "horario"
+      ],
+      "conselhos_municipais": [
+        "id",
+        "status",
+        "nome",
+        "categoria",
+        "conteudo",
+        "ordem"
       ]
     },
     "arquivos": {

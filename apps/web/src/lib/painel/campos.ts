@@ -295,6 +295,30 @@ export const CAMPOS: Record<ColecaoEditavel, Campo[]> = {
     { nome: 'dias', rotulo: 'Dias da coleta', tipo: 'texto', obrigatorio: true, largura: 'metade', ajuda: 'Ex.: "Segunda-feira, Quarta-feira, Sexta-feira".' },
     { nome: 'horario', rotulo: 'Horário', tipo: 'texto', obrigatorio: true, largura: 'metade', ajuda: 'Ex.: "A partir das 06:00 horas - Diurno".' },
   ],
+
+  conselhos_municipais: [
+    { nome: 'nome', rotulo: 'Nome do conselho', tipo: 'texto', obrigatorio: true, largura: 'inteira' },
+    {
+      nome: 'categoria',
+      rotulo: 'Categoria',
+      tipo: 'selecao',
+      obrigatorio: true,
+      largura: 'metade',
+      opcoes: [
+        { valor: 'assistencia_social', rotulo: 'Assistência Social' },
+        { valor: 'educacao', rotulo: 'Educação' },
+        { valor: 'saude', rotulo: 'Saúde' },
+      ],
+    },
+    { nome: 'ordem', rotulo: 'Ordem dentro da categoria', tipo: 'numero', ajuda: 'Menor aparece primeiro. Vazio vai para o fim.', largura: 'metade' },
+    {
+      nome: 'conteudo',
+      rotulo: 'Base legal',
+      tipo: 'rico',
+      largura: 'inteira',
+      ajuda: 'Lei de criação, portaria de nomeação de membros, atas — um link por linha. Publique o PDF em Documentos primeiro, depois use o botão "Link" da barra de formatação apontando para ele.',
+    },
+  ],
 };
 
 /** Campos que guardam HTML e precisam passar pelo sanitizador na gravação. */
