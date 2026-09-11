@@ -1,20 +1,25 @@
 ---
 /**
- * A SERRA TECIDA — elemento-assinatura do portal.
+ * A SILHUETA DA SERRA — abertura da página "A cidade".
  *
- * A silhueta do horizonte da Mantiqueira preenchida com pontos de tricô: a
- * montanha que o cidadão vê da janela, desenhada com o ponto que a cidade
- * produz. É a tese do DESIGN.md numa imagem só, e a razão de este portal não
- * poder ser transplantado para outro município.
+ * A silhueta do horizonte da Mantiqueira vista de Cambuí, traçada à mão a
+ * partir do recorte real (não montanha genérica de banco de imagens) — três
+ * planos com opacidade decrescente, como serra sob neblina, e um fio carmim
+ * marcando a linha do horizonte.
  *
- * PESO: um <pattern> de UM ponto, azulejado dentro das silhuetas. Não são mil
- * caminhos — é um, repetido pelo próprio renderizador. SVG embutido no HTML,
- * sem requisição extra, sem canvas, sem biblioteca.
+ * Corrigido em 2026-09-11 (era SerraTecida.astro): a versão anterior
+ * preenchia a silhueta com um padrão de ponto de tricô, associando a
+ * montanha à malharia — que não é a economia de Cambuí (é de Monte Sião e do
+ * Circuito das Malhas, município vizinho; ver dados/cidade.ts). A forma da
+ * serra é real e específica; a textura de tricô não era.
+ *
+ * PESO: só três <path> recortados por <clipPath>. SVG embutido no HTML, sem
+ * requisição extra, sem canvas, sem biblioteca.
  *
  * MOVIMENTO: um véu da cor do fundo desliza para a direita no primeiro
- * carregamento, revelando os pontos como carreira saindo do tear. Anima
- * `transform`, no compositor. Com prefers-reduced-motion o véu nem existe
- * (regra em global.css) e a serra aparece inteira e imóvel.
+ * carregamento, revelando a serra. Anima `transform`, no compositor. Com
+ * prefers-reduced-motion o véu nem existe (regra em global.css) e a serra
+ * aparece inteira e imóvel.
  *
  * ACESSIBILIDADE: é decoração. Fica com aria-hidden e o texto que a acompanha
  * carrega todo o significado — nenhuma informação vive só aqui.
@@ -56,17 +61,10 @@ const CRISTA_FRENTE =
   'M0 300 C 120 274, 214 288, 316 262 S 486 232, 606 258 C 706 280, 782 262, 884 246 S 1058 272, 1160 258 C 1258 244, 1338 266, 1440 252 L1440 320 L0 320 Z';
 ---
 
-<div class="serra-tecida sem-impressao" style={`--altura-serra:${altura};--fundo-serra:${fundo}`} aria-hidden="true">
+<div class="silhueta-serra sem-impressao" style={`--altura-serra:${altura};--fundo-serra:${fundo}`} aria-hidden="true">
   <svg viewBox="0 0 1440 320" preserveAspectRatio="none" role="presentation" focusable="false">
     <defs>
-      <!-- O ponto meia: o "V" que a malharia repete carreira após carreira.
-           14×9 é a proporção que deixa o ponto legível a 1440 de largura sem
-           virar textura suja quando a faixa encolhe no celular. -->
-      <pattern id="ponto-meia" width="14" height="9" patternUnits="userSpaceOnUse">
-        <path d="M0 1 L3.5 8 L7 1 L10.5 8 L14 1" fill="none" stroke="#ffffff" stroke-width="1.15" stroke-linecap="round" />
-      </pattern>
-
-      <!-- Cada plano recorta o mesmo azulejo de pontos. -->
+      <!-- Cada plano recorta a mesma crista. -->
       <clipPath id="rec-fundo"><path d={CRISTA_FUNDO} /></clipPath>
       <clipPath id="rec-meio"><path d={CRISTA_MEIO} /></clipPath>
       <clipPath id="rec-frente"><path d={CRISTA_FRENTE} /></clipPath>
@@ -75,35 +73,32 @@ const CRISTA_FRENTE =
     <!-- Plano de fundo: a serra distante, comida pela neblina. -->
     <g clip-path="url(#rec-fundo)">
       <path d={CRISTA_FUNDO} fill="var(--color-serra)" opacity="0.34" />
-      <rect width="1440" height="320" fill="url(#ponto-meia)" opacity="0.20" />
     </g>
 
     <!-- Plano do meio. -->
     <g clip-path="url(#rec-meio)">
       <path d={CRISTA_MEIO} fill="var(--color-serra)" opacity="0.72" />
-      <rect width="1440" height="320" fill="url(#ponto-meia)" opacity="0.16" />
     </g>
 
     <!-- Plano da frente, e o fio carmim que marca o horizonte: o único acento
          de cor do sistema, aqui usado uma vez só. -->
     <g clip-path="url(#rec-frente)">
       <path d={CRISTA_FRENTE} fill="var(--color-serra-noite)" />
-      <rect width="1440" height="320" fill="url(#ponto-meia)" opacity="0.13" />
     </g>
     <path d={CRISTA_FRENTE} fill="none" stroke={acento} stroke-width="2.5" />
 
-    <!-- O véu do tear: desliza para a direita revelando os pontos. -->
+    <!-- O véu: desliza para a direita revelando a serra. -->
     <rect class="veu" width="1440" height="320" fill={fundo} />
   </svg>
 </div>
 
 <style>
-  .serra-tecida {
+  .silhueta-serra {
     height: var(--altura-serra);
     line-height: 0;
     background: var(--fundo-serra);
   }
-  .serra-tecida svg {
+  .silhueta-serra svg {
     display: block;
     width: 100%;
     height: 100%;
@@ -112,9 +107,9 @@ const CRISTA_FRENTE =
   /* O gesto de assinatura: 900ms, uma vez, no carregamento. */
   .veu {
     transform-origin: right center;
-    animation: tecer var(--duracao-tear) var(--ease-tear) forwards;
+    animation: revelar var(--duracao-revelar) var(--ease-revelar) forwards;
   }
-  @keyframes tecer {
+  @keyframes revelar {
     from { transform: translate3d(0, 0, 0); }
     to   { transform: translate3d(100%, 0, 0); }
   }

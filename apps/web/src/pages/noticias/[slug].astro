@@ -3,8 +3,8 @@
  * Matéria.
  *
  * A coluna de leitura é fixa em 62ch: a largura da tela não é a largura do
- * texto. A ourela tricotada acompanha a rolagem à esquerda, ancorando a
- * leitura e amarrando a página interna ao mesmo sistema da home.
+ * texto. A ourela acompanha a rolagem à esquerda, ancorando a leitura e
+ * amarrando a página interna ao mesmo sistema da home.
  */
 import Base from '../../layouts/Base.astro';
 import Carreira from '../../componentes/Carreira.astro';
@@ -53,7 +53,7 @@ const capa = arquivo(noticia.imagem, { width: 1200, quality: 76, fit: 'cover', f
       </div>
     </div>
 
-    <div class="regua-tricô" aria-hidden="true"></div>
+    <div class="regua" aria-hidden="true"></div>
 
     <div class="carreira corpo-materia">
       <div class="ourela">

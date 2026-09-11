@@ -118,8 +118,8 @@
 
   /* ── Movimento ──────────────────────────────────────────────────────────
      Uma curva para o gesto de assinatura, uma para microfeedback. */
-  --ease-tear: cubic-bezier(0.22, 0.61, 0.36, 1);
-  --duracao-tear: 900ms;
+  --ease-revelar: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --duracao-revelar: 900ms;
   --duracao-foco: 120ms;
   --duracao-faixa: 400ms;
 }
@@ -193,15 +193,16 @@ h1, h2, h3, .display {
    foco com --color-sobre-escuro, que vence esta por especificidade. */
 .sobre-serra :focus-visible { outline-color: var(--color-papel); }
 
-/* ── O ponto: motivo do sistema ──────────────────────────────────────────
-   O "V" do ponto meia. Aparece em duas escalas — no hero (grande) e na régua
-   que separa cada carreira (média). Vivia numa terceira, mínima, no fio da
-   ourela; removida a 2026-08-31 a pedido do usuário (ver .fio-ourela). É SVG
-   embutido: zero requisição. */
-.regua-tricô {
-  height: 6px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='6' viewBox='0 0 12 6'%3E%3Cpath d='M0 0.6 L3 5.4 L6 0.6 L9 5.4 L12 0.6' fill='none' stroke='%234c5a51' stroke-width='1.1' stroke-opacity='.55'/%3E%3C/svg%3E");
-  background-repeat: repeat-x;
+/* ── A régua: separador entre carreiras ──────────────────────────────────
+   Linha fina que separa o cabeçalho de página do corpo (TituloPagina.astro)
+   e, em página de detalhe (notícia, licitação, obra), o cabeçalho do texto.
+   Corrigida em 2026-09-11: era um padrão de ponto de tricô repetido
+   (.regua-tricô) — mesma correção do hero de /a-cidade, ver
+   SilhuetaSerra.astro. Virou linha sólida. */
+.regua {
+  height: 3px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--color-musgo) 30%, transparent);
 }
 .fio-ourela {
   /* Removida a 2026-08-31: o ponto tricotado que corria na vertical à
@@ -375,14 +376,15 @@ a:focus-visible .fio-foco,
   --color-serra-noite: #000000;
   --color-carmim: #064e3b;
 }
-[data-contraste='alto'] .regua-tricô,
+[data-contraste='alto'] .regua,
 [data-contraste='alto'] .fio-ourela { background-image: none; background: #000; }
 [data-contraste='alto'] .fio-ourela { width: 3px; }
 [data-contraste='alto'] :focus-visible { outline-width: 4px; }
-[data-contraste='alto'] .serra-tecida { filter: grayscale(1) contrast(2); }
+[data-contraste='alto'] .silhueta-serra { filter: grayscale(1) contrast(2); }
 /* A foto do hero da home (index.astro) precisa do mesmo tratamento que a
-   SerraTecida tinha: sem cor e com véu quase opaco, senão o fundo fotográfico
-   compete com o texto branco no modo de alto contraste (exigência do eMAG). */
+   serra desenhada tinha: sem cor e com véu quase opaco, senão o fundo
+   fotográfico compete com o texto branco no modo de alto contraste
+   (exigência do eMAG). */
 [data-contraste='alto'] .hero {
   background-image:
     linear-gradient(180deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.92) 100%),
@@ -401,7 +403,7 @@ a:focus-visible .fio-foco,
     transition-duration: 0.001ms !important;
   }
   .entra { opacity: 1; transform: none; }
-  .serra-tecida .veu { display: none; }
+  .silhueta-serra .veu { display: none; }
 }
 
 /* ── Utilitário de leitor de tela ──────────────────────────────────────── */

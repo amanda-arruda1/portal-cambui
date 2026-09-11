@@ -2,25 +2,38 @@
 
 > Documento da passada 1. Escrito **antes** de qualquer código, revisado ao fim
 > com a autocrítica registrada na última seção.
+>
+> **Corrigido em 2026-09-11.** A tese original apoiava metade do argumento na
+> malharia como "a economia que traz gente" a Cambuí — informação falsa,
+> vinda de confusão com Monte Sião e o Circuito das Malhas, município vizinho
+> (seis cidades: Albertina, Borda da Mata, Inconfidentes, Jacutinga, Monte
+> Sião e Ouro Fino — Cambuí não é uma delas). Apurado via Wikipédia e IBGE
+> Cidades depois que a usuária notou o erro. A tese abaixo foi reescrita para
+> se apoiar só no que é verificável: a serra, a estrada e o sabor. O
+> elemento-assinatura (seção 6) perdeu a textura de tricô mas manteve a
+> silhueta — que sempre foi real, traçada à mão a partir do recorte da
+> Mantiqueira vista de Cambuí, e não precisava da malharia para ser
+> específica. Histórico das seções que citavam o erro original fica marcado
+> abaixo como "revisado em 2026-09-11", para quem quiser reconstruir por que
+> a decisão mudou.
 
 ---
 
 ## 1. Tese
 
-> **Cambuí é uma cidade feita de carreiras.** As carreiras de ponto que saem das
-> malharias — a economia que traz gente de toda a região — e as carreiras de
-> montanha da Mantiqueira que fecham o horizonte são o mesmo gesto: fios
-> paralelos que, repetidos, viram forma. **O portal adota a carreira como
-> unidade de composição.** O conteúdo se organiza em faixas horizontais lidas de
-> fio a fio, nunca em quadros; e a serra que o cidadão vê da janela aparece
-> **tricotada**, ponto a ponto, no topo da página.
+> **Cambuí é uma cidade de serra.** A Mantiqueira fecha o horizonte, dá à
+> cidade o clima de altitude e o inverno de verdade, e organiza a vida ao
+> redor — de festival a safra. **O portal adota a carreira (a faixa
+> horizontal) como unidade de composição:** o conteúdo se organiza em faixas
+> lidas de fio a fio, nunca em quadros, ecoando as cristas sobrepostas da
+> serra que se veem do centro da cidade.
 
-Por que isto é de Cambuí e de nenhum outro lugar: a malha não é metáfora
-emprestada, é o setor que sustenta a cidade e a razão pela qual visitantes
-sobem a serra. E a Mantiqueira não é "montanha genérica" — é o recorte
-específico que dá à cidade o clima de altitude, o inverno e os festivais.
-Trocar Cambuí por outro município quebraria as duas metades da tese ao mesmo
-tempo.
+Por que isto é de Cambuí e de nenhum outro lugar: a Mantiqueira não é
+"montanha genérica" — é o recorte específico que dá à cidade o clima de
+altitude, o inverno e os festivais, e a silhueta do hero é traçada à mão a
+partir desse recorte real, não de um banco de imagens. Trocar Cambuí por
+outro município quebraria a tese: nenhuma outra prefeitura do Brasil vê essa
+mesma crista pela janela.
 
 **Consequência estrutural, e não só estética:** se a unidade é a carreira, a
 grade de quadradinhos com ícone e rótulo — o anti-padrão número um dos portais
@@ -81,7 +94,7 @@ público, e um salto de DNS+TLS a mais no 4G da serra.
 
 | Papel | Família | Peso do arquivo | Por quê |
 |---|---|---|---|
-| **Display** | Bricolage Grotesque (400–800, opsz 12–96) | 77 KB | Grotesca de terminais irregulares, quase cortada à mão. Lê como *feita*, não como corporativa — que é exatamente o registro da malharia. O eixo óptico deixa a manchete apertar sem um segundo arquivo. |
+| **Display** | Bricolage Grotesque (400–800, opsz 12–96) | 77 KB | Grotesca de terminais irregulares, quase cortada à mão. Lê como *feita*, não como corporativa — o registro de uma cidade de serra, não de escritório. O eixo óptico deixa a manchete apertar sem um segundo arquivo. |
 | **Corpo** | Inter (400–700, opsz 14–32) | 73 KB | Altura de x generosa e aberturas largas. É a decisão certa para um público com fatia relevante de leitores idosos em tela de celular. |
 
 **Sem terceira família, e isso é escolha.** Uma face utilitária custaria mais
@@ -125,9 +138,8 @@ serviço público é onde o cidadão se perde.
 horizontais sangradas. Dentro de cada faixa, uma grade assimétrica de duas
 trilhas:
 
-- a **ourela** (do tecido: a borda que não desfia) — trilha estreita à esquerda
-  que carrega o número da seção, o rótulo em versalete e o fio tricotado
-  vertical;
+- a **ourela** (a margem, a borda) — trilha estreita à esquerda que carrega o
+  número da seção, o rótulo em versalete e um fio vertical;
 - o **corpo** — trilha larga, com o conteúdo em **linhas de largura total**, não
   em quadros.
 
@@ -152,10 +164,10 @@ perde a margem.
 │  └────────────────────────────────────────────────────┘      │   elemento do cabeçalho
 │  Serviços   A cidade   A Prefeitura   Transparência   Notícias│
 ├══════════════════════════════════════════════════════════════┤
-│ ╱╲╱╲╱╲                    A SERRA TECIDA                     │
-│ ╱╲╱╲╱╲╱╲╱╲      (silhueta da Mantiqueira preenchida          │ ← elemento-assinatura
-│ ╱╲╱╲╱╲╱╲╱╲╱╲╱╲   com pontos de tricô; um fio carmim          │
-│ ╱╲╱╲╱╲╱╲╱╲╱╲╱╲╱╲ marca a linha do horizonte)                 │
+│ ╱╲╱╲╱╲                    A SILHUETA DA SERRA                │
+│ ╱╲╱╲╱╲╱╲╱╲      (silhueta da Mantiqueira vista de Cambuí,    │ ← elemento-assinatura
+│ ╱╲╱╲╱╲╱╲╱╲╱╲╱╲   traçada à mão; um fio carmim marca a        │
+│ ╱╲╱╲╱╲╱╲╱╲╱╲╱╲╱╲ linha do horizonte)                         │
 │                                                              │
 │   Cambuí resolve                                             │
 │   o seu dia.                                       ← display │
@@ -186,7 +198,7 @@ perde a margem.
 │ ▏  │ 24 ago · Educação  Terceira matéria                     │
 ├──────────────────────────────────────────────────────────────┤
 │ 04 │ A CIDADE                                                │
-│ ▏  │  malha · serra · inverno — faixa editorial de turismo   │
+│ ▏  │  serra · estrada · sabor — faixa editorial de turismo   │
 ├──────────────────────────────────────────────────────────────┤
 │ 05 │ TRANSPARÊNCIA E ACESSO À INFORMAÇÃO      (LAI em foco)  │
 ├══════════════════════════════════════════════════════════════┤
@@ -217,8 +229,8 @@ perde a margem.
 │ ▏ └────────────────────────────────────────────────┘         │
 │ ▏                                                            │
 │ ▏   Corpo em coluna de 62ch — medida de leitura, não a       │
-│ ▏   largura da tela. A ourela à esquerda acompanha a rolagem │
-│ ▏   com o fio tricotado, ancorando a leitura.                │
+│ ▏   largura da tela. A ourela à esquerda acompanha a rolagem,│
+│ ▏   ancorando a leitura.                                     │
 │ ▏                                                            │
 │ ▏ ──────────────────────────────────────────────────────     │
 │ ▏  ← Voltar     Compartilhar     Falar com esta secretaria   │
@@ -236,7 +248,7 @@ nunca decoração. Um momento orquestrado, dois microfeedbacks — e nada mais.
 
 | # | Movimento | Propósito | Curva | Duração |
 |---|---|---|---|---|
-| 1 | **A serra tricota** — no primeiro carregamento, os pontos da silhueta se revelam da esquerda para a direita, como carreira saindo do tear | Dar um instante de identidade, uma vez só, sem atrasar leitura nenhuma | `cubic-bezier(.22,.61,.36,1)` | 900ms |
+| 1 | **A serra se revela** — no primeiro carregamento, a silhueta aparece da esquerda para a direita, como um véu que desliza | Dar um instante de identidade, uma vez só, sem atrasar leitura nenhuma | `cubic-bezier(.22,.61,.36,1)` | 900ms |
 | 2 | **Fio de foco** — foco e hover puxam um sublinhado carmim que cresce do início da linha | Sinal de foco visível e com personalidade, sem `outline: none` | `ease-out` | 120ms |
 | 3 | **Entrada da faixa** — cada banda entra com 12px de deslocamento e opacidade, escalonada em 60ms | Faz a rolagem ter ritmo de carreira; acontece uma vez por elemento | `ease-out` | 400ms |
 
@@ -250,29 +262,34 @@ não é sugestão.
 
 ---
 
-## 6. Elemento-assinatura — "A Serra Tecida"
+## 6. Elemento-assinatura — "A Silhueta da Serra"
 
-O único componente pelo qual a página será lembrada, e onde toda a ousadia do
-projeto está concentrada.
+> **Revisado em 2026-09-11.** Chamava-se "A Serra Tecida": a silhueta vinha
+> preenchida com um padrão de ponto de tricô, e a seção inteira argumentava
+> que isso "amarrava a paisagem à malharia" — a economia que, apurado depois,
+> não é a de Cambuí. A silhueta em si sempre foi real (traçada à mão a partir
+> do recorte da Mantiqueira vista da cidade); só a textura saiu. Descrição
+> abaixo já reflete o componente corrigido (`SilhuetaSerra.astro`).
 
-**O que é:** a silhueta do horizonte da Mantiqueira, preenchida com **pontos de
-tricô** — o "V" do ponto meia, repetido em carreiras. Três camadas de
-profundidade com opacidade decrescente lêem como serra sob neblina. Uma única
-carreira em carmim marca a linha do horizonte.
+O componente de abertura da página "A cidade", e onde a identidade visual do
+portal respira mais solta.
 
-**Por que funciona:** é a tese inteira em uma imagem. A montanha que o cidadão
-vê da janela, desenhada com o ponto que a cidade produz. Não é ilustração
-comprada nem foto de banco de imagens — não existe em nenhum outro portal
-porque não descreve nenhum outro lugar.
+**O que é:** a silhueta do horizonte da Mantiqueira vista de Cambuí, traçada à
+mão. Três camadas de profundidade com opacidade decrescente lêem como serra
+sob neblina. Um fio em carmim marca a linha do horizonte.
 
-**Como se sustenta tecnicamente:** um `<pattern>` SVG de um único ponto,
-azulejado dentro de uma silhueta recortada por `clipPath`. O peso é o de um
-ponto, não o de mil. Sem canvas, sem biblioteca, sem requisição extra —
-embutido no HTML e servido junto com a página.
+**Por que funciona:** a montanha que o cidadão vê da janela, e não uma
+ilustração comprada nem foto de banco de imagens — a crista é o recorte
+específico de Cambuí, não uma montanha genérica que serviria a qualquer
+prefeitura de serra.
 
-**Como vira sistema, e não enfeite:** o mesmo ponto, reduzido, é o fio vertical
-da ourela em toda página interna, e a régua que separa cada carreira. O motivo
-aparece três vezes em escalas diferentes; quem vê uma vez reconhece as outras.
+**Como se sustenta tecnicamente:** três `<path>` SVG recortados por
+`clipPath`, sem canvas, sem biblioteca, sem requisição extra — embutido no
+HTML e servido junto com a página.
+
+**O véu:** no primeiro carregamento, um véu da cor do fundo desliza para a
+direita revelando a serra — o único movimento de assinatura do sistema (ver
+seção 5). Desliga por completo com `prefers-reduced-motion`.
 
 ---
 
@@ -314,9 +331,14 @@ Canguava, Cohab, Colinas do Itaim…). Um cidadão de outra cidade não reconhec
 essa lista; um de Cambuí reconhece a própria rua.
 
 **(c) O hero era "uma imagem bonita da serra".** Serra genérica serve para
-qualquer cidade de montanha do Brasil. *Correção:* a serra passou a ser
-**tricotada**, amarrando a paisagem à malharia. É a junção das duas metades que
-torna a imagem intransferível.
+qualquer cidade de montanha do Brasil. *Correção, na época:* a serra passou a
+ser **tricotada**, amarrando a paisagem à malharia — raciocínio que **revelou-se
+falho** em 2026-09-11 (a malharia não é a economia de Cambuí; ver a nota no
+topo do documento e a seção 6). O que continuou de pé, e que já bastava para
+tornar a imagem intransferível: a crista é o recorte *específico* da
+Mantiqueira vista de Cambuí, traçado à mão, não uma montanha genérica de banco
+de imagens. A textura de tricô nunca foi necessária para isso — só parecia
+ser.
 
 *Segunda pergunta: o que ainda é genérico e eu aceito?* A estrutura de faixas
 horizontais e a coluna de leitura de 62ch são boas práticas transferíveis — e
@@ -340,13 +362,12 @@ tela a quem só quer pagar o IPTU.
 servindo à tese. Se não achar nenhum, procurar de novo.*
 
 **Removido: a miniatura vazia da listagem de notícias.** Matéria sem foto
-recebia um retângulo com a textura de tricô no lugar da imagem, para manter o
-alinhamento da lista. Ao ver a lista pronta, ficou evidente o problema: era
-decoração fingindo conteúdo, e fazia a notícia sem foto parecer **quebrada** —
-como se a imagem tivesse falhado ao carregar. Pior, gastava o motivo do tricô
-num lugar onde ele não diz nada: o ponto significa alguma coisa na serra do
-hero e na régua que separa seções; num buraco de miniatura, significa "aqui
-faltou algo".
+recebia um retângulo com a textura de tricô (então usada também na serra do
+hero e na régua que separa seções — ambas corrigidas em 2026-09-11, ver nota
+no topo do documento) no lugar da imagem, para manter o alinhamento da lista.
+Ao ver a lista pronta, ficou evidente o problema: era decoração fingindo
+conteúdo, e fazia a notícia sem foto parecer **quebrada** — como se a imagem
+tivesse falhado ao carregar.
 
 Sem ela, o texto ocupa a largura inteira da linha e a lista fica mais legível.
 Menos elemento, mais leitura.
@@ -355,10 +376,11 @@ Menos elemento, mais leitura.
 
 - *Os números de seção na ourela* — servem à tese: a carreira numerada é o que
   dá ritmo de leitura à rolagem, e some no celular, onde não caberia.
-- *A régua tricotada entre o cabeçalho de página e o corpo* — é o motivo em
-  escala média, a peça que amarra página interna e home no mesmo sistema.
-- *O véu do tear* — é o único movimento de assinatura, dura 900ms, roda uma vez
-  e desaparece por completo com `prefers-reduced-motion`.
+- *A régua entre o cabeçalho de página e o corpo* — a peça que amarra página
+  interna e home no mesmo sistema (perdeu a textura de tricô em 2026-09-11;
+  hoje é uma linha sólida, ver seção 6).
+- *O véu que revela a serra* — é o único movimento de assinatura, dura 900ms,
+  roda uma vez e desaparece por completo com `prefers-reduced-motion`.
 
 **O que eu removeria a seguir, se precisasse cortar mais:** o `<span>` com o
 número dentro de cada linha de tarefa na home. Ele é bonito e reforça a
@@ -406,7 +428,7 @@ próximo da fila.
 | `dados/instituicional.ts` | **CNPJ** da Prefeitura; e-mail institucional; confirmação do horário; perfis oficiais de redes sociais |
 | `dados/cidade.ts` | **Calendário real da coleta** por bairro (hoje a interface diz "a confirmar" em vez de inventar dia); lista completa de bairros e distritos; link direto da emissão da guia de IPTU |
 | `pages/privacidade.astro` | **Encarregado de dados (DPO)** — nome e canal, exigidos pela LGPD |
-| `pages/a-cidade.astro` | Altitude e área oficiais; fotografias reais da serra, das malharias e do centro |
+| `pages/a-cidade.astro` | Altitude e área oficiais; fotografias reais da serra, do comércio e do centro |
 | `pages/secretarias/index.astro` | Organograma, competências e conselhos municipais |
 | Marca | Vetor do brasão (.svg) — hoje só existe o PNG |
 
