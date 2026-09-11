@@ -1,0 +1,204 @@
+---
+/**
+ * Telefones úteis.
+ *
+ * Lista telefônica municipal além das secretarias (que já têm telefone,
+ * e-mail e endereço no próprio cadastro — ver /secretarias): emergências,
+ * escolas, unidades de saúde, assistência social, departamentos e diversos.
+ * Migrada do site antigo em 2026-09-11, dado real, sem inventar nada.
+ *
+ * Mesmo padrão de /perguntas-frequentes: agrupado por categoria, acordeão
+ * sem JavaScript (aqui, lista simples em vez de <details> — telefone é pra
+ * escanear, não pra ler e recolher), filtro de texto por conveniência.
+ */
+import Base from '../layouts/Base.astro';
+import Carreira from '../componentes/Carreira.astro';
+import EstadoVazio from '../componentes/EstadoVazio.astro';
+import TituloPagina from '../componentes/TituloPagina.astro';
+import { telefonesUteis } from '../lib/conteudo';
+import type { CategoriaTelefoneUtil, TelefoneUtil } from '../lib/tipos';
+
+const { dados, indisponivel } = await telefonesUteis();
+
+const ROTULO_CATEGORIA: Record<CategoriaTelefoneUtil, string> = {
+  emergencias: 'Emergências',
+  escolas_creches: 'Escolas e Creches',
+  unidades_saude: 'Unidades de Saúde',
+  assistencia_social: 'Assistência Social',
+  departamentos: 'Departamentos',
+  diversos: 'Diversos',
+};
+const ORDEM_CATEGORIA: CategoriaTelefoneUtil[] = ['emergencias', 'departamentos', 'unidades_saude', 'assistencia_social', 'escolas_creches', 'diversos'];
+
+interface Grupo { categoria: CategoriaTelefoneUtil; rotulo: string; itens: TelefoneUtil[] }
+
+const grupos = ORDEM_CATEGORIA
+  .map((categoria) => ({ categoria, rotulo: ROTULO_CATEGORIA[categoria], itens: dados.filter((t) => t.categoria === categoria) }))
+  .filter((g) => g.itens.length > 0);
+
+/** Só dígitos, para o link tel: funcionar mesmo com telefone de dois números
+ *  separados por "/" ou similar — usa só o primeiro. */
+function telHref(telefone: string): string {
+  const primeiro = telefone.split('/')[0];
+  return `tel:+55${primeiro.replace(/\D/g, '')}`;
+}
+---
+
+<Base
+  titulo="Telefones úteis"
+  descricao="Telefones e e-mails de emergências, escolas, unidades de saúde, assistência social e departamentos da Prefeitura de Cambuí."
+>
+  <TituloPagina
+    rotulo="Contato"
+    titulo="Telefones úteis"
+    chamada="Emergências, escolas, unidades de saúde, assistência social e departamentos — telefone, e-mail e endereço de cada um. Secretarias têm página própria em Estrutura administrativa."
+    trilha={[{ rotulo: 'Telefones úteis' }]}
+  />
+
+  {
+    dados.length === 0 ? (
+      <Carreira numero="01" rotulo="Telefones" fundo="papel">
+        <EstadoVazio indisponivel={indisponivel} assunto="telefones úteis" />
+      </Carreira>
+    ) : (
+      <Carreira numero="01" rotulo={`${dados.length} contato${dados.length === 1 ? '' : 's'}`} fundo="papel">
+        <div class="busca sem-impressao">
+          <label for="filtro-tel" class="t-rotulo etiqueta">Filtrar por nome</label>
+          <input
+            type="search"
+            id="filtro-tel"
+            autocomplete="off"
+            placeholder="Digite um nome, ex.: creche, CRAS, posto de saúde…"
+          />
+        </div>
+
+        <nav aria-label="Categorias" class="sem-impressao">
+          <ul class="filtros">
+            {grupos.map((g) => (
+              <li><a href={`#${g.categoria}`} class="atalho">{g.rotulo}</a></li>
+            ))}
+          </ul>
+        </nav>
+
+        <div id="tel-sem-resultado" class="vazio-filtro" hidden>
+          <p class="t-sub">Nenhum contato encontrado.</p>
+          <p class="t-lead">Tente outra palavra ou limpe o filtro.</p>
+        </div>
+
+        {
+          grupos.map((grupo) => (
+            <section id={grupo.categoria} class="grupo entra" data-grupo-tel>
+              <h2 class="t-secao titulo-grupo">{grupo.rotulo}</h2>
+              <ul class="lista">
+                {grupo.itens.map((t) => (
+                  <li class="item-tel" data-nome={t.nome.toLowerCase()}>
+                    <p class="t-sub nome">{t.nome}</p>
+                    {t.endereco && <p class="endereco">{t.endereco}</p>}
+                    <div class="contatos">
+                      {t.telefone && (
+                        <a href={telHref(t.telefone)} class="contato">
+                          <svg width="15" height="15" viewBox="0 0 17 17" fill="none" aria-hidden="true"><path d="M17 1.42v2.84a.71.71 0 0 1-.71.71.71.71 0 0 1-.71-.71V2.44l-3.76 3.74a.71.71 0 0 1-1-.99l3.76-3.74h-1.82a.71.71 0 0 1 0-1.42h2.83A.71.71 0 0 1 17 1.42Z" fill="currentColor"/><path d="M5.72 8.52a12.3 12.3 0 0 0 2.76 2.76l.92-1.28a.71.71 0 0 1 .93-.2c.96.5 2.02.82 3.13.9a.71.71 0 0 1 .65.7v2.84a.71.71 0 0 1-.71.71C6.72 15.07 1.93 10.28 1.93 3.5a.71.71 0 0 1 .71-.71H5.48a.71.71 0 0 1 .7.65c.09 1.11.4 2.17.9 3.13a.71.71 0 0 1-.19.93l-1.17.92Z" fill="currentColor"/></svg>
+                          {t.telefone}
+                        </a>
+                      )}
+                      {t.email && (
+                        <a href={`mailto:${t.email}`} class="contato">
+                          <svg width="15" height="15" viewBox="0 0 20 16" fill="none" aria-hidden="true"><rect x="1" y="1" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="m2 2.5 8 6.5 8-6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                          {t.email}
+                        </a>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))
+        }
+      </Carreira>
+    )
+  }
+</Base>
+
+<script>
+  const campo = document.getElementById('filtro-tel') as HTMLInputElement | null;
+  const itens = Array.from(document.querySelectorAll<HTMLElement>('.item-tel'));
+  const grupos = Array.from(document.querySelectorAll<HTMLElement>('[data-grupo-tel]'));
+  const semResultado = document.getElementById('tel-sem-resultado');
+
+  campo?.addEventListener('input', () => {
+    const termo = campo.value.trim().toLowerCase();
+
+    itens.forEach((item) => {
+      item.hidden = !!termo && !(item.dataset.nome ?? '').includes(termo);
+    });
+
+    let algumVisivel = false;
+    grupos.forEach((grupo) => {
+      const visivel = Array.from(grupo.querySelectorAll<HTMLElement>('.item-tel')).some((i) => !i.hidden);
+      grupo.hidden = !visivel;
+      if (visivel) algumVisivel = true;
+    });
+
+    if (semResultado) semResultado.hidden = algumVisivel || !termo;
+  });
+</script>
+
+<style>
+  .busca { max-width: 28rem; margin-bottom: 1.75rem; }
+  .etiqueta { display: block; color: var(--color-musgo); margin-bottom: 0.4rem; }
+  .busca input {
+    width: 100%;
+    font: inherit;
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+    min-height: 2.75rem;
+    border: 2px solid var(--color-serra);
+    border-radius: 10px;
+    background: var(--color-papel);
+    color: var(--color-tinta);
+  }
+
+  .filtros { list-style: none; margin: 0 0 2rem; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .atalho {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: 0.4rem 0.9rem;
+    border: 2px solid color-mix(in srgb, var(--color-serra) 30%, transparent);
+    border-radius: 999px;
+    text-decoration: none;
+    color: var(--color-serra);
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+  .atalho:hover { background: var(--color-serra); color: var(--color-papel); border-color: var(--color-serra); }
+
+  .vazio-filtro { padding: 1.5rem 0; color: var(--color-musgo); }
+  .vazio-filtro .t-sub { color: var(--color-serra); }
+
+  .grupo + .grupo { margin-top: 2.75rem; }
+  .titulo-grupo { color: var(--color-serra); margin-bottom: 1rem; }
+
+  .lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
+  .item-tel {
+    border: 1px solid var(--color-prata);
+    border-radius: 12px;
+    background: var(--color-papel);
+    padding: 1rem 1.25rem;
+  }
+  .nome { font-family: var(--font-display); letter-spacing: -0.01em; }
+  .endereco { margin-top: 0.3rem; color: var(--color-musgo); font-size: 0.875rem; }
+
+  .contatos { margin-top: 0.6rem; display: grid; gap: 0.4rem; }
+  .contato {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--color-serra);
+    text-decoration: none;
+    font-size: 0.9375rem;
+    word-break: break-word;
+  }
+  .contato svg { flex: none; opacity: 0.8; }
+  .contato:hover { color: var(--color-carmim); text-decoration: underline; }
+</style>

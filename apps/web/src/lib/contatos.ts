@@ -9,9 +9,19 @@
  * `contato.astro`/`secretarias/index.astro`, para não mudar o que já
  * funciona nessas páginas.
  */
-import { secretarias } from './conteudo';
+import { secretarias, telefonesUteis } from './conteudo';
 import type { RegistroContato } from './contatos-busca';
+import type { CategoriaTelefoneUtil } from './tipos';
 import { EMAIL_CONTATO, HORARIO_ATENDIMENTO, MUNICIPIO, TELEFONES } from '../dados/instituicional';
+
+const ROTULO_CATEGORIA_TELEFONE: Record<CategoriaTelefoneUtil, string> = {
+  emergencias: 'Emergências',
+  escolas_creches: 'Escolas e Creches',
+  unidades_saude: 'Unidades de Saúde',
+  assistencia_social: 'Assistência Social',
+  departamentos: 'Departamentos',
+  diversos: 'Diversos',
+};
 
 const VALIDADE_MS = 60_000;
 let cache: { em: number; dados: RegistroContato[] } | null = null;
@@ -36,7 +46,7 @@ export async function registrosDeContato(): Promise<{ dados: RegistroContato[]; 
   if (cache && Date.now() - cache.em < VALIDADE_MS) return { dados: cache.dados, indisponivel: false };
 
   const geral = contatoGeral();
-  const r = await secretarias();
+  const [r, t] = await Promise.all([secretarias(), telefonesUteis()]);
   if (r.indisponivel) {
     // Falha silenciosa: o assistente perde as secretarias, mas o contato
     // geral (estático, sem CMS) continua funcionando.
@@ -54,7 +64,22 @@ export async function registrosDeContato(): Promise<{ dados: RegistroContato[]; 
     palavrasChave: s.palavras_chave,
   }));
 
-  const dados = [...geral, ...doCms];
+  // Telefones úteis (emergências, escolas, saúde, assistência social,
+  // departamentos, diversos) — mesma coleção que alimenta /telefones. Só
+  // entra se a consulta funcionar; indisponibilidade dela não derruba o
+  // resto do assistente (mesmo espírito da falha silenciosa acima).
+  const doTelefones: RegistroContato[] = t.indisponivel ? [] : t.dados.map((tel) => ({
+    id: `telefone-${tel.id}`,
+    titulo: tel.nome,
+    subtitulo: ROTULO_CATEGORIA_TELEFONE[tel.categoria],
+    telefone: tel.telefone,
+    email: tel.email,
+    horario: null,
+    destino: `/telefones#${tel.categoria}`,
+    palavrasChave: ROTULO_CATEGORIA_TELEFONE[tel.categoria],
+  }));
+
+  const dados = [...geral, ...doCms, ...doTelefones];
   cache = { em: Date.now(), dados };
   return { dados, indisponivel: false };
 }

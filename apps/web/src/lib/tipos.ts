@@ -130,3 +130,17 @@ export interface PerguntaFrequente {
   secretaria: { nome: string; slug: string } | null;
   ordem: number | null;
 }
+
+export type CategoriaTelefoneUtil =
+  | 'emergencias' | 'escolas_creches' | 'unidades_saude' | 'assistencia_social' | 'departamentos' | 'diversos';
+
+export interface TelefoneUtil {
+  id: string;
+  status: Situacao;
+  nome: string;
+  categoria: CategoriaTelefoneUtil;
+  endereco: string | null;
+  telefone: string | null;
+  email: string | null;
+  ordem: number | null;
+}

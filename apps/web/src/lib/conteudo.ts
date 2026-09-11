@@ -7,7 +7,7 @@
  * vaze rascunho de secretaria.
  */
 import { listar, umPor } from './directus';
-import type { CategoriaPatrimonio, Documento, DocumentoPatrimonio, LinkUtil, Noticia, Pagina, PerguntaFrequente, Secretaria, Selo, Servico } from './tipos';
+import type { CategoriaPatrimonio, Documento, DocumentoPatrimonio, LinkUtil, Noticia, Pagina, PerguntaFrequente, Secretaria, Selo, Servico, TelefoneUtil } from './tipos';
 
 const PUBLICADO = JSON.stringify({ status: { _eq: 'publicado' } });
 
@@ -113,6 +113,19 @@ export function perguntasFrequentes() {
     fields: 'id,status,pergunta,resposta,categoria,ordem,secretaria.nome,secretaria.slug',
     filter: PUBLICADO,
     sort: 'categoria,ordem,pergunta',
+    limit: 300,
+  });
+}
+
+/** Telefones úteis além das secretarias (que já têm telefone/email próprios
+ *  no cadastro): emergências, escolas, unidades de saúde, assistência
+ *  social, departamentos e diversos. Agrupados por categoria na própria
+ *  página — mesmo padrão de 'perguntasFrequentes'. */
+export function telefonesUteis() {
+  return listar<TelefoneUtil>('telefones_uteis', {
+    fields: 'id,status,nome,categoria,endereco,telefone,email,ordem',
+    filter: PUBLICADO,
+    sort: 'categoria,ordem,nome',
     limit: 300,
   });
 }

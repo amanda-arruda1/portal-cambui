@@ -454,6 +454,52 @@
           "nota": "Ordem de exibição dentro da categoria. Menor aparece primeiro."
         }
       ]
+    },
+    {
+      "nome": "telefones_uteis",
+      "rotulo": {
+        "singular": "Telefone útil",
+        "plural": "Telefones úteis"
+      },
+      "icone": "call",
+      "nota": "Lista telefônica municipal além das secretarias (que já têm telefone/email próprios): emergências, escolas, unidades de saúde, assistência social, departamentos e diversos.",
+      "campos": [
+        {
+          "campo": "nome",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "categoria",
+          "tipo": "string",
+          "obrigatorio": true,
+          "opcoes": [
+            "emergencias",
+            "escolas_creches",
+            "unidades_saude",
+            "assistencia_social",
+            "departamentos",
+            "diversos"
+          ]
+        },
+        {
+          "campo": "endereco",
+          "tipo": "string"
+        },
+        {
+          "campo": "telefone",
+          "tipo": "string"
+        },
+        {
+          "campo": "email",
+          "tipo": "string"
+        },
+        {
+          "campo": "ordem",
+          "tipo": "integer",
+          "nota": "Ordem de exibição dentro da categoria."
+        }
+      ]
     }
   ]
 }
