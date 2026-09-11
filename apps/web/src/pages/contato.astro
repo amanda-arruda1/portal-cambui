@@ -4,7 +4,7 @@ import Carreira from '../componentes/Carreira.astro';
 import LinhaTarefa from '../componentes/LinhaTarefa.astro';
 import TituloPagina from '../componentes/TituloPagina.astro';
 import { secretarias } from '../lib/conteudo';
-import { linkMapa } from '../lib/formato';
+import { linkMapa, linkTelefone, linkWhatsapp } from '../lib/formato';
 import {
   EMAIL_CONTATO,
   ENDERECO,
@@ -48,11 +48,19 @@ const mapaSede = ENDERECO ? linkMapa(`${ENDERECO.logradouro}, ${ENDERECO.numero}
           )}
           {TELEFONES.length > 0 && (
             <p class="contatos">
-              {TELEFONES.map((t) => (
-                <a href={`tel:+55${t.numero.replace(/\D/g, '')}`}>
-                  <span class="fio-foco">{t.rotulo ? `${t.rotulo}: ${t.numero}` : t.numero}</span>
-                </a>
-              ))}
+              {TELEFONES.map((t) => {
+                const rotuloTexto = t.rotulo ? `${t.rotulo}: ${t.numero}` : t.numero;
+                const whatsapp = linkWhatsapp(t.numero);
+                return whatsapp ? (
+                  <a href={whatsapp} target="_blank" rel="noopener noreferrer">
+                    <span class="fio-foco">{rotuloTexto}</span>
+                  </a>
+                ) : (
+                  <a href={linkTelefone(t.numero)}>
+                    <span class="fio-foco">{rotuloTexto}</span>
+                  </a>
+                );
+              })}
             </p>
           )}
           {EMAIL_CONTATO && (

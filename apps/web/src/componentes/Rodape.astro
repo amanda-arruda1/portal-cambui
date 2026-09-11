@@ -10,6 +10,7 @@
 import { CNPJ, ENDERECO, EMAIL_CONTATO, HORARIO_ATENDIMENTO, MUNICIPIO, TELEFONES, AUTARQUIAS } from '../dados/instituicional';
 import { selos as selosDoCms } from '../lib/conteudo';
 import { arquivo } from '../lib/directus';
+import { linkTelefone, linkWhatsapp } from '../lib/formato';
 
 const ano = new Date().getFullYear();
 
@@ -39,9 +40,14 @@ const { dados: selos } = await selosDoCms();
 
             {TELEFONES.length > 0 && (
               <p class="contatos">
-                {TELEFONES.map((t) => (
-                  <a href={`tel:+55${t.numero.replace(/\D/g, '')}`}><span class="fio-foco">{t.numero}</span></a>
-                ))}
+                {TELEFONES.map((t) => {
+                  const whatsapp = linkWhatsapp(t.numero);
+                  return whatsapp ? (
+                    <a href={whatsapp} target="_blank" rel="noopener noreferrer"><span class="fio-foco">{t.numero}</span></a>
+                  ) : (
+                    <a href={linkTelefone(t.numero)}><span class="fio-foco">{t.numero}</span></a>
+                  );
+                })}
               </p>
             )}
             {EMAIL_CONTATO && <p class="contatos"><a href={`mailto:${EMAIL_CONTATO}`}><span class="fio-foco">{EMAIL_CONTATO}</span></a></p>}
