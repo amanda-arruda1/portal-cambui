@@ -2,10 +2,14 @@
 /**
  * Telefones úteis.
  *
- * Lista telefônica municipal além das secretarias (que já têm telefone,
- * e-mail e endereço no próprio cadastro — ver /secretarias): emergências,
- * escolas, unidades de saúde, assistência social, departamentos e diversos.
- * Migrada do site antigo em 2026-09-11, dado real, sem inventar nada.
+ * Lista telefônica municipal: secretarias, emergências, escolas, unidades de
+ * saúde, assistência social, departamentos e diversos. Migrada do site
+ * antigo em 2026-09-11, dado real, sem inventar nada.
+ *
+ * As secretarias entraram aqui em 2026-09-11: o site antigo listava todas
+ * juntas na mesma página de telefones, e separar deixava a secretaria sem
+ * esse ponto de entrada — cada uma continua tendo página própria (endereço,
+ * biografia do responsável etc.), esta lista só aponta pra lá.
  *
  * Mesmo padrão de /perguntas-frequentes: agrupado por categoria, acordeão
  * sem JavaScript (aqui, lista simples em vez de <details> — telefone é pra
@@ -15,11 +19,15 @@ import Base from '../layouts/Base.astro';
 import Carreira from '../componentes/Carreira.astro';
 import EstadoVazio from '../componentes/EstadoVazio.astro';
 import TituloPagina from '../componentes/TituloPagina.astro';
-import { telefonesUteis } from '../lib/conteudo';
+import { secretarias, telefonesUteis } from '../lib/conteudo';
 import { linkMapa, linkTelefone, linkWhatsapp, numerosTelefone } from '../lib/formato';
-import type { CategoriaTelefoneUtil, TelefoneUtil } from '../lib/tipos';
+import type { CategoriaTelefoneUtil } from '../lib/tipos';
 
-const { dados, indisponivel } = await telefonesUteis();
+const [{ dados: dadosTelefones, indisponivel: telefonesIndisponivel }, { dados: dadosSecretarias, indisponivel: secretariasIndisponivel }] = await Promise.all([
+  telefonesUteis(),
+  secretarias(),
+]);
+const indisponivel = telefonesIndisponivel || secretariasIndisponivel;
 
 const ROTULO_CATEGORIA: Record<CategoriaTelefoneUtil, string> = {
   emergencias: 'Emergências',
@@ -31,22 +39,49 @@ const ROTULO_CATEGORIA: Record<CategoriaTelefoneUtil, string> = {
 };
 const ORDEM_CATEGORIA: CategoriaTelefoneUtil[] = ['emergencias', 'departamentos', 'unidades_saude', 'assistencia_social', 'escolas_creches', 'diversos'];
 
-interface Grupo { categoria: CategoriaTelefoneUtil; rotulo: string; itens: TelefoneUtil[] }
+/** Forma comum pra secretaria e telefone útil caberem na mesma lista — a
+ *  secretaria ganha `destino` (link pra página própria, com mais detalhe). */
+interface ItemLista {
+  nome: string;
+  endereco: string | null;
+  telefone: string | null;
+  email: string | null;
+  destino?: string;
+}
 
-const grupos = ORDEM_CATEGORIA
-  .map((categoria) => ({ categoria, rotulo: ROTULO_CATEGORIA[categoria], itens: dados.filter((t) => t.categoria === categoria) }))
-  .filter((g) => g.itens.length > 0);
+interface Grupo { categoria: string; rotulo: string; itens: ItemLista[] }
+
+const grupoSecretarias: Grupo = {
+  categoria: 'secretarias',
+  rotulo: 'Secretarias',
+  itens: dadosSecretarias.map((s) => ({
+    nome: s.nome,
+    endereco: s.endereco,
+    telefone: s.telefone,
+    email: s.email,
+    destino: `/secretarias/${s.slug}`,
+  })),
+};
+
+const dados = [...grupoSecretarias.itens, ...dadosTelefones];
+
+const grupos: Grupo[] = [
+  grupoSecretarias,
+  ...ORDEM_CATEGORIA
+    .map((categoria) => ({ categoria, rotulo: ROTULO_CATEGORIA[categoria], itens: dadosTelefones.filter((t) => t.categoria === categoria) }))
+    .filter((g) => g.itens.length > 0),
+].filter((g) => g.itens.length > 0);
 
 ---
 
 <Base
   titulo="Telefones úteis"
-  descricao="Telefones e e-mails de emergências, escolas, unidades de saúde, assistência social e departamentos da Prefeitura de Cambuí."
+  descricao="Telefones e e-mails das secretarias, emergências, escolas, unidades de saúde, assistência social e departamentos da Prefeitura de Cambuí."
 >
   <TituloPagina
     rotulo="Contato"
     titulo="Telefones úteis"
-    chamada="Emergências, escolas, unidades de saúde, assistência social e departamentos — telefone, e-mail e endereço de cada um. Secretarias têm página própria em Estrutura administrativa."
+    chamada="Secretarias, emergências, escolas, unidades de saúde, assistência social e departamentos — telefone, e-mail e endereço de cada um."
     trilha={[{ rotulo: 'Telefones úteis' }]}
   />
 
@@ -124,6 +159,11 @@ const grupos = ORDEM_CATEGORIA
                         </a>
                       )}
                     </div>
+                    {t.destino && (
+                      <a href={t.destino} class="ver-mais">
+                        <span class="fio-foco">Ver secretaria</span> <span aria-hidden="true">→</span>
+                      </a>
+                    )}
                   </li>
                   );
                 })}
@@ -226,4 +266,16 @@ const grupos = ORDEM_CATEGORIA
   }
   .contato svg { flex: none; opacity: 0.8; }
   .contato:hover { color: var(--color-carmim); text-decoration: underline; }
+
+  .ver-mais {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.75rem;
+    color: var(--color-carmim);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    text-decoration: none;
+  }
+  .ver-mais:hover { text-decoration: underline; }
 </style>
