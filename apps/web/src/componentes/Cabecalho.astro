@@ -94,8 +94,13 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
           <!-- brasao.png é um LOCKUP horizontal (1126×510) com o texto em
                branco, feito para fundo escuro: usado como quadrado ficava
                esmagado, e o texto some sobre a neblina. Aqui entra só o
-               símbolo, recortado do original e já quadrado. -->
-          <img src="/brasao-simbolo.png" alt="" width="44" height="44" decoding="async" />
+               símbolo, recortado do original e já quadrado. Aumentado de
+               44 para 56px em 2026-09-10, a pedido do usuário: precisava
+               ficar mais visível e na altura das duas linhas do nome
+               ("Prefeitura de Cambuí" + "Minas Gerais"), que juntas somam
+               algo perto disso. Fonte original é 480×480, sobra resolução
+               de sobra pro tamanho maior. -->
+          <img src="/brasao-simbolo.png" alt="" width="56" height="56" decoding="async" />
           <span class="nomes">
             <strong>Prefeitura de {MUNICIPIO.nome}</strong>
             <span class="t-rotulo uf">Minas Gerais</span>
@@ -247,8 +252,8 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
   .topo { padding-top: clamp(0.5rem, 2.5vw, 0.9rem); }
   .linha-topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: clamp(0.35rem, 2vw, 0.75rem) 1.5rem; }
 
-  .marca { display: flex; align-items: center; gap: 0.7rem; text-decoration: none; color: inherit; }
-  .marca img { display: block; }
+  .marca { display: flex; align-items: center; gap: 0.85rem; text-decoration: none; color: inherit; }
+  .marca img { display: block; flex: none; }
   .nomes { display: flex; flex-direction: column; line-height: 1.15; }
   /* Nome do município — aumentado a pedido do usuário em 2026-09-02 (era
      1.15rem/0.8125rem). Ganha mais peso visual porque um brasão novo está a
