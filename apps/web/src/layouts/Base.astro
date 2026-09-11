@@ -94,10 +94,22 @@ const canonica = new URL(Astro.url.pathname, SITE.urlPublica).href;
     <AvisoCookies />
     <AssistenteContatos />
 
+    <noscript><style>.entra { opacity: 1 !important; transform: none !important; }</style></noscript>
+
     <script>
       /* Entrada das faixas ao rolar. Uma vez por elemento, e só se a pessoa
          não pediu para reduzir movimento — a checagem é feita aqui e não só no
-         CSS porque, sem ela, o observador ainda rodaria à toa. */
+         CSS porque, sem ela, o observador ainda rodaria à toa.
+
+         Rede de segurança (2026-09-11): o CSS de .entra parte de opacity:0 —
+         se o JavaScript não rodar por qualquer motivo (bloqueador mais
+         agressivo, erro em outro script da página, navegador com suporte
+         parcial a IntersectionObserver), o conteúdo fica invisível PARA
+         SEMPRE, mesmo estando ali. Reportado em produção: página de
+         Competências (texto longo, /estrutura-administrativa) sumia no Opera
+         e aparecia no Brave. Por isso, o timeout abaixo força .visivel em
+         qualquer .entra que ainda não tenha aparecido, decorrido tempo
+         suficiente — decoração nunca pode custar o conteúdo. */
       const reduzir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const alvos = document.querySelectorAll('.entra');
 
@@ -117,6 +129,11 @@ const canonica = new URL(Astro.url.pathname, SITE.urlPublica).href;
           { rootMargin: '0px 0px -12% 0px', threshold: 0.05 },
         );
         alvos.forEach((el) => observador.observe(el));
+
+        setTimeout(() => {
+          alvos.forEach((el) => el.classList.add('visivel'));
+          observador.disconnect();
+        }, 2500);
       }
     </script>
   </body>
