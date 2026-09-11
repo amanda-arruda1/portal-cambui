@@ -86,6 +86,11 @@ const DESCARTAVEIS = new Set([
   'falar', 'ligar', 'ligo', 'quero', 'gostaria', 'preciso', 'saber',
   'ache', 'achar', 'encontrar', 'encontro', 'buscar', 'busca', 'procurar', 'procuro', 'pesquisar',
   'departamento', 'departamentos', 'secretaria', 'secretarias', 'setor', 'setores', 'area', 'orgao',
+  // Achadas testando o assistente com o dado real de telefones úteis
+  // (2026-09-11): "onde FICA a secretaria de educação" reprovava a pergunta
+  // inteira porque "fica" não bate em nada — mesmo raciocínio de "telefone"/
+  // "departamento" acima.
+  'fica', 'ficam', 'fico', 'localiza', 'localizado', 'localizada', 'situado', 'situada',
 ]);
 
 /** Distância de Levenshtein com teto — só tolera erro de digitação em
