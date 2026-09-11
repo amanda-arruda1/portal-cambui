@@ -291,7 +291,20 @@ const dadosJson = JSON.stringify(dados).replace(/</g, '\\u003c');
     gap: 0.6rem;
     background: var(--color-neblina);
   }
-  .msg {
+  /* TUDO daqui pra baixo, até o fim do bloco de mensagens, é :global()
+   * DE PROPÓSITO — não só nas classes internas, a própria ".msg" também.
+   * `adicionarMensagem()` em scripts/assistente-contatos.ts cria essas divs
+   * via document.createElement em resposta ao clique/pergunta do usuário;
+   * elemento criado assim NUNCA recebe o atributo data-astro-cid-* que o
+   * Astro carimba nos elementos escritos no próprio template. Uma regra
+   * escopada como ".msg { ... }" (sem :global) simplesmente não bate
+   * nessas divs — a mensagem inicial (escrita direto no HTML deste
+   * componente) parecia estar tudo bem por isso mesmo, mas CADA resposta
+   * de verdade da conversa saía sem bolha, sem cor, sem nada. Só ficou
+   * visível quando um contato passou a ter dois telefones (2026-09-11): os
+   * dois links vieram sem quebra de linha porque ".telefone { display:
+   * block }" também nunca bateu. */
+  :global(.msg) {
     max-width: 85%;
     padding: 0.65rem 0.85rem;
     border-radius: 14px;
@@ -303,32 +316,32 @@ const dadosJson = JSON.stringify(dados).replace(/</g, '\\u003c');
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: none; }
   }
-  .msg p { margin: 0; }
-  .msg p + p { margin-top: 0.5rem; }
-  .msg-assistente {
+  :global(.msg p) { margin: 0; }
+  :global(.msg p + p) { margin-top: 0.5rem; }
+  :global(.msg-assistente) {
     align-self: flex-start;
     background: var(--color-papel);
     color: var(--color-tinta);
     border-bottom-left-radius: 4px;
     box-shadow: 0 0.2rem 0.6rem -0.3rem color-mix(in srgb, var(--color-tinta) 25%, transparent);
   }
-  .msg-usuario {
+  :global(.msg-usuario) {
     align-self: flex-end;
     background: linear-gradient(135deg, var(--color-turquesa), var(--color-turquesa-noite));
     /* --color-sobre-escuro: --color-turquesa-noite ancora o degradê. */
     color: var(--color-sobre-escuro);
     border-bottom-right-radius: 4px;
   }
-  .msg :global(.telefone) {
+  :global(.msg .telefone) {
     display: block;
     margin-top: 0.35rem;
     font-weight: 700;
     color: var(--color-turquesa);
     text-decoration: none;
   }
-  .msg :global(.telefone:hover) { text-decoration: underline; }
-  .msg :global(.pendente) { color: var(--color-musgo); font-style: italic; font-size: 0.875rem; }
-  .msg :global(.ver-secretaria) {
+  :global(.msg .telefone:hover) { text-decoration: underline; }
+  :global(.msg .pendente) { color: var(--color-musgo); font-style: italic; font-size: 0.875rem; }
+  :global(.msg .ver-secretaria) {
     display: inline-block;
     margin-top: 0.35rem;
     color: var(--color-turquesa);
@@ -336,14 +349,14 @@ const dadosJson = JSON.stringify(dados).replace(/</g, '\\u003c');
     font-size: 0.875rem;
     text-decoration: none;
   }
-  .msg :global(.ver-secretaria:hover) { text-decoration: underline; }
-  .msg :global(.bloco-contato) { margin-top: 0.6rem; }
-  .msg :global(.bloco-contato + .bloco-contato) {
+  :global(.msg .ver-secretaria:hover) { text-decoration: underline; }
+  :global(.msg .bloco-contato) { margin-top: 0.6rem; }
+  :global(.msg .bloco-contato + .bloco-contato) {
     margin-top: 0.75rem;
     padding-top: 0.6rem;
     border-top: 1px solid color-mix(in srgb, var(--color-musgo) 22%, transparent);
   }
-  .msg :global(.sugestao) {
+  :global(.msg .sugestao) {
     display: block;
     width: 100%;
     text-align: left;
@@ -358,7 +371,7 @@ const dadosJson = JSON.stringify(dados).replace(/</g, '\\u003c');
     font-size: 0.875rem;
     cursor: pointer;
   }
-  .msg :global(.sugestao:hover) { background: var(--color-turquesa); color: var(--color-papel); }
+  :global(.msg .sugestao:hover) { background: var(--color-turquesa); color: var(--color-papel); }
 
   /* Indicador de "digitando" — três pontos, rápido e discreto, nunca um
      spinner nem texto "carregando". */
