@@ -4,6 +4,7 @@ import Carreira from '../componentes/Carreira.astro';
 import LinhaTarefa from '../componentes/LinhaTarefa.astro';
 import TituloPagina from '../componentes/TituloPagina.astro';
 import { secretarias } from '../lib/conteudo';
+import { linkMapa } from '../lib/formato';
 import {
   EMAIL_CONTATO,
   ENDERECO,
@@ -15,6 +16,7 @@ import {
 
 const { dados } = await secretarias();
 const comContato = dados.filter((s) => s.telefone || s.email || s.endereco);
+const mapaSede = ENDERECO ? linkMapa(`${ENDERECO.logradouro}, ${ENDERECO.numero} – ${ENDERECO.bairro} – ${ENDERECO.cidade}/${ENDERECO.uf}`) : null;
 ---
 
 <Base
@@ -36,6 +38,12 @@ const comContato = dados.filter((s) => s.telefone || s.email || s.endereco);
             <p class="endereco">
               {ENDERECO.logradouro}, {ENDERECO.numero} — {ENDERECO.bairro}<br />
               {ENDERECO.cidade}/{ENDERECO.uf} — CEP {ENDERECO.cep}
+              {mapaSede && (
+                <>
+                  <br />
+                  <a href={mapaSede} class="mapa" target="_blank" rel="noopener noreferrer">Ver no mapa</a>
+                </>
+              )}
             </p>
           )}
           {TELEFONES.length > 0 && (
@@ -87,6 +95,8 @@ const comContato = dados.filter((s) => s.telefone || s.email || s.endereco);
 <style>
   .sede { max-width: var(--container-leitura); }
   .endereco { line-height: 1.6; }
+  .mapa { color: var(--color-serra); font-weight: 600; text-decoration: none; font-size: 0.9375rem; }
+  .mapa:hover { text-decoration: underline; }
   .contatos { margin-top: 0.75rem; font-weight: 600; }
   .contatos a { color: var(--color-serra); text-decoration: none; }
   .horario { margin-top: 0.75rem; color: var(--color-musgo); }

@@ -10,7 +10,7 @@ import Base from '../../layouts/Base.astro';
 import Carreira from '../../componentes/Carreira.astro';
 import TituloPagina from '../../componentes/TituloPagina.astro';
 import { noticiasRecentes, secretariaPorSlug } from '../../lib/conteudo';
-import { data, iso, linkTelefone, linkWhatsapp, numerosTelefone, recorte, semHtml } from '../../lib/formato';
+import { data, iso, linkMapa, linkTelefone, linkWhatsapp, numerosTelefone, recorte, semHtml } from '../../lib/formato';
 import { limpar } from '../../lib/sanitizar';
 
 const { slug } = Astro.params;
@@ -36,7 +36,7 @@ const linhasTelefone: ValorContato[] = sec.telefone
   : [];
 
 const contatos: LinhaContato[] = [
-  sec.endereco && { rotulo: 'Endereço', valores: [{ texto: sec.endereco, href: null, externo: false }] },
+  sec.endereco && { rotulo: 'Endereço', valores: [{ texto: sec.endereco, href: linkMapa(sec.endereco), externo: true }] },
   linhasTelefone.length > 0 && { rotulo: 'Telefone', valores: linhasTelefone },
   sec.email && { rotulo: 'E-mail', valores: [{ texto: sec.email, href: `mailto:${sec.email}`, externo: false }] },
   sec.horario_atendimento && { rotulo: 'Atendimento', valores: [{ texto: sec.horario_atendimento, href: null, externo: false }] },

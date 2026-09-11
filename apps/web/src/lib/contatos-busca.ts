@@ -21,6 +21,7 @@ export interface RegistroContato {
   subtitulo: string | null;
   telefone: string | null;
   email: string | null;
+  endereco: string | null;
   horario: string | null;
   /** Link para a página da secretaria, quando existe. */
   destino: string | null;

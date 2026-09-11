@@ -93,3 +93,16 @@ export function linkWhatsapp(numero: string, nota?: string | null): string | nul
   if (digitos.length !== 11 || digitos[2] !== '9') return null;
   return `https://wa.me/55${digitos}`;
 }
+
+/** Link de busca do Google Maps a partir de um endereço em texto livre. Volta
+ *  null pra "Não informado" e afins — texto que não é endereço nenhum, então
+ *  não tem o que localizar. O município não costuma aparecer no texto (é
+ *  "R. Tal, 32 – Centro", não "…, Cambuí/MG"), então é acrescentado aqui: sem
+ *  isso a busca ficaria ambígua com ruas de mesmo nome em outra cidade. */
+export function linkMapa(endereco: string | null | undefined): string | null {
+  if (!endereco) return null;
+  const texto = endereco.trim();
+  if (!texto || /^n[aã]o informado$/i.test(texto)) return null;
+  const consulta = /cambu[ií]/i.test(texto) ? texto : `${texto}, Cambuí - MG`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(consulta)}`;
+}

@@ -9,7 +9,7 @@
  * COMO desenhar isso como mensagem.
  */
 import { responderContato, type RegistroContato, type RespostaAssistente } from '../lib/contatos-busca';
-import { linkTelefone, linkWhatsapp, numerosTelefone } from '../lib/formato';
+import { linkMapa, linkTelefone, linkWhatsapp, numerosTelefone } from '../lib/formato';
 
 const raiz = document.querySelector<HTMLDivElement>('.assistente-contatos');
 const botao = document.getElementById('assistente-botao') as HTMLButtonElement | null;
@@ -56,6 +56,17 @@ if (raiz && botao && painel && fechar && form && campo && mensagens && digitando
     forte.textContent = r.subtitulo ? `${r.titulo} (${r.subtitulo})` : r.titulo;
     titulo.append(forte);
     bloco.append(titulo);
+
+    const mapa = linkMapa(r.endereco);
+    if (mapa) {
+      const link = document.createElement('a');
+      link.className = 'endereco';
+      link.href = mapa;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = `📍 ${r.endereco}`;
+      bloco.append(link);
+    }
 
     if (r.telefone) {
       // Pode ter mais de um número (ex.: "(35) 1111-1111 / (35) 2222-2222")

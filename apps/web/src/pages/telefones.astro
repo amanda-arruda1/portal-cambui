@@ -16,7 +16,7 @@ import Carreira from '../componentes/Carreira.astro';
 import EstadoVazio from '../componentes/EstadoVazio.astro';
 import TituloPagina from '../componentes/TituloPagina.astro';
 import { telefonesUteis } from '../lib/conteudo';
-import { linkTelefone, linkWhatsapp, numerosTelefone } from '../lib/formato';
+import { linkMapa, linkTelefone, linkWhatsapp, numerosTelefone } from '../lib/formato';
 import type { CategoriaTelefoneUtil, TelefoneUtil } from '../lib/tipos';
 
 const { dados, indisponivel } = await telefonesUteis();
@@ -87,10 +87,20 @@ const grupos = ORDEM_CATEGORIA
               <ul class="lista">
                 {grupo.itens.map((t) => {
                   const numeros = t.telefone ? numerosTelefone(t.telefone) : [];
+                  const mapa = linkMapa(t.endereco);
                   return (
                   <li class="item-tel" data-nome={t.nome.toLowerCase()}>
                     <p class="t-sub nome">{t.nome}</p>
-                    {t.endereco && <p class="endereco">{t.endereco}</p>}
+                    {t.endereco && (
+                      mapa ? (
+                        <a href={mapa} class="endereco" target="_blank" rel="noopener noreferrer">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 22s7-7.05 7-12.5S16.42 1 12 1 5 4.55 5 9.5 12 22 12 22Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="9.5" r="2.5" stroke="currentColor" stroke-width="1.6"/></svg>
+                          {t.endereco}
+                        </a>
+                      ) : (
+                        <p class="endereco">{t.endereco}</p>
+                      )
+                    )}
                     <div class="contatos">
                       {numeros.map((n) => {
                         const whatsapp = linkWhatsapp(n.numero, n.nota);
@@ -195,6 +205,14 @@ const grupos = ORDEM_CATEGORIA
   }
   .nome { font-family: var(--font-display); letter-spacing: -0.01em; }
   .endereco { margin-top: 0.3rem; color: var(--color-musgo); font-size: 0.875rem; }
+  a.endereco {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 0.35rem;
+    text-decoration: none;
+  }
+  a.endereco svg { flex: none; margin-top: 0.15rem; opacity: 0.8; }
+  a.endereco:hover { color: var(--color-carmim); text-decoration: underline; }
 
   .contatos { margin-top: 0.6rem; display: grid; gap: 0.4rem; }
   .contato {

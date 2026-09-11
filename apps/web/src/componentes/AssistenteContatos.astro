@@ -332,6 +332,14 @@ const dadosJson = JSON.stringify(dados).replace(/</g, '\\u003c');
     color: var(--color-sobre-escuro);
     border-bottom-right-radius: 4px;
   }
+  :global(.msg .endereco) {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 0.875rem;
+    color: var(--color-musgo);
+    text-decoration: none;
+  }
+  :global(.msg .endereco:hover) { color: var(--color-turquesa); text-decoration: underline; }
   :global(.msg .telefone) {
     display: block;
     margin-top: 0.35rem;

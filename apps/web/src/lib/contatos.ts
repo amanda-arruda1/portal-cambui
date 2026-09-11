@@ -12,7 +12,7 @@
 import { secretarias, telefonesUteis } from './conteudo';
 import type { RegistroContato } from './contatos-busca';
 import type { CategoriaTelefoneUtil } from './tipos';
-import { EMAIL_CONTATO, HORARIO_ATENDIMENTO, MUNICIPIO, TELEFONES } from '../dados/instituicional';
+import { EMAIL_CONTATO, ENDERECO, HORARIO_ATENDIMENTO, MUNICIPIO, TELEFONES } from '../dados/instituicional';
 
 const ROTULO_CATEGORIA_TELEFONE: Record<CategoriaTelefoneUtil, string> = {
   emergencias: 'Emergências',
@@ -35,6 +35,7 @@ function contatoGeral(): RegistroContato[] {
       subtitulo: 'Atendimento geral',
       telefone: TELEFONES[0]?.numero ?? null,
       email: EMAIL_CONTATO,
+      endereco: ENDERECO ? `${ENDERECO.logradouro}, ${ENDERECO.numero} – ${ENDERECO.bairro} – ${ENDERECO.cidade}/${ENDERECO.uf}` : null,
       horario: HORARIO_ATENDIMENTO,
       destino: '/contato',
       palavrasChave: 'prefeitura sede gabinete geral',
@@ -59,6 +60,7 @@ export async function registrosDeContato(): Promise<{ dados: RegistroContato[]; 
     subtitulo: s.sigla,
     telefone: s.telefone,
     email: s.email,
+    endereco: s.endereco,
     horario: s.horario_atendimento,
     destino: `/secretarias/${s.slug}`,
     palavrasChave: s.palavras_chave,
@@ -74,6 +76,7 @@ export async function registrosDeContato(): Promise<{ dados: RegistroContato[]; 
     subtitulo: ROTULO_CATEGORIA_TELEFONE[tel.categoria],
     telefone: tel.telefone,
     email: tel.email,
+    endereco: tel.endereco,
     horario: null,
     destino: `/telefones#${tel.categoria}`,
     palavrasChave: ROTULO_CATEGORIA_TELEFONE[tel.categoria],
