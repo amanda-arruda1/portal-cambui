@@ -9,6 +9,7 @@
  * COMO desenhar isso como mensagem.
  */
 import { responderContato, type RegistroContato, type RespostaAssistente } from '../lib/contatos-busca';
+import { linkTelefone, linkWhatsapp } from '../lib/formato';
 
 const raiz = document.querySelector<HTMLDivElement>('.assistente-contatos');
 const botao = document.getElementById('assistente-botao') as HTMLButtonElement | null;
@@ -57,10 +58,15 @@ if (raiz && botao && painel && fechar && form && campo && mensagens && digitando
     bloco.append(titulo);
 
     if (r.telefone) {
+      // Celular de verdade (DDD + 9 dígitos) já abre o WhatsApp direto —
+      // mesma regra de /telefones e da página de secretaria. Fixo continua
+      // indo para tel:.
+      const whatsapp = linkWhatsapp(r.telefone);
       const link = document.createElement('a');
       link.className = 'telefone';
-      link.href = `tel:+55${r.telefone.replace(/\D/g, '')}`;
-      link.textContent = `☎ ${r.telefone}`;
+      link.href = whatsapp ?? linkTelefone(r.telefone);
+      link.textContent = whatsapp ? `💬 ${r.telefone}` : `☎ ${r.telefone}`;
+      if (whatsapp) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
       bloco.append(link);
     } else {
       const p = document.createElement('p');
