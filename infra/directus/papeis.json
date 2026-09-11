@@ -955,6 +955,7 @@
         "descricao",
         "responsavel",
         "cargo_responsavel",
+        "biografia_responsavel",
         "endereco",
         "telefone",
         "email",

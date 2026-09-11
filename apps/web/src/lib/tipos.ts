@@ -38,6 +38,8 @@ export interface Secretaria {
   descricao: string | null;
   responsavel: string | null;
   cargo_responsavel: string | null;
+  /** Breve biografia do responsável — formação, trajetória. Opcional. */
+  biografia_responsavel: string | null;
   endereco: string | null;
   telefone: string | null;
   email: string | null;

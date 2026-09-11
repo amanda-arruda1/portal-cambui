@@ -85,11 +85,16 @@ const contatos: LinhaContato[] = [
     }
 
     {(sec.responsavel || sec.cargo_responsavel) && (
-      <p class="responsavel">
-        <span class="t-rotulo">Responsável</span><br />
-        {sec.responsavel}
-        {sec.cargo_responsavel && <span class="cargo"> — {sec.cargo_responsavel}</span>}
-      </p>
+      <div class="responsavel">
+        <p>
+          <span class="t-rotulo">Responsável</span><br />
+          {sec.responsavel}
+          {sec.cargo_responsavel && <span class="cargo"> — {sec.cargo_responsavel}</span>}
+        </p>
+        {sec.biografia_responsavel && (
+          <div class="conteudo-rico biografia" set:html={limpar(sec.biografia_responsavel)} />
+        )}
+      </div>
     )}
   </Carreira>
 
@@ -134,6 +139,7 @@ const contatos: LinhaContato[] = [
   .responsavel { margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid color-mix(in srgb, var(--color-musgo) 26%, transparent); max-width: 46rem; }
   .responsavel .t-rotulo { color: var(--color-musgo); }
   .cargo { color: var(--color-musgo); }
+  .biografia { margin-top: 0.75rem; font-size: 0.9375rem; color: var(--color-musgo); }
   .vazio { margin-top: 1.25rem; color: var(--color-musgo); max-width: var(--container-leitura); }
   .vazio a { color: var(--color-serra); font-weight: 600; text-decoration: none; }
   .texto { margin-top: 1.25rem; }

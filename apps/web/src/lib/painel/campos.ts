@@ -181,6 +181,13 @@ export const CAMPOS: Record<ColecaoEditavel, Campo[]> = {
     { nome: 'descricao', rotulo: 'Descrição', tipo: 'rico', largura: 'inteira' },
     { nome: 'responsavel', rotulo: 'Responsável', tipo: 'texto', largura: 'metade' },
     { nome: 'cargo_responsavel', rotulo: 'Cargo do responsável', tipo: 'texto', largura: 'metade' },
+    {
+      nome: 'biografia_responsavel',
+      rotulo: 'Biografia do responsável',
+      tipo: 'rico',
+      largura: 'inteira',
+      ajuda: 'Breve trajetória — formação, experiência. Opcional.',
+    },
     { nome: 'endereco', rotulo: 'Endereço', tipo: 'texto', largura: 'inteira' },
     { nome: 'telefone', rotulo: 'Telefone', tipo: 'telefone', largura: 'metade' },
     { nome: 'email', rotulo: 'E-mail', tipo: 'email', largura: 'metade' },

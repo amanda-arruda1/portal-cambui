@@ -59,6 +59,12 @@
           "tipo": "string"
         },
         {
+          "campo": "biografia_responsavel",
+          "tipo": "text",
+          "interface": "input-rich-text-html",
+          "nota": "Breve biografia do responsável — formação, trajetória. Opcional."
+        },
+        {
           "campo": "endereco",
           "tipo": "string"
         },
