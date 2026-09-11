@@ -10,7 +10,7 @@ import Base from '../../layouts/Base.astro';
 import Carreira from '../../componentes/Carreira.astro';
 import TituloPagina from '../../componentes/TituloPagina.astro';
 import { noticiasRecentes, secretariaPorSlug } from '../../lib/conteudo';
-import { data, iso, linkTelefone, linkWhatsapp, recorte, semHtml } from '../../lib/formato';
+import { data, iso, linkTelefone, linkWhatsapp, numerosTelefone, recorte, semHtml } from '../../lib/formato';
 import { limpar } from '../../lib/sanitizar';
 
 const { slug } = Astro.params;
@@ -20,17 +20,27 @@ if (!sec) return Astro.rewrite('/404');
 const { dados: noticias } = await noticiasRecentes(20);
 const daSecretaria = noticias.filter((n) => n.secretaria?.slug === sec.slug).slice(0, 4);
 
-// Quando o telefone é celular de verdade (DDD + 9 dígitos), o próprio número
-// já linka pro WhatsApp — não faz sentido um segundo link "WhatsApp" logo
-// abaixo repetindo o mesmo número. Fixo continua indo para tel:.
-const whatsapp = sec.telefone && linkWhatsapp(sec.telefone);
+interface ValorContato { texto: string; href: string | null; externo: boolean }
+interface LinhaContato { rotulo: string; valores: ValorContato[] }
 
-const contatos = [
-  sec.endereco && { rotulo: 'Endereço', valor: sec.endereco, href: null, externo: false },
-  sec.telefone && { rotulo: 'Telefone', valor: sec.telefone, href: whatsapp || linkTelefone(sec.telefone), externo: !!whatsapp },
-  sec.email && { rotulo: 'E-mail', valor: sec.email, href: `mailto:${sec.email}`, externo: false },
-  sec.horario_atendimento && { rotulo: 'Atendimento', valor: sec.horario_atendimento, href: null, externo: false },
-].filter(Boolean) as Array<{ rotulo: string; valor: string; href: string | null; externo: boolean }>;
+// Telefone pode ter mais de um número (ex.: "(35) 1111-1111 / (35) 2222-2222")
+// — cada um vira seu próprio valor na mesma linha, com o link certo (WhatsApp
+// quando é celular de verdade, tel: quando não é). O resto do cadastro
+// (endereço, e-mail, horário) é sempre um valor só.
+const linhasTelefone: ValorContato[] = sec.telefone
+  ? numerosTelefone(sec.telefone).map((n) => {
+      const whatsapp = linkWhatsapp(n.numero, n.nota);
+      const mostrarNota = n.nota && !/^whatsapp$/i.test(n.nota);
+      return { texto: `${n.numero}${mostrarNota ? ` (${n.nota})` : ''}`, href: whatsapp ?? linkTelefone(n.numero), externo: !!whatsapp };
+    })
+  : [];
+
+const contatos: LinhaContato[] = [
+  sec.endereco && { rotulo: 'Endereço', valores: [{ texto: sec.endereco, href: null, externo: false }] },
+  linhasTelefone.length > 0 && { rotulo: 'Telefone', valores: linhasTelefone },
+  sec.email && { rotulo: 'E-mail', valores: [{ texto: sec.email, href: `mailto:${sec.email}`, externo: false }] },
+  sec.horario_atendimento && { rotulo: 'Atendimento', valores: [{ texto: sec.horario_atendimento, href: null, externo: false }] },
+].filter(Boolean) as LinhaContato[];
 ---
 
 <Base
@@ -51,11 +61,16 @@ const contatos = [
             <div class="par">
               <dt class="t-rotulo">{c.rotulo}</dt>
               <dd>
-                {c.href ? (
-                  <a href={c.href} {...(c.externo ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
-                    <span class="fio-foco">{c.valor}</span>
-                  </a>
-                ) : c.valor}
+                {c.valores.map((v, i) => (
+                  <>
+                    {i > 0 && <br />}
+                    {v.href ? (
+                      <a href={v.href} {...(v.externo ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+                        <span class="fio-foco">{v.texto}</span>
+                      </a>
+                    ) : v.texto}
+                  </>
+                ))}
               </dd>
             </div>
           ))}

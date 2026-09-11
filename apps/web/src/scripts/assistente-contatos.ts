@@ -9,7 +9,7 @@
  * COMO desenhar isso como mensagem.
  */
 import { responderContato, type RegistroContato, type RespostaAssistente } from '../lib/contatos-busca';
-import { linkTelefone, linkWhatsapp } from '../lib/formato';
+import { linkTelefone, linkWhatsapp, numerosTelefone } from '../lib/formato';
 
 const raiz = document.querySelector<HTMLDivElement>('.assistente-contatos');
 const botao = document.getElementById('assistente-botao') as HTMLButtonElement | null;
@@ -58,16 +58,20 @@ if (raiz && botao && painel && fechar && form && campo && mensagens && digitando
     bloco.append(titulo);
 
     if (r.telefone) {
-      // Celular de verdade (DDD + 9 dígitos) já abre o WhatsApp direto —
-      // mesma regra de /telefones e da página de secretaria. Fixo continua
-      // indo para tel:.
-      const whatsapp = linkWhatsapp(r.telefone);
-      const link = document.createElement('a');
-      link.className = 'telefone';
-      link.href = whatsapp ?? linkTelefone(r.telefone);
-      link.textContent = whatsapp ? `💬 ${r.telefone}` : `☎ ${r.telefone}`;
-      if (whatsapp) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
-      bloco.append(link);
+      // Pode ter mais de um número (ex.: "(35) 1111-1111 / (35) 2222-2222")
+      // — cada um vira seu próprio link. Celular de verdade (DDD + 9
+      // dígitos) já abre o WhatsApp direto — mesma regra de /telefones e da
+      // página de secretaria. Fixo continua indo para tel:.
+      for (const n of numerosTelefone(r.telefone)) {
+        const whatsapp = linkWhatsapp(n.numero, n.nota);
+        const mostrarNota = n.nota && !/^whatsapp$/i.test(n.nota);
+        const link = document.createElement('a');
+        link.className = 'telefone';
+        link.href = whatsapp ?? linkTelefone(n.numero);
+        link.textContent = `${whatsapp ? '💬' : '☎'} ${n.numero}${mostrarNota ? ` (${n.nota})` : ''}`;
+        if (whatsapp) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
+        bloco.append(link);
+      }
     } else {
       const p = document.createElement('p');
       p.className = 'pendente';

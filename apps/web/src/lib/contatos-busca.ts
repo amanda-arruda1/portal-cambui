@@ -40,12 +40,22 @@ export const semAcento = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '
  * mexer em código.
  */
 export const SINONIMOS: Record<string, string[]> = {
-  rh: ['administracao'],
-  pessoal: ['administracao'],
+  // "RH"/"pessoal" caíam só na Secretaria de Administração e Fazenda (mais
+  // genérica) porque "recursos humanos" era o único termo que faltava — o
+  // Departamento de Recursos Humanos específico (telefones úteis) não tinha
+  // esse nome dito de nenhum outro jeito no cadastro. Achado testando o
+  // assistente de verdade (2026-09-11).
+  rh: ['administracao', 'recursos humanos'],
+  pessoal: ['administracao', 'recursos humanos'],
   financas: ['administracao'],
   fazenda: ['administracao'],
-  tributos: ['administracao'],
-  iptu: ['administracao'],
+  tributos: ['administracao', 'tributos'],
+  iptu: ['administracao', 'tributos'],
+  // "TI" tem só 2 letras — curto demais pra tolerância a erro de digitação
+  // (só entra em jogo com 5+), precisa estar aqui pra achar o Departamento
+  // de Tecnologia da Informação.
+  ti: ['tecnologia'],
+  informatica: ['tecnologia'],
   hospital: ['saude'],
   posto: ['saude'],
   vacina: ['saude'],
@@ -66,6 +76,8 @@ export const SINONIMOS: Record<string, string[]> = {
   evento: ['cultura'],
   prefeitura: ['geral', 'sede', 'gabinete'],
   gabinete: ['geral'],
+  vaga: ['emprego'],
+  vagas: ['emprego'],
 };
 
 /**

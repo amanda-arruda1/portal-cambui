@@ -48,21 +48,48 @@ export function recorte(texto: string | null | undefined, limite = 180): string 
   return limpo.slice(0, limite).replace(/\s+\S*$/, '') + '…';
 }
 
-/** Link tel: a partir de um telefone em texto livre — usa só o primeiro
- *  número, quando há mais de um separado por "/" ou "-". */
-export function linkTelefone(telefone: string): string {
-  const primeiro = telefone.split('/')[0];
-  return `tel:+55${primeiro.replace(/\D/g, '')}`;
+export interface NumeroTelefone {
+  /** Só o número, sem a nota entre parênteses — ex.: "(35) 99733-6816". */
+  numero: string;
+  /** Anotação da fonte, quando houver — ex.: "Interno", "Somente ligação". */
+  nota: string | null;
 }
 
-/** Link do WhatsApp (wa.me), só quando o telefone é celular de verdade —
+/** Separa um campo de telefone em texto livre nos números individuais —
+ *  alguns registros têm mais de um, separados por "/" ou por " - " (com
+ *  espaço dos dois lados: o hífen DENTRO de um número, tipo "99733-6816",
+ *  não tem espaço ao redor, então não é confundido com separador). Cada
+ *  número mantém sua própria nota entre parênteses, quando houver — usada
+ *  pra decidir o link (ver linkWhatsapp) e pra mostrar ao lado do número.
+ *  Sem isso, dois números apareciam colados como se fossem um só, e só o
+ *  primeiro funcionava de verdade. */
+export function numerosTelefone(telefone: string): NumeroTelefone[] {
+  return telefone
+    .split(/\s*\/\s*|\s+-\s+/)
+    .map((parte) => parte.trim())
+    .filter(Boolean)
+    .map((parte) => {
+      const m = parte.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+      return m ? { numero: m[1].trim(), nota: m[2].trim() } : { numero: parte, nota: null };
+    });
+}
+
+/** Link tel: a partir de UM número (já separado por numerosTelefone). */
+export function linkTelefone(numero: string): string {
+  return `tel:+55${numero.replace(/\D/g, '')}`;
+}
+
+/** Link do WhatsApp (wa.me) pra UM número, só quando é celular de verdade —
  *  DDD (2 dígitos) + 9 dígitos locais começando em "9", o formato que o
  *  Brasil usa desde 2016. Fixo (8 dígitos locais) e número de emergência
  *  sem DDD (190, 192...) voltam null — não têm WhatsApp e o link quebraria
- *  ou abriria conversa com o número errado. Só o primeiro número, quando
- *  há mais de um. */
-export function linkWhatsapp(telefone: string): string | null {
-  const primeiro = telefone.split('/')[0].replace(/\D/g, '');
-  if (primeiro.length !== 11 || primeiro[2] !== '9') return null;
-  return `https://wa.me/55${primeiro}`;
+ *  ou abriria conversa com o número errado. `nota` vindo de
+ *  numerosTelefone() também derruba o link quando a própria fonte avisa que
+ *  o número é "Somente ligação" — mesmo celular de verdade, sem WhatsApp
+ *  não tem o que abrir. */
+export function linkWhatsapp(numero: string, nota?: string | null): string | null {
+  if (nota && /somente\s+liga[cç][aã]o/i.test(nota)) return null;
+  const digitos = numero.replace(/\D/g, '');
+  if (digitos.length !== 11 || digitos[2] !== '9') return null;
+  return `https://wa.me/55${digitos}`;
 }
