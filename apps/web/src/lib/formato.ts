@@ -47,3 +47,22 @@ export function recorte(texto: string | null | undefined, limite = 180): string 
   if (limpo.length <= limite) return limpo;
   return limpo.slice(0, limite).replace(/\s+\S*$/, '') + '…';
 }
+
+/** Link tel: a partir de um telefone em texto livre — usa só o primeiro
+ *  número, quando há mais de um separado por "/" ou "-". */
+export function linkTelefone(telefone: string): string {
+  const primeiro = telefone.split('/')[0];
+  return `tel:+55${primeiro.replace(/\D/g, '')}`;
+}
+
+/** Link do WhatsApp (wa.me), só quando o telefone é celular de verdade —
+ *  DDD (2 dígitos) + 9 dígitos locais começando em "9", o formato que o
+ *  Brasil usa desde 2016. Fixo (8 dígitos locais) e número de emergência
+ *  sem DDD (190, 192...) voltam null — não têm WhatsApp e o link quebraria
+ *  ou abriria conversa com o número errado. Só o primeiro número, quando
+ *  há mais de um. */
+export function linkWhatsapp(telefone: string): string | null {
+  const primeiro = telefone.split('/')[0].replace(/\D/g, '');
+  if (primeiro.length !== 11 || primeiro[2] !== '9') return null;
+  return `https://wa.me/55${primeiro}`;
+}

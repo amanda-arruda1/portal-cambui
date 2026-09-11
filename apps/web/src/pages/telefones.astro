@@ -16,6 +16,7 @@ import Carreira from '../componentes/Carreira.astro';
 import EstadoVazio from '../componentes/EstadoVazio.astro';
 import TituloPagina from '../componentes/TituloPagina.astro';
 import { telefonesUteis } from '../lib/conteudo';
+import { linkTelefone, linkWhatsapp } from '../lib/formato';
 import type { CategoriaTelefoneUtil, TelefoneUtil } from '../lib/tipos';
 
 const { dados, indisponivel } = await telefonesUteis();
@@ -36,12 +37,6 @@ const grupos = ORDEM_CATEGORIA
   .map((categoria) => ({ categoria, rotulo: ROTULO_CATEGORIA[categoria], itens: dados.filter((t) => t.categoria === categoria) }))
   .filter((g) => g.itens.length > 0);
 
-/** Só dígitos, para o link tel: funcionar mesmo com telefone de dois números
- *  separados por "/" ou similar — usa só o primeiro. */
-function telHref(telefone: string): string {
-  const primeiro = telefone.split('/')[0];
-  return `tel:+55${primeiro.replace(/\D/g, '')}`;
-}
 ---
 
 <Base
@@ -96,9 +91,15 @@ function telHref(telefone: string): string {
                     {t.endereco && <p class="endereco">{t.endereco}</p>}
                     <div class="contatos">
                       {t.telefone && (
-                        <a href={telHref(t.telefone)} class="contato">
+                        <a href={linkTelefone(t.telefone)} class="contato">
                           <svg width="15" height="15" viewBox="0 0 17 17" fill="none" aria-hidden="true"><path d="M17 1.42v2.84a.71.71 0 0 1-.71.71.71.71 0 0 1-.71-.71V2.44l-3.76 3.74a.71.71 0 0 1-1-.99l3.76-3.74h-1.82a.71.71 0 0 1 0-1.42h2.83A.71.71 0 0 1 17 1.42Z" fill="currentColor"/><path d="M5.72 8.52a12.3 12.3 0 0 0 2.76 2.76l.92-1.28a.71.71 0 0 1 .93-.2c.96.5 2.02.82 3.13.9a.71.71 0 0 1 .65.7v2.84a.71.71 0 0 1-.71.71C6.72 15.07 1.93 10.28 1.93 3.5a.71.71 0 0 1 .71-.71H5.48a.71.71 0 0 1 .7.65c.09 1.11.4 2.17.9 3.13a.71.71 0 0 1-.19.93l-1.17.92Z" fill="currentColor"/></svg>
                           {t.telefone}
+                        </a>
+                      )}
+                      {t.telefone && linkWhatsapp(t.telefone) && (
+                        <a href={linkWhatsapp(t.telefone)!} class="contato" target="_blank" rel="noopener noreferrer">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M17.6 6.32A7.85 7.85 0 0 0 12.05 4c-4.35 0-7.9 3.53-7.9 7.87 0 1.39.36 2.74 1.05 3.93L4 20l4.31-1.13a7.93 7.93 0 0 0 3.74.95h.01c4.34 0 7.88-3.53 7.88-7.87a7.8 7.8 0 0 0-2.34-5.63Zm-5.55 12.1h-.01a6.58 6.58 0 0 1-3.34-.91l-.24-.14-2.48.65.66-2.42-.16-.25a6.55 6.55 0 0 1-1-3.48c0-3.62 2.96-6.57 6.6-6.57a6.56 6.56 0 0 1 6.58 6.58c0 3.62-2.96 6.54-6.61 6.54Zm3.6-4.92c-.2-.1-1.17-.58-1.35-.64-.18-.07-.31-.1-.45.1-.13.19-.51.64-.63.78-.11.13-.23.15-.43.05-.2-.1-.83-.3-1.58-.97-.58-.52-.98-1.16-1.09-1.36-.11-.2-.01-.3.09-.4.09-.1.2-.24.3-.36.1-.12.13-.2.2-.34.06-.13.03-.25-.02-.35-.05-.1-.45-1.08-.61-1.48-.16-.38-.33-.33-.45-.34h-.38c-.13 0-.35.05-.53.25-.18.2-.7.68-.7 1.66s.72 1.93.82 2.06c.1.13 1.41 2.15 3.42 3.02.48.2.85.33 1.14.42.48.15.92.13 1.26.08.39-.06 1.17-.48 1.34-.94.16-.46.16-.86.11-.94-.05-.09-.18-.14-.38-.24Z" fill="currentColor"/></svg>
+                          WhatsApp
                         </a>
                       )}
                       {t.email && (

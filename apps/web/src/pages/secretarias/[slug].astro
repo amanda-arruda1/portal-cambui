@@ -10,7 +10,7 @@ import Base from '../../layouts/Base.astro';
 import Carreira from '../../componentes/Carreira.astro';
 import TituloPagina from '../../componentes/TituloPagina.astro';
 import { noticiasRecentes, secretariaPorSlug } from '../../lib/conteudo';
-import { data, iso, recorte, semHtml } from '../../lib/formato';
+import { data, iso, linkTelefone, linkWhatsapp, recorte, semHtml } from '../../lib/formato';
 import { limpar } from '../../lib/sanitizar';
 
 const { slug } = Astro.params;
@@ -20,12 +20,17 @@ if (!sec) return Astro.rewrite('/404');
 const { dados: noticias } = await noticiasRecentes(20);
 const daSecretaria = noticias.filter((n) => n.secretaria?.slug === sec.slug).slice(0, 4);
 
+const whatsapp = sec.telefone && linkWhatsapp(sec.telefone);
+
 const contatos = [
-  sec.endereco && { rotulo: 'Endereço', valor: sec.endereco, href: null },
-  sec.telefone && { rotulo: 'Telefone', valor: sec.telefone, href: `tel:+55${sec.telefone.replace(/\D/g, '')}` },
-  sec.email && { rotulo: 'E-mail', valor: sec.email, href: `mailto:${sec.email}` },
-  sec.horario_atendimento && { rotulo: 'Atendimento', valor: sec.horario_atendimento, href: null },
-].filter(Boolean) as Array<{ rotulo: string; valor: string; href: string | null }>;
+  sec.endereco && { rotulo: 'Endereço', valor: sec.endereco, href: null, externo: false },
+  sec.telefone && { rotulo: 'Telefone', valor: sec.telefone, href: linkTelefone(sec.telefone), externo: false },
+  // Só aparece quando o telefone é celular de verdade (DDD + 9 dígitos) —
+  // fixo não tem WhatsApp, o link quebraria ou abriria conversa errada.
+  whatsapp && { rotulo: 'WhatsApp', valor: sec.telefone!, href: whatsapp, externo: true },
+  sec.email && { rotulo: 'E-mail', valor: sec.email, href: `mailto:${sec.email}`, externo: false },
+  sec.horario_atendimento && { rotulo: 'Atendimento', valor: sec.horario_atendimento, href: null, externo: false },
+].filter(Boolean) as Array<{ rotulo: string; valor: string; href: string | null; externo: boolean }>;
 ---
 
 <Base
@@ -45,7 +50,13 @@ const contatos = [
           {contatos.map((c) => (
             <div class="par">
               <dt class="t-rotulo">{c.rotulo}</dt>
-              <dd>{c.href ? <a href={c.href}><span class="fio-foco">{c.valor}</span></a> : c.valor}</dd>
+              <dd>
+                {c.href ? (
+                  <a href={c.href} {...(c.externo ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+                    <span class="fio-foco">{c.valor}</span>
+                  </a>
+                ) : c.valor}
+              </dd>
             </div>
           ))}
         </dl>
