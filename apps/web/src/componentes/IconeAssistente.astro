@@ -1,0 +1,49 @@
+---
+/**
+ * ÍCONE DO ASSISTENTE — anel "C" + três pulsos concêntricos, em branco
+ * sólido (2026-09-01, quarta composição).
+ *
+ * As três versões anteriores tentaram fazer o "C" carregar a paleta pedida
+ * (verde-escuro/marinho/esmeralda) e cada uma esbarrou na mesma parede: o
+ * botão flutuante É verde-escuro→marinho, então qualquer preenchimento nessa
+ * família de tom perde contraste contra o próprio fundo — resolvido antes
+ * com gradientes de compensação, mas gradiente em cima de gradiente é
+ * exatamente a textura que faz um ícone pequeno parecer gerado por IA em vez
+ * de desenhado. A saída, a pedido do cliente: branco sólido, sem gradiente
+ * nenhum. Contraste around resolvido pela cor, não por camada.
+ *
+ * Geometria herdada da versão anterior (mesmos paths, ids sem cor): anel
+ * institucional (r20/r12, abertura de 92° à direita) + três arcos
+ * concêntricos ao mesmo centro, crescendo em raio — a "voz" ganhando
+ * alcance a partir do C. A hierarquia entre eles agora é só OPACIDADE
+ * (0,5 → 0,74 → 1), a mesma linguagem do símbolo de wi-fi/around: nenhuma
+ * cor nova, nenhuma forma decorativa, uma sombra só (drop-shadow único no
+ * grupo inteiro) para dar o mínimo de profundidade sem empilhar camada.
+ *
+ * `id` prefixa o id do filtro de sombra: o ícone aparece 2x na mesma página
+ * (botão flutuante + avatar do painel), e ids de <filter> duplicados
+ * colidiriam no DOM.
+ */
+interface Props {
+  id: string;
+  tamanho?: number;
+}
+const { id, tamanho = 24 } = Astro.props;
+---
+
+<svg width={tamanho} height={tamanho} viewBox="0 0 64 64" role="img" aria-label="Assistente Virtual da Prefeitura de Cambuí">
+  <defs>
+    <filter id={`icone-sombra-${id}`} x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="1.4" stdDeviation="1.3" flood-color="#000000" flood-opacity="0.38" />
+    </filter>
+  </defs>
+
+  <g filter={`url(#icone-sombra-${id})`}>
+    <!-- C institucional: anel r20/r12, abertura radial de 92° à direita -->
+    <path fill="#ffffff" d="M35.89 17.61A20 20 0 1 0 35.89 46.39L30.34 40.63A12 12 0 1 1 30.34 23.37Z" />
+    <!-- três pulsos concêntricos, mesmo centro — só a opacidade cresce -->
+    <path fill="#ffffff" opacity="0.5" d="M45.46 14.95A29 29 0 0 1 45.46 49.05L41.42 46.11A24 24 0 0 0 41.42 17.89Z" />
+    <path fill="#ffffff" opacity="0.74" d="M54.17 17A35.5 35.5 0 0 1 54.17 47L50.55 45.31A31.5 31.5 0 0 0 50.55 18.69Z" />
+    <path fill="#ffffff" d="M61.3 22.2A40.5 40.5 0 0 1 61.3 41.8L58.39 41.07A37.5 37.5 0 0 0 58.39 22.93Z" />
+  </g>
+</svg>

@@ -7,7 +7,7 @@
  * vaze rascunho de secretaria.
  */
 import { listar, umPor } from './directus';
-import type { Documento, LinkUtil, Noticia, Pagina, Secretaria, Servico } from './tipos';
+import type { CategoriaPatrimonio, Documento, DocumentoPatrimonio, LinkUtil, Noticia, Pagina, PerguntaFrequente, Secretaria, Selo, Servico } from './tipos';
 
 const PUBLICADO = JSON.stringify({ status: { _eq: 'publicado' } });
 
@@ -93,6 +93,42 @@ export function linksUteis() {
     filter: PUBLICADO,
     sort: 'grupo,ordem,nome',
     limit: 100,
+  });
+}
+
+/** Selos e certificações institucionais — exibidos no rodapé (todas as
+ *  páginas) e em detalhe na página de Transparência. */
+export function selos() {
+  return listar<Selo>('selos', {
+    fields: '*',
+    filter: PUBLICADO,
+    sort: 'ordem,nome',
+    limit: 50,
+  });
+}
+
+/** Perguntas frequentes, agrupadas por categoria na própria página. */
+export function perguntasFrequentes() {
+  return listar<PerguntaFrequente>('perguntas_frequentes', {
+    fields: 'id,status,pergunta,resposta,categoria,ordem,secretaria.nome,secretaria.slug',
+    filter: PUBLICADO,
+    sort: 'categoria,ordem,pergunta',
+    limit: 300,
+  });
+}
+
+/** Documentos do Patrimônio Cultural (livros, dossiês de tombamento,
+ *  inventários, legislação e outros arquivos), agrupados por categoria na
+ *  própria página — mesmo padrão de 'perguntasFrequentes'. */
+export function documentosPatrimonio(categoria?: CategoriaPatrimonio) {
+  const filtro = categoria
+    ? { status: { _eq: 'publicado' }, categoria: { _eq: categoria } }
+    : { status: { _eq: 'publicado' } };
+  return listar<DocumentoPatrimonio>('patrimonio_documentos', {
+    fields: '*',
+    filter: JSON.stringify(filtro),
+    sort: 'ordem,-periodo,titulo',
+    limit: 300,
   });
 }
 

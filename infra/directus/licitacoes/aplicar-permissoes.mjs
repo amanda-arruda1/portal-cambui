@@ -61,15 +61,38 @@ function permissoesDoSetor() {
   }
   // Precisa enxergar as secretarias para escolher o órgão demandante.
   linhas.push({ collection: 'secretarias', action: 'read', permissions: {}, validation: null, presets: null, fields: '*' });
+  linhas.push(...permissaoAutoLeitura());
   return linhas;
 }
 
 /* Leitor: acompanha sem poder mexer. Serve para controladoria interna e para
    quem só precisa conferir o que foi publicado. */
 function permissoesDoLeitor() {
-  return [...COLECOES, 'secretarias'].map((colecao) => ({
-    collection: colecao, action: 'read', permissions: {}, validation: null, presets: null, fields: '*',
-  }));
+  return [
+    ...[...COLECOES, 'secretarias'].map((colecao) => ({
+      collection: colecao, action: 'read', permissions: {}, validation: null, presets: null, fields: '*',
+    })),
+    ...permissaoAutoLeitura(),
+  ];
+}
+
+/**
+ * ARMADILHA PAGA (2026-09-01, achada construindo o módulo de obras públicas
+ * — o mesmo defeito estava aqui e nunca tinha sido testado por login de
+ * verdade): sem permissão de leitura em `directus_users` (mesmo só do
+ * próprio registro), `/users/me?fields=...,role.name,secretaria.id,...` —
+ * que `lib/painel/sessao.ts` chama logo após autenticar — devolve a
+ * projeção cortada para `{id}` (campo relacional fora da política = projeção
+ * inteira descartada, mesma armadilha do Diário Oficial). `role.name` some,
+ * `usuario.papel` fica nulo, e o LOGIN é recusado com "Sua conta não tem
+ * função definida no portal" mesmo com credenciais corretas. Restrito à
+ * própria linha — não abre a base de usuários. */
+function permissaoAutoLeitura() {
+  return [{
+    collection: 'directus_users', action: 'read',
+    permissions: { id: { _eq: '$CURRENT_USER' } }, validation: null, presets: null,
+    fields: 'id,secretaria',
+  }];
 }
 
 const POLITICAS = [

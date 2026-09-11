@@ -22,7 +22,7 @@ export type Saida<T> = { ok: true; dados: T } | { ok: false; motivo: string; sta
 
 /** Coleções que o painel edita. Lista fechada: caminho de coleção não vem da
  *  URL sem passar por aqui, senão vira leitura arbitrária do CMS. */
-export const COLECOES_EDITAVEIS = ['noticias', 'documentos', 'servicos', 'paginas', 'links_uteis', 'secretarias'] as const;
+export const COLECOES_EDITAVEIS = ['noticias', 'documentos', 'servicos', 'paginas', 'links_uteis', 'secretarias', 'selos', 'perguntas_frequentes', 'patrimonio_documentos'] as const;
 export type ColecaoEditavel = (typeof COLECOES_EDITAVEIS)[number];
 
 export function colecaoValida(nome: string): nome is ColecaoEditavel {
@@ -43,6 +43,9 @@ export const ROTULO: Record<ColecaoEditavel, string> = {
   paginas: 'Páginas',
   links_uteis: 'Links úteis',
   secretarias: 'Secretarias',
+  selos: 'Selos e certificações',
+  perguntas_frequentes: 'Perguntas frequentes',
+  patrimonio_documentos: 'Patrimônio Cultural',
 };
 
 async function chamar<T>(sessao: Sessao, caminho: string, opcoes: RequestInit = {}): Promise<Saida<T>> {
@@ -96,14 +99,18 @@ export interface ItemDaFila {
   user_updated: string | null;
 }
 
-/** Coleções cujo campo de identificação é 'nome' e não 'titulo'. */
-const CAMPO_ROTULO: Record<ColecaoEditavel, 'titulo' | 'nome'> = {
+/** Campo de identificação de cada coleção — 'titulo' e 'nome' na maioria,
+ *  'pergunta' nas perguntas frequentes (não têm nem um nem outro). */
+const CAMPO_ROTULO: Record<ColecaoEditavel, 'titulo' | 'nome' | 'pergunta'> = {
   noticias: 'titulo',
   documentos: 'titulo',
   paginas: 'titulo',
   servicos: 'nome',
   links_uteis: 'nome',
   secretarias: 'nome',
+  selos: 'nome',
+  perguntas_frequentes: 'pergunta',
+  patrimonio_documentos: 'titulo',
 };
 
 export async function listarFila(
@@ -273,11 +280,17 @@ async function idDaPastaPublica(sessao: Sessao, nome: string): Promise<string | 
   const r = await chamar<Array<{ id: string }>>(sessao, `/folders?${parametros}`);
 
   if (!r.ok || !r.dados[0]) {
-    console.error(`[upload] pasta "${nome}" não encontrada no CMS — envios de arquivo estão bloqueados.`);
-    pastaPublicaId = null;
-  } else {
-    pastaPublicaId = r.dados[0].id;
+    // NÃO grava `pastaPublicaId = null` aqui: essa variável é de módulo, ou
+    // seja, compartilhada por TODAS as sessões do processo. Uma falha
+    // isolada (ex.: a primeira pessoa a subir arquivo depois de um reinício
+    // é uma conta sem permissão em `directus_folders`, achado real em
+    // 2026-09-01) travaria upload para todo mundo até o próximo reinício.
+    // Deixando `undefined`, a PRÓXIMA chamada tenta de novo — sucesso de
+    // uma conta com permissão correta destrava o processo inteiro sozinho.
+    console.error(`[upload] pasta "${nome}" não encontrada (ou sem permissão de leitura) — tentando de novo na próxima chamada.`);
+    return null;
   }
+  pastaPublicaId = r.dados[0].id;
   return pastaPublicaId;
 }
 

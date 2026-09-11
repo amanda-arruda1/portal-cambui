@@ -32,19 +32,56 @@
 
 @theme {
   /* ── Cor ────────────────────────────────────────────────────────────────
-     Amostrada dos pixels do brasão oficial. Contrastes verificados em
-     ferramentas/contraste.py — nenhum par em uso abaixo de 5,6:1. */
-  --color-serra: #0c5430;        /* verde do brasão / a Mantiqueira coberta */
-  --color-serra-noite: #06301c;  /* o mesmo verde ao anoitecer */
-  --color-carmim: #a8303c;       /* vermelho do brasão — ÚNICO acento de ação */
-  --color-neblina: #e9edea;      /* a névoa; fundo de página */
-  --color-tinta: #141c18;        /* preto com resto de verde; nunca #000 */
-  --color-musgo: #4c5a51;        /* liquen na pedra; texto secundário */
+     Redesenho de 2026-08-31: paleta trocada do verde/carmim do brasão para
+     o AZUL INSTITUCIONAL do brasão (#304890 — antes deixado de fora de
+     propósito) com um acento dourado/trigo, a pedido do cliente, buscando
+     um tom mais sério e mais próximo de referências como oregon.gov. A
+     unidade de composição (carreira, linhas em vez de cartão) e a tipografia
+     não mudaram — só a cor. Contrastes reverificados em
+     ferramentas/contraste.py — nenhum par em uso abaixo de 5,6:1.
+
+     Acento trocado de novo em 2026-09-01: dourado/trigo → verde-esmeralda,
+     a pedido do cliente (#10B981 nomeado por ele). Esboço aprovado em
+     artefato antes do código. O tom pedido (#10B981) só passa em AA como
+     texto/UI grande — como texto corrido sobre fundo claro cai a ~2,5:1, e é
+     exatamente aí (índice/seta de LinhaTarefa, etiqueta.astro, foco) que o
+     acento mais aparece. Por isso split escuro/claro, no mesmo padrão que o
+     dourado já usava: --color-carmim escurecido para AA (~7,7:1) e
+     --color-carmim-brilho com o #10B981 exato, reservado para cima de fundo
+     escuro (cabeçalho, hero). Ver ferramentas/contraste.py. */
+  --color-serra: #304890;        /* azul do brasão — agora a superfície institucional dominante */
+  --color-serra-noite: #16234a;  /* o mesmo azul mais profundo, quase noturno */
+  --color-carmim: #065f46;       /* esmeralda escura — ÚNICO acento de ação, AA-safe sobre neblina/papel (7,7:1) */
+  --color-carmim-brilho: #10b981; /* o esmeralda pedido pelo cliente, cru — só sobre fundo escuro (hero, cabeçalho); nunca sobre neblina/papel */
+  --color-preto: #05070d;        /* base do gradiente escuro do cabeçalho/hero — não usar como cor de texto corrido */
+  --color-neblina: #e9ebee;      /* a névoa; fundo de página — esfriada para acompanhar o azul */
+  --color-tinta: #14171f;        /* preto com resto de azul; nunca #000 */
+  --color-musgo: #545b66;        /* cinza-pedra; texto secundário — esfriado junto com a neblina */
   --color-papel: #ffffff;        /* superfície, não cor de marca */
 
-  /* O azul do brasão (#304890) fica FORA do sistema de propósito: é ele que
-     puxaria o portal de volta para a faixa azul institucional que a tese
-     recusa. Vive apenas dentro da imagem do brasão. */
+  /* Texto/ícone sobre uma superfície que É ESCURA NOS DOIS TEMAS — cabeçalho,
+     rodapé, barra de acessibilidade, o hero fotográfico, o assistente de
+     contatos (que já tem o próprio "-noite" fixo como âncora do gradiente).
+     --color-papel NÃO serve pra isto: ela é a superfície clara que o modo
+     escuro precisa escurecer, e viraria texto escuro sobre fundo escuro
+     nesses lugares específicos. Introduzido em 2026-09-02 junto do modo
+     escuro — antes disso os dois papéis coincidiam por acidente (papel
+     também era #fff). */
+  --color-sobre-escuro: #ffffff;
+
+  /* O verde do brasão (#0c5430) fica fora do sistema agora — é o inverso da
+     decisão anterior, tomada quando a tese ainda evitava o azul. */
+
+  /* ── Turquesa: só o assistente de contatos ──────────────────────────────
+     Acento de propósito FORA da paleta institucional (azul/dourado) — o
+     pedido explícito era uma cor "completamente diferente" pra esse widget
+     se destacar como camada interativa própria, não mais um botão azul.
+     Nunca usar --color-turquesa-brilho como texto sobre neblina/papel (1,9:1
+     — não passa nem de longe); é feito pra ficar sobre fundo escuro (ícone,
+     glow, texto sobre --color-turquesa-noite). */
+  --color-turquesa: #086055;        /* AA-safe sobre neblina/papel (6,25:1 / 7,46:1) — texto e links do assistente */
+  --color-turquesa-brilho: #22d3c5; /* o tom pedido, cru — glow, ícone sobre fundo escuro */
+  --color-turquesa-noite: #04211d;  /* base do degradê do botão flutuante */
 
   /* ── Ponte de compatibilidade ───────────────────────────────────────────
      O PAINEL das secretarias (/painel) é outro produto: ferramenta interna,
@@ -54,17 +91,22 @@
 
      PÁGINA PÚBLICA NÃO USA ESTES NOMES. Se aparecer 'text-azul' numa página
      do portal, é código velho que escapou da revisão. */
-  --color-azul: #0c5430;           /* → serra */
-  --color-azul-escuro: #06301c;    /* → serra-noite */
-  --color-azul-claro: #dbe5de;     /* tinta clara de serra */
-  --color-vermelho: #a8303c;       /* → carmim */
-  --color-vinho: #8a2531;
-  --color-verde: #0c5430;
-  --color-verde-texto: #0c5430;
-  --color-prata: #c3ccc6;
-  --color-grafite: #4c5a51;        /* → musgo */
-  --color-trigo: #8a6a2f;          /* atenção; 5,1:1 sobre papel */
-  --color-papel-suave: #e9edea;    /* → neblina */
+  --color-azul: #304890;           /* → serra */
+  --color-azul-escuro: #16234a;    /* → serra-noite */
+  --color-azul-claro: #dbe0ea;     /* tinta clara de serra */
+  /* vermelho/vinho/trigo NÃO seguiram --color-carmim para o esmeralda em
+     2026-09-01 de propósito: no painel, vermelho é a cor de ERRO (Campo.astro
+     — borda/asterisco/mensagem de campo obrigatório) e trigo é a cor
+     distinta do status "aprovado" em fluxo.ts (diferente de "publicado").
+     Trocar por verde quebraria essas duas leituras. Ficam no tom antigo. */
+  --color-vermelho: #6e5220;
+  --color-vinho: #5a4119;
+  --color-verde: #304890;
+  --color-verde-texto: #304890;
+  --color-prata: #c7ccd3;
+  --color-grafite: #545b66;        /* → musgo */
+  --color-trigo: #6e5220;          /* atenção; 6,1:1 sobre papel */
+  --color-papel-suave: #e9ebee;    /* → neblina */
 
   --font-display: 'Bricolage Grotesque', 'Arial Narrow', system-ui, sans-serif;
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -142,31 +184,47 @@ h1, h2, h3, .display {
   outline-offset: 3px;
   border-radius: 2px;
 }
+/* --color-papel de propósito, não --color-sobre-escuro: `.sobre-serra`
+   também marca a faixa "f-serra" de Carreira.astro, cujo fundo É
+   --color-serra — essa MUDA de tom no modo escuro, e o foco precisa mudar
+   junto (é o mesmo raciocínio de "cor sobre acento" que --color-papel já
+   resolve em qualquer botão serra/carmim). Cabeçalho, rodapé e a barra de
+   acessibilidade — cujo fundo NÃO muda — têm a própria regra local de
+   foco com --color-sobre-escuro, que vence esta por especificidade. */
 .sobre-serra :focus-visible { outline-color: var(--color-papel); }
 
 /* ── O ponto: motivo do sistema ──────────────────────────────────────────
-   O "V" do ponto meia. Aparece em três escalas — no hero (grande), na régua
-   que separa cada carreira (média) e no fio da ourela (mínima). Quem vê uma
-   vez reconhece as outras. É SVG embutido: zero requisição. */
+   O "V" do ponto meia. Aparece em duas escalas — no hero (grande) e na régua
+   que separa cada carreira (média). Vivia numa terceira, mínima, no fio da
+   ourela; removida a 2026-08-31 a pedido do usuário (ver .fio-ourela). É SVG
+   embutido: zero requisição. */
 .regua-tricô {
   height: 6px;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='6' viewBox='0 0 12 6'%3E%3Cpath d='M0 0.6 L3 5.4 L6 0.6 L9 5.4 L12 0.6' fill='none' stroke='%234c5a51' stroke-width='1.1' stroke-opacity='.55'/%3E%3C/svg%3E");
   background-repeat: repeat-x;
 }
 .fio-ourela {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='12' viewBox='0 0 6 12'%3E%3Cpath d='M0.6 0 L5.4 3 L0.6 6 L5.4 9 L0.6 12' fill='none' stroke='%234c5a51' stroke-width='1.1' stroke-opacity='.45'/%3E%3C/svg%3E");
-  background-repeat: repeat-y;
+  /* Removida a 2026-08-31: o ponto tricotado que corria na vertical à
+     esquerda de todo bloco de conteúdo, a pedido do usuário. A largura fica
+     — é ela quem sustenta a coluna da ourela (onde mora o número "01", "02"
+     em Carreira.astro) e o ritmo vertical (min-height por arquivo). Só a
+     textura sai. */
   width: 6px;
 }
 
 /* ── Carreira: a unidade de composição ───────────────────────────────────
-   Faixa horizontal sangrada. Dentro, duas trilhas: a ourela (estreita, com
-   número e rótulo da seção) e o corpo (largo). Em 360px a ourela colapsa
-   para o fio de 6px — a estrutura não muda de natureza no celular. */
+   Faixa horizontal sangrada, com o corpo centralizado dentro do contêiner.
+   A coluna reservada da ourela (onde viviam o número da seção e o fio) foi
+   ZERADA em 2026-09-01 a pedido do cliente: o gutter fixo de 9rem/6px
+   empurrava todo conteúdo do site para a direita do centro real da tela —
+   sensível demais em faixas largas como o hero. `.ourela` continua no
+   markup de todas as páginas (só não reserva espaço): o fio/marca que
+   sobra ali já não tem cor de fundo própria desde 2026-08-31, então some
+   sem deixar buraco. */
 .carreira {
   display: grid;
-  grid-template-columns: 6px minmax(0, 1fr);
-  gap: 1.25rem;
+  grid-template-columns: 0 minmax(0, 1fr);
+  gap: 0;
   max-width: var(--container-carreira);
   margin-inline: auto;
   padding-inline: 1rem;
@@ -175,8 +233,6 @@ h1, h2, h3, .display {
 
 @media (min-width: 48rem) {
   .carreira {
-    grid-template-columns: 9rem minmax(0, 1fr);
-    gap: 2.5rem;
     padding-inline: 2rem;
   }
 }
@@ -257,6 +313,56 @@ a:focus-visible .fio-foco,
   text-align: left;
 }
 
+/* ── Modo escuro ─────────────────────────────────────────────────────────
+   --color-serra-noite e --color-preto NÃO mudam — já são a âncora escura do
+   sistema (cabeçalho, rodapé, hero) e continuam servindo os mesmos lugares.
+   O que muda é a superfície clara (papel/neblina, agora escuras) e os tons
+   pensados para TEXTO/ícone sobre superfície clara (tinta, musgo, serra,
+   carmim, turquesa) — esses precisam clarear para continuar legíveis
+   sobre o fundo agora escuro. --color-carmim e --color-turquesa reaproveitam
+   o valor "cru" que --color-carmim-brilho/--color-turquesa-brilho já
+   guardavam justamente para uso "sobre fundo escuro" (ver a nota da paleta,
+   acima) — não são cores novas, são as mesmas já pensadas pra isto.
+   Contrastes conferidos à mão (todos ≥6,7:1, bem acima do AA de 4,5:1):
+   tinta/musgo/serra/carmim sobre neblina e papel escuros.
+
+   PEGADINHA que este arquivo já pagou uma vez: cabeçalho/rodapé/barra usam
+   `color: var(--color-papel)` para o texto branco deles, sobre um fundo que
+   É --color-serra-noite/--color-preto e NÃO muda de tom. Escurecer
+   --color-papel aqui apagaria esse texto (escuro sobre escuro). Por isso
+   existe --color-sobre-escuro — um branco que nunca muda de tema — e esses
+   três componentes (mais o hero e o assistente de contatos) usam ELE, não
+   --color-papel, para o próprio texto. Ver a nota ao lado da declaração do
+   token, acima.
+
+   Vem ANTES do bloco de alto contraste de propósito: se as duas
+   preferências estiverem ligadas ao mesmo tempo, quem "ganha" na cascata é
+   o alto contraste (regra mais abaixo no arquivo) — é a exigência mais
+   forte do eMAG, puro preto e branco, e não pode amolecer por causa do
+   tema escuro. */
+[data-tema='escuro'] {
+  --color-neblina: #0b0f1a;
+  --color-papel: #141a2c;
+  --color-tinta: #e9ebee;
+  --color-musgo: #9aa2b1;
+  --color-serra: #93a5e6;
+  --color-carmim: #10b981;
+  --color-prata: #2a3145;
+  /* O texto do assistente de contatos (--color-turquesa) também foi pensado
+     só para fundo claro — mesma troca pelo tom "brilho", já pensado para
+     fundo escuro. */
+  --color-turquesa: #22d3c5;
+  color-scheme: dark;
+}
+/* Fotos com moldura clara "pesam" demais sobre fundo escuro — mesmo
+   tratamento que o alto contraste já dá à foto do hero, só que sem
+   dessaturar (aqui é conforto visual, não exigência do eMAG). */
+[data-tema='escuro'] .hero {
+  background-image:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.72) 100%),
+    url('/imagens/hero-cambui-neblina.webp');
+}
+
 /* ── Modo de alto contraste ─────────────────────────────────────────────
    Não é um "tema escuro": endurece para preto e branco puros e engrossa os
    traços. Exigência do eMAG. */
@@ -265,15 +371,24 @@ a:focus-visible .fio-foco,
   --color-papel: #ffffff;
   --color-tinta: #000000;
   --color-musgo: #1a1a1a;
-  --color-serra: #00331a;
+  --color-serra: #001a4d;
   --color-serra-noite: #000000;
-  --color-carmim: #8f0018;
+  --color-carmim: #064e3b;
 }
 [data-contraste='alto'] .regua-tricô,
 [data-contraste='alto'] .fio-ourela { background-image: none; background: #000; }
 [data-contraste='alto'] .fio-ourela { width: 3px; }
 [data-contraste='alto'] :focus-visible { outline-width: 4px; }
 [data-contraste='alto'] .serra-tecida { filter: grayscale(1) contrast(2); }
+/* A foto do hero da home (index.astro) precisa do mesmo tratamento que a
+   SerraTecida tinha: sem cor e com véu quase opaco, senão o fundo fotográfico
+   compete com o texto branco no modo de alto contraste (exigência do eMAG). */
+[data-contraste='alto'] .hero {
+  background-image:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.92) 100%),
+    url('/imagens/hero-cambui-neblina.webp');
+  filter: grayscale(1);
+}
 
 /* ── prefers-reduced-motion ─────────────────────────────────────────────
    Desliga, não atenua. É portal de governo: a preferência do sistema

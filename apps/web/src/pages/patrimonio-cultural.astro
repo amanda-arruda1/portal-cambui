@@ -1,0 +1,173 @@
+---
+/**
+ * Patrimônio Cultural.
+ *
+ * Migrado do site antigo (7 subpáginas sob "O Município") para uma página só
+ * com seções ancoradas — mesmo padrão de /perguntas-frequentes, em vez de
+ * replicar uma URL por categoria. "Apresentação" e "Contato Patrimônio" vêm
+ * da coleção genérica 'paginas' (rich text simples); os documentos (livros,
+ * dossiês de tombamento, inventários, legislação, outros arquivos) vêm de
+ * 'patrimonio_documentos', a coleção nova deste módulo — mesmo fluxo
+ * editorial das demais, dona: Secretaria de Cultura e Turismo.
+ */
+import Base from '../layouts/Base.astro';
+import Carreira from '../componentes/Carreira.astro';
+import EstadoVazio from '../componentes/EstadoVazio.astro';
+import TituloPagina from '../componentes/TituloPagina.astro';
+import { documentosPatrimonio, paginaPorSlug } from '../lib/conteudo';
+import { arquivo } from '../lib/directus';
+import { limpar } from '../lib/sanitizar';
+import type { CategoriaPatrimonio, DocumentoPatrimonio } from '../lib/tipos';
+
+/* Texto de cada categoria é o mesmo do site antigo, palavra por palavra —
+ * migrado por leitura direta em 2026-09-03, não redigido aqui. */
+const CATEGORIAS: Array<{ chave: CategoriaPatrimonio; rotulo: string; texto: string }> = [
+  {
+    chave: 'livro',
+    rotulo: 'Livros do Patrimônio',
+    texto: 'O Livro do Patrimônio reúne o registro oficial dos bens móveis e imóveis pertencentes ao município.',
+  },
+  {
+    chave: 'dossie',
+    rotulo: 'Dossiês de Tombamento',
+    texto: 'O tombamento é o ato pelo qual o poder público reconhece o valor histórico, cultural, arquitetônico ou paisagístico de um bem e garante sua preservação para as gerações futuras. Aqui estão reunidos os dossiês de tombamento elaborados pela administração municipal, com o registro e a documentação oficial dos bens protegidos do município.',
+  },
+  {
+    chave: 'inventario',
+    rotulo: 'Inventários',
+    texto: 'O inventário é o instrumento fundamental para o conhecimento e a salvaguarda do patrimônio cultural de um município — identifica, documenta e cataloga os bens de natureza material e imaterial que expressam a história, a memória e a identidade da comunidade local.',
+  },
+  {
+    chave: 'legislacao',
+    rotulo: 'Legislação Municipal',
+    texto: 'A proteção do patrimônio cultural de Cambuí é fundamentada em normas municipais que estabelecem as diretrizes para a preservação, o tombamento e o financiamento dos bens históricos e culturais do município.',
+  },
+  {
+    chave: 'outro',
+    rotulo: 'Outros Arquivos',
+    texto: 'Documentos complementares ao trabalho de preservação do patrimônio cultural de Cambuí: decretos municipais, relatórios, laudos técnicos, fichas de acervo e materiais de planejamento e educação patrimonial.',
+  },
+];
+
+const [{ dados: documentos, indisponivel }, apresentacao, contato] = await Promise.all([
+  documentosPatrimonio(),
+  paginaPorSlug('patrimonio-cultural'),
+  paginaPorSlug('patrimonio-cultural-contato'),
+]);
+
+const grupos = CATEGORIAS.map((c) => ({
+  ...c,
+  itens: documentos.filter((d) => d.categoria === c.chave),
+}));
+---
+
+<Base
+  titulo="Patrimônio Cultural"
+  descricao="Livros do Patrimônio, dossiês de tombamento, inventários e legislação do patrimônio histórico e cultural de Cambuí."
+>
+  <TituloPagina
+    rotulo="O Município"
+    titulo="Patrimônio Cultural"
+    chamada="Os bens tombados, os dossiês, inventários e a legislação que protegem a memória de Cambuí."
+    trilha={[{ rotulo: 'Patrimônio Cultural' }]}
+  />
+
+  {
+    apresentacao.dado?.conteudo && (
+      <Carreira numero="01" rotulo="Apresentação" fundo="papel">
+        <div class="conteudo-rico" set:html={limpar(apresentacao.dado.conteudo)} />
+      </Carreira>
+    )
+  }
+
+  <Carreira numero="02" rotulo="Acervo" titulo="Documentos por categoria">
+    <nav aria-label="Categorias de documentos" class="sem-impressao">
+      <ul class="filtros">
+        {grupos.map((g) => (
+          <li><a href={`#${g.chave}`} class="atalho">{g.rotulo}</a></li>
+        ))}
+      </ul>
+    </nav>
+
+    {
+      grupos.map((grupo) => (
+        <section id={grupo.chave} class="grupo entra">
+          <h3 class="t-secao titulo-grupo">{grupo.rotulo}</h3>
+          <p class="t-lead texto-categoria">{grupo.texto}</p>
+          {
+            grupo.itens.length === 0 ? (
+              <EstadoVazio indisponivel={indisponivel} assunto={`documentos em "${grupo.rotulo}"`} />
+            ) : (
+              <ul class="lista">
+                {grupo.itens.map((documento: DocumentoPatrimonio) => {
+                  const destino = documento.url_externa ?? arquivo(documento.arquivo);
+                  return (
+                    <li>
+                      {destino ? (
+                        <a href={destino} class="linha-tarefa" target={documento.url_externa ? '_blank' : undefined} rel={documento.url_externa ? 'noopener noreferrer' : undefined}>
+                          <span class="texto">
+                            {documento.periodo && <span class="t-rotulo meta">{documento.periodo}</span>}
+                            <span class="t-sub titulo"><span class="fio-foco">{documento.titulo}</span></span>
+                            {documento.descricao && <span class="resumo t-micro">{documento.descricao}</span>}
+                          </span>
+                          <svg class="seta" width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                            <path d="M4 11h13M12 6l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                          </svg>
+                        </a>
+                      ) : (
+                        <div class="linha-tarefa sem-link">
+                          <span class="texto">
+                            {documento.periodo && <span class="t-rotulo meta">{documento.periodo}</span>}
+                            <span class="t-sub titulo">{documento.titulo}</span>
+                            {documento.descricao && <span class="resumo t-micro">{documento.descricao}</span>}
+                          </span>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )
+          }
+        </section>
+      ))
+    }
+  </Carreira>
+
+  {
+    contato.dado?.conteudo && (
+      <Carreira numero="03" rotulo="Fale conosco" titulo="Contato Patrimônio" fundo="papel">
+        <div class="conteudo-rico" set:html={limpar(contato.dado.conteudo)} />
+      </Carreira>
+    )
+  }
+</Base>
+
+<style>
+  .filtros { list-style: none; margin: 0 0 2.5rem; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .atalho {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: 0.4rem 0.9rem;
+    border: 2px solid color-mix(in srgb, var(--color-serra) 30%, transparent);
+    border-radius: 999px;
+    text-decoration: none;
+    color: var(--color-serra);
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+  .atalho:hover { background: var(--color-serra); color: var(--color-papel); border-color: var(--color-serra); }
+
+  .grupo + .grupo { margin-top: 2.75rem; }
+  .titulo-grupo { color: var(--color-serra); }
+  .texto-categoria { margin-top: 0.35rem; margin-bottom: 1.25rem; max-width: var(--container-leitura); color: var(--color-musgo); }
+
+  .lista { list-style: none; margin: 0; padding: 0; }
+  .texto { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+  .meta { color: var(--color-musgo); }
+  .titulo { font-family: var(--font-display); letter-spacing: -0.01em; }
+  .resumo { color: var(--color-musgo); }
+  .seta { color: var(--color-carmim); flex: none; }
+  .sem-link .texto { padding-block: 0.25rem; }
+</style>

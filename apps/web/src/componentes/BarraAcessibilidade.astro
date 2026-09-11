@@ -3,7 +3,15 @@
  * Barra de acessibilidade — primeira coisa no documento.
  *
  * Reúne o que o eMAG pede e o que portal de governo brasileiro consolidou:
- * atalhos de salto, controle de tamanho de fonte, alto contraste e VLibras.
+ * atalhos de salto, controle de tamanho de fonte e alto contraste.
+ *
+ * O Libras SAIU da barra em 2026-09-02, a pedido do usuário. Primeira
+ * tentativa criou um botão nosso, com ícone próprio — o usuário corrigiu:
+ * era pra sumir do cabeçalho e sobrar só o ícone OFICIAL do governo federal
+ * (o que o próprio plugin `vw-access-button` desenha), sem reinventar nada
+ * visual. Por isso o plugin agora carrega direto no carregamento da página,
+ * e não mais sob demanda atrás de um botão — é o widget do gov.br que fica
+ * sempre visível à direita da tela, com a aparência dele mesmo.
  *
  * Fica ANTES do cabeçalho na ordem do DOM, que é a ordem que o leitor de tela
  * e o teclado percorrem. Os atalhos são o primeiro elemento focável da página.
@@ -13,29 +21,46 @@
 <div class="barra sem-impressao">
   <div class="interna">
     <nav aria-label="Atalhos de acessibilidade" class="atalhos">
-      <a href="#conteudo" accesskey="1">Ir para o conteúdo <kbd>1</kbd></a>
-      <a href="#menu" accesskey="2">Ir para o menu <kbd>2</kbd></a>
-      <a href="#busca" accesskey="3">Ir para a busca <kbd>3</kbd></a>
-      <a href="#rodape" accesskey="4">Ir para o rodapé <kbd>4</kbd></a>
+      <a href="#rodape">Ir para o rodapé</a>
     </nav>
 
     <div class="controles">
       <div class="grupo" role="group" aria-label="Tamanho do texto">
-        <button type="button" data-fonte="menor" aria-label="Diminuir o tamanho do texto">A−</button>
-        <button type="button" data-fonte="normal" aria-label="Voltar o texto ao tamanho normal">A</button>
-        <button type="button" data-fonte="maior" aria-label="Aumentar o tamanho do texto">A+</button>
+        <button type="button" data-fonte="menor" class="com-icone" title="Diminuir o tamanho do texto">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M3 16L7 4L11 16M4.6 11.5H9.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M13.5 10H18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <span class="sr-only">Diminuir o tamanho do texto</span>
+        </button>
+        <button type="button" data-fonte="maior" class="com-icone" title="Aumentar o tamanho do texto">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M3 16L7 4L11 16M4.6 11.5H9.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M15.75 7.5V12.5M13.5 10H18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <span class="sr-only">Aumentar o tamanho do texto</span>
+        </button>
       </div>
-      <button type="button" data-contraste aria-pressed="false" class="grupo unico">
-        Alto contraste
+      <button type="button" data-contraste aria-pressed="false" class="grupo unico com-icone" title="Alto contraste">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="2" />
+          <path d="M10 3a7 7 0 0 1 0 14V3z" fill="currentColor" />
+        </svg>
+        <span class="sr-only">Alto contraste</span>
       </button>
-      <button type="button" data-libras class="grupo unico">
-        Libras
+      <button type="button" data-tema-alternar aria-pressed="false" class="grupo unico com-icone" title="Modo escuro">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M17 12.3A7 7 0 0 1 7.7 3 7 7 0 1 0 17 12.3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span class="sr-only">Modo escuro</span>
       </button>
     </div>
   </div>
 </div>
 
-<!-- Widget oficial do gov.br. Marcação exigida pelo plugin. -->
+<!-- Widget oficial do gov.br. Marcação exigida pelo plugin — é o próprio
+     plugin quem estiliza `vw-access-button` como o ícone flutuante fixo à
+     direita da tela; nada aqui desenha por cima dele. -->
 <div {...{ vw: true }} class="enabled sem-impressao">
   <div {...{ "vw-access-button": true }} class="active"></div>
   <div {...{ "vw-plugin-wrapper": true }}><div class="vw-plugin-top-wrapper"></div></div>
@@ -44,7 +69,9 @@
 <style>
   .barra {
     background: var(--color-serra-noite);
-    color: var(--color-papel);
+    /* --color-sobre-escuro, não --color-papel: este fundo não muda com o
+       tema (ver a nota em global.css), então o texto também não pode. */
+    color: var(--color-sobre-escuro);
     font-size: 0.8125rem;
   }
   .interna {
@@ -60,29 +87,27 @@
   .atalhos { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
   .atalhos a { color: inherit; text-decoration: none; padding: 0.25rem 0; }
   .atalhos a:hover { text-decoration: underline; }
-  .atalhos kbd {
-    font: inherit;
-    border: 1px solid currentColor;
-    border-radius: 3px;
-    padding: 0 0.3em;
-    opacity: 0.75;
-  }
   .controles { display: flex; align-items: center; gap: 0.5rem; }
   .grupo { display: flex; border: 1px solid color-mix(in srgb, currentColor 45%, transparent); border-radius: 4px; overflow: hidden; }
   .grupo button, .grupo.unico {
     background: none;
-    border: 0;
     color: inherit;
     font: inherit;
     padding: 0.3rem 0.6rem;
     cursor: pointer;
     min-height: 2rem;
   }
+  /* Só os botões DENTRO do grupo de fonte não têm borda própria — a borda
+     do par inteiro já vem do .grupo pai. O botão único (contraste, tema) É
+     o .grupo: precisa manter a borda de 1px herdada dessa regra. */
+  .grupo button { border: 0; }
   .grupo button + button { border-left: 1px solid color-mix(in srgb, currentColor 45%, transparent); }
   .grupo button:hover, .grupo.unico:hover { background: color-mix(in srgb, currentColor 18%, transparent); }
   .grupo.unico[aria-pressed='true'] { background: var(--color-carmim); border-color: var(--color-carmim); }
+  .com-icone { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .com-icone svg { flex: none; }
   /* A barra é escura: o foco branco é o que enxerga sobre ela. */
-  .barra :focus-visible { outline-color: var(--color-papel); }
+  .barra :focus-visible { outline-color: var(--color-sobre-escuro); }
 
   /* Os atalhos só aparecem ao receber foco no celular, onde não cabem. */
   @media (max-width: 47.99rem) {
@@ -112,6 +137,16 @@
     try { localStorage.setItem('cambui:contraste', ligado ? 'alto' : 'normal'); } catch { /* modo privado */ }
   }
 
+  /* O <script is:inline> no <head> (Base.astro) já decidiu e aplicou o tema
+     ANTES da primeira pintura — evita o "flash" de claro em quem prefere
+     escuro. Esta função só entra depois: sincroniza o botão com o que já
+     está no DOM e grava a escolha quando a pessoa clica. */
+  function aplicarTema(escuro: boolean) {
+    raiz.dataset.tema = escuro ? 'escuro' : 'claro';
+    document.querySelector<HTMLButtonElement>('button[data-tema-alternar]')?.setAttribute('aria-pressed', String(escuro));
+    try { localStorage.setItem('cambui:tema', escuro ? 'escuro' : 'claro'); } catch { /* modo privado */ }
+  }
+
   document.querySelectorAll<HTMLButtonElement>('[data-fonte]').forEach((b) =>
     b.addEventListener('click', () => aplicarFonte(b.dataset.fonte!)),
   );
@@ -119,6 +154,8 @@
   botaoContraste?.addEventListener('click', () => {
     aplicarContraste(botaoContraste.getAttribute('aria-pressed') !== 'true');
   });
+  const botaoTema = document.querySelector<HTMLButtonElement>('button[data-tema-alternar]');
+  botaoTema?.addEventListener('click', () => aplicarTema(raiz.dataset.tema !== 'escuro'));
 
   try {
     const f = localStorage.getItem('cambui:fonte');
@@ -126,20 +163,16 @@
     if (localStorage.getItem('cambui:contraste') === 'alto') aplicarContraste(true);
   } catch { /* modo privado: segue no padrão */ }
 
-  /* VLibras SOB DEMANDA, e não no carregamento.
-   *
-   * Medido com Lighthouse em 28/08/2026: carregar o plugin automaticamente
-   * custava desempenho a todo mundo e ainda trazia para dentro da nossa página
-   * os defeitos de acessibilidade dele — <img> sem alt, controle sem nome.
-   *
-   * Quem precisa de Libras teria de clicar no botão do plugin de qualquer
-   * forma; agora clica num botão NOSSO, que tem nome acessível de verdade, e o
-   * plugin só então é baixado. Ganha o desempenho de quem não usa, ganha a
-   * clareza de quem usa, e ganha a LGPD: nenhuma requisição a vlibras.gov.br
-   * acontece sem a pessoa pedir.
+  // Só sincroniza o aria-pressed do botão — o dataset em si já veio certo
+  // do script do <head>, escolha do usuário ou preferência do sistema.
+  botaoTema?.setAttribute('aria-pressed', String(raiz.dataset.tema === 'escuro'));
+
+  /* VLibras — o ícone oficial do gov.br, carregado direto (não mais atrás
+   * de um botão nosso: o usuário pediu só o ícone federal, sem reinvenção
+   * visual). Isto reabre o custo medido em 28/08/2026 no Lighthouse — mas é
+   * a troca que o usuário escolheu, e o plugin já vem com posição e ícone
+   * prontos, então não há CSS nosso a manter em cima dele.
    */
-  const botaoLibras = document.querySelector<HTMLButtonElement>('button[data-libras]');
-  let librasCarregando = false;
 
   /* O plugin injeta <img> sem alt. Não dá para corrigir na origem; dá para
    * corrigir aqui. Só o atributo alt — NADA de aria-label em <div> sem papel,
@@ -157,30 +190,25 @@
     setTimeout(() => observador.disconnect(), 20000);
   }
 
-  botaoLibras?.addEventListener('click', () => {
-    if (librasCarregando) return;
-    librasCarregando = true;
-    botaoLibras.disabled = true;
-    botaoLibras.textContent = 'Carregando…';
+  const s = document.createElement('script');
+  s.src = 'https://vlibras.gov.br/app/vlibras-plugin.js';
+  s.async = true;
+  s.onload = () => {
+    // @ts-expect-error — global instalado pelo próprio plugin
+    new window.VLibras.Widget('https://vlibras.gov.br/app');
+    corrigirImagensDoVLibras();
 
-    const s = document.createElement('script');
-    s.src = 'https://vlibras.gov.br/app/vlibras-plugin.js';
-    s.async = true;
-    s.onload = () => {
-      // @ts-expect-error — global instalado pelo próprio plugin
-      new window.VLibras.Widget('https://vlibras.gov.br/app');
-      corrigirImagensDoVLibras();
-      // O plugin leva um instante para montar o próprio botão de acesso.
-      setTimeout(() => {
-        document.querySelector<HTMLElement>('[vw-access-button]')?.click();
-        botaoLibras.remove();
-      }, 900);
-    };
-    s.onerror = () => {
-      botaoLibras.disabled = false;
-      botaoLibras.textContent = 'Libras indisponível';
-      librasCarregando = false;
-    };
-    document.body.appendChild(s);
-  });
+    // Passar o mouse já abre a caixa de Libras (pedido do usuário). Só na
+    // PRIMEIRA vez (`once: true`): o clique do próprio plugin ALTERNA
+    // aberto/fechado, então repetir o clique a cada hover fecharia a caixa
+    // sempre que o mouse saísse e voltasse — depois do primeiro hover, quem
+    // manda é o clique nativo do botão, como sempre funcionou.
+    document.querySelector<HTMLElement>('[vw-access-button]')?.addEventListener(
+      'mouseenter',
+      function abrir() { this.click(); },
+      { once: true },
+    );
+  };
+  s.onerror = () => console.error('[libras] o plugin vlibras.gov.br não carregou.');
+  document.body.appendChild(s);
 </script>

@@ -4,9 +4,9 @@
  * DECISÃO CENTRAL — a busca e os filtros rodam EM MEMÓRIA, não no CMS.
  *
  * Uma prefeitura deste porte publica de 100 a 200 licitações por ano. Carregar
- * o conjunto publicado inteiro uma vez, guardar por 60 segundos e filtrar em
- * JavaScript é mais simples, mais previsível e mais rápido do que montar
- * filtros relacionais no Directus — e é o que permite, sem depender do banco:
+ * o conjunto publicado inteiro e filtrar em JavaScript é mais simples, mais
+ * previsível e mais rápido do que montar filtros relacionais no Directus — e
+ * é o que permite, sem depender do banco:
  *   · ignorar acento ("pregao" acha "Pregão");
  *   · expandir sinônimos ("merenda" acha "gêneros alimentícios");
  *   · tolerar erro de digitação ("licitacao", "asfaudo");
@@ -125,7 +125,7 @@ export interface Licitacao {
   demonstracao: boolean; date_updated: string | null;
 }
 
-/* ─────────────────────────  carga com cache  ───────────────────────── */
+/* ─────────────────────────  carga  ───────────────────────── */
 
 const CAMPOS = [
   'id', 'numero_processo', 'numero', 'ano', 'slug', 'modalidade', 'forma', 'justificativa_presencial',
@@ -135,24 +135,15 @@ const CAMPOS = [
   'situacao', 'motivo_situacao', 'pncp_id', 'pncp_url', 'sistema_sessao_url', 'demonstracao', 'date_updated',
 ].join(',');
 
-const VALIDADE_MS = 60_000;
-let cache: { em: number; dados: Licitacao[] } | null = null;
-
 /** Todas as licitações publicadas. Falha silenciosa: se o CMS cair, a página
  *  mostra estado vazio honesto em vez de erro — mesma regra do resto do portal. */
 export async function todas(): Promise<{ dados: Licitacao[]; indisponivel: boolean }> {
-  if (cache && Date.now() - cache.em < VALIDADE_MS) return { dados: cache.dados, indisponivel: false };
-
-  const r = await listar<Licitacao>('licitacoes', {
+  return listar<Licitacao>('licitacoes', {
     fields: CAMPOS,
     filter: JSON.stringify({ status: { _eq: 'publicado' } }),
     sort: '-data_publicacao',
     limit: 2000,
   });
-  if (r.indisponivel) return { dados: cache?.dados ?? [], indisponivel: cache === null };
-
-  cache = { em: Date.now(), dados: r.dados };
-  return { dados: r.dados, indisponivel: false };
 }
 
 export async function porSlug(ano: number, slug: string): Promise<Licitacao | null> {

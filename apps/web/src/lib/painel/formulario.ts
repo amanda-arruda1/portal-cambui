@@ -200,8 +200,15 @@ export async function lerFormulario(
             enviado.type || 'application/octet-stream',
             PASTA_PUBLICA,
           );
-          if (!gravado.ok) {
-            erros[campo.nome] = gravado.motivo;
+          // `gravado.ok` sozinho não garante `gravado.dados`: o Directus
+          // devolve 204 sem corpo quando a política tem 'create' mas não
+          // 'read' em directus_files (achado real em 2026-09-01, ver
+          // aplicar-papeis.mjs). Sem esta guarda, a página quebrava com
+          // HTTP 500 em vez de dizer o que houve.
+          if (!gravado.ok || !gravado.dados) {
+            erros[campo.nome] = gravado.ok
+              ? 'O arquivo foi enviado, mas o sistema não confirmou o registro. Sua função pode estar sem permissão de leitura em arquivos — avise a TI.'
+              : gravado.motivo;
             valores[campo.nome] = idExistente || null;
             break;
           }

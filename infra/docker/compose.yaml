@@ -128,7 +128,7 @@ services:
       STORAGE_LOCATIONS: local
       STORAGE_LOCAL_DRIVER: local
       STORAGE_LOCAL_ROOT: /directus/uploads
-      FILES_MAX_UPLOAD_SIZE: 50mb
+      FILES_MAX_UPLOAD_SIZE: 200mb
 
       EXTENSIONS_PATH: /directus/extensions
       EXTENSIONS_AUTO_RELOAD: "false"

@@ -15,13 +15,24 @@ import Base from '../layouts/Base.astro';
 import Carreira from '../componentes/Carreira.astro';
 import SerraTecida from '../componentes/SerraTecida.astro';
 import LinhaTarefa from '../componentes/LinhaTarefa.astro';
-import { A_CIDADE } from '../dados/cidade';
+import { A_CIDADE, HISTORIA } from '../dados/cidade';
 
 const NUMEROS = [
-  { valor: '1.030 m', rotulo: 'de altitude', nota: 'na Serra da Mantiqueira' },
+  { valor: '244,6 km²', rotulo: 'de área', nota: 'IBGE' },
+  { valor: '860–2.050 m', rotulo: 'de altitude', nota: 'sede a 860 m; serra até 2.050 m' },
   { valor: 'BR-459', rotulo: 'corta o município', nota: 'a Fernão Dias passa ao lado' },
   { valor: 'MG / SP', rotulo: 'na divisa', nota: 'Sul de Minas' },
 ];
+
+/* Coordenadas reais do município, via geocodificação OpenStreetMap/Nominatim
+   em 2026-08-31 (não estimadas). O bbox é o contorno administrativo de
+   Cambuí devolvido pela mesma consulta — mostra o município inteiro, não só
+   o centro. */
+const MAPA = {
+  lat: -22.6122501,
+  lon: -46.0572137,
+  bbox: '-46.1579870,-22.6916640,-45.9409440,-22.4916860',
+};
 
 const PARA_QUEM_CHEGA = [
   { rotulo: 'Portal turístico de Cambuí', detalhe: 'Onde ficar, onde comer, o que visitar', destino: A_CIDADE.portalTuristico, externo: true },
@@ -32,7 +43,7 @@ const PARA_QUEM_CHEGA = [
 
 <Base
   titulo="A cidade"
-  descricao="Cambuí fica a mais de mil metros de altitude, na Serra da Mantiqueira, na divisa de Minas com São Paulo. Cidade de malharia, de estrada e de inverno de verdade."
+  descricao="Cambuí fica na Serra da Mantiqueira, na divisa de Minas com São Paulo, entre 860 m na sede e mais de 2 mil metros nos pontos mais altos. Cidade de malharia, de estrada e de inverno de verdade."
   colado
 >
   <div class="abertura">
@@ -41,6 +52,13 @@ const PARA_QUEM_CHEGA = [
       <div class="ourela">
         <span aria-hidden="true"></span>
         <div class="corpo">
+          <nav aria-label="Você está aqui" class="trilha t-micro">
+            <ol>
+              <li><a href="/">Início</a></li>
+              <li><span aria-hidden="true">›</span> <span aria-current="page">A cidade</span></li>
+            </ol>
+          </nav>
+
           <p class="t-rotulo etiqueta">A cidade</p>
           <h1 class="t-display frase">{A_CIDADE.chamada}</h1>
           <p class="t-lead sub">{A_CIDADE.texto}</p>
@@ -62,17 +80,43 @@ const PARA_QUEM_CHEGA = [
       ))}
     </dl>
     <p class="t-micro fonte">
-      TODO(cliente): confirmar a altitude oficial e a área do município com o setor de planejamento.
+      Área e altitude: IBGE/Wikipédia. TODO(cliente): confirmar com o setor de planejamento se
+      houver número oficial diferente.
     </p>
+
+    <div class="mapa">
+      <iframe
+        title="Mapa de Cambuí, Minas Gerais"
+        src={`https://www.openstreetmap.org/export/embed.html?bbox=${MAPA.bbox}&layer=mapnik&marker=${MAPA.lat},${MAPA.lon}`}
+        loading="lazy"
+      ></iframe>
+      <p class="t-micro credito">
+        <a
+          href={`https://www.openstreetmap.org/?mlat=${MAPA.lat}&mlon=${MAPA.lon}#map=11/${MAPA.lat}/${MAPA.lon}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Ver mapa maior<span class="sr-only"> — abre em uma nova aba</span>
+        </a>
+        <span aria-hidden="true"> · </span>
+        Dados do mapa © colaboradores do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>
+      </p>
+    </div>
   </Carreira>
 
-  <Carreira numero="02" rotulo="A malha" fundo="serra" titulo="A cidade que se faz por carreiras">
+  <Carreira numero="02" rotulo="História" titulo="De povoado a cidade">
+    <div class="texto-historia entra">
+      {HISTORIA.paragrafos.map((p) => <p class="t-lead">{p}</p>)}
+      <p class="t-micro fonte">{HISTORIA.fonte}</p>
+    </div>
+  </Carreira>
+
+  <Carreira numero="03" rotulo="A malha" fundo="serra" titulo="A cidade que se faz por carreiras">
     <div class="texto-serra entra">
       <p class="t-lead">
         A malharia é o que sustenta Cambuí e o que traz visitante de toda a região o ano inteiro. É
         também a razão de este portal ser desenhado como é: o ponto de tricô que preenche a serra no
-        topo da página, a régua que separa cada seção e o fio que corre à esquerda de cada texto são
-        o mesmo motivo, em três escalas.
+        topo da página e a régua que separa cada seção são o mesmo motivo, em duas escalas.
       </p>
       <p class="t-lead">
         Uma carreira de ponto e uma carreira de montanha são o mesmo gesto — fios paralelos que,
@@ -81,7 +125,7 @@ const PARA_QUEM_CHEGA = [
     </div>
   </Carreira>
 
-  <Carreira numero="03" rotulo="Para quem chega">
+  <Carreira numero="04" rotulo="Para quem chega">
     <ul class="lista entra">
       {PARA_QUEM_CHEGA.map((t) => <li><LinhaTarefa tarefa={t} /></li>)}
     </ul>
@@ -90,18 +134,35 @@ const PARA_QUEM_CHEGA = [
 
 <style>
   .abertura { background: var(--color-neblina); padding-bottom: clamp(2rem, 5vw, 3rem); }
+  .trilha ol { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; padding: 0; color: var(--color-musgo); }
+  .trilha a { color: var(--color-serra); text-decoration: none; }
   .etiqueta { color: var(--color-carmim); margin-top: clamp(1.25rem, 3vw, 2rem); }
   .frase { margin-top: 0.5rem; max-width: 14ch; }
   .sub { margin-top: 1.25rem; max-width: var(--container-leitura); color: var(--color-musgo); }
 
   .numeros { margin-top: 1.5rem; display: grid; gap: 1.75rem; }
-  @media (min-width: 44rem) { .numeros { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2.5rem; } }
+  @media (min-width: 30rem) { .numeros { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.5rem; } }
+  @media (min-width: 60rem) { .numeros { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
   .valor { font-family: var(--font-display); font-size: clamp(2rem, 4.5vw, 2.9rem); font-weight: 700; letter-spacing: -0.03em; color: var(--color-serra); line-height: 1; }
   .numero dd { margin: 0.5rem 0 0; display: flex; flex-direction: column; gap: 0.15rem; }
   .rotulo { font-weight: 600; }
   .nota { color: var(--color-musgo); }
   .fonte { margin-top: 2rem; color: var(--color-musgo); }
 
+  .mapa { margin-top: 2rem; max-width: var(--container-carreira); }
+  .mapa iframe {
+    display: block;
+    width: 100%;
+    height: clamp(16rem, 40vw, 26rem);
+    border: 2px solid color-mix(in srgb, var(--color-musgo) 25%, transparent);
+    border-radius: 4px;
+  }
+  .credito { margin-top: 0.6rem; color: var(--color-musgo); }
+  .credito a { color: var(--color-serra); text-decoration: none; font-weight: 600; }
+
   .texto-serra { margin-top: 1.25rem; max-width: var(--container-leitura); display: grid; gap: 1.1rem; }
+
+  .texto-historia { margin-top: 1.25rem; max-width: var(--container-leitura); display: grid; gap: 1.1rem; }
+  .texto-historia .fonte { margin-top: 0.5rem; color: var(--color-musgo); }
   .lista { list-style: none; margin: 1.25rem 0 0; padding: 0; }
 </style>

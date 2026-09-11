@@ -130,7 +130,7 @@ const meses = Array.from({ length: 12 }, (_, m) => ({ mes: m, dias: grade(m) }))
   .anos a { padding: 0.4rem 0.9rem; border: 1px solid color-mix(in srgb, var(--color-musgo) 35%, transparent);
     border-radius: 999px; text-decoration: none; color: var(--color-tinta); font-size: 0.9375rem; min-height: 2.25rem;
     display: inline-flex; align-items: center; }
-  .anos a.atual { background: var(--color-serra); border-color: var(--color-serra); color: #fff; font-weight: 700; }
+  .anos a.atual { background: var(--color-serra); border-color: var(--color-serra); color: var(--color-papel); font-weight: 700; }
   .anos a:focus-visible { outline: 3px solid var(--color-carmim); outline-offset: 2px; }
 
   .calendarios { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
@@ -149,9 +149,9 @@ const meses = Array.from({ length: 12 }, (_, m) => ({ mes: m, dias: grade(m) }))
      verde com número em branco, que é diferença de forma, não de matiz. */
   .mes td.nao-util span { color: var(--color-musgo); }
   .mes td a { display: flex; align-items: center; justify-content: center;
-    min-height: 1.9rem; background: var(--color-serra); color: #fff;
+    min-height: 1.9rem; background: var(--color-serra); color: var(--color-papel);
     border-radius: 3px; text-decoration: none; font-weight: 700; }
-  .mes td a:hover { background: var(--color-serra-noite); }
+  .mes td a:hover { background: var(--color-serra-noite); color: var(--color-sobre-escuro); }
   .mes td a:focus-visible { outline: 3px solid var(--color-carmim); outline-offset: 1px; }
   .mes td a sup { font-size: 0.625rem; margin-left: 0.1em; }
 
@@ -163,7 +163,7 @@ const meses = Array.from({ length: 12 }, (_, m) => ({ mes: m, dias: grade(m) }))
   .lista a { text-decoration: none; color: var(--color-tinta); display: flex; gap: 0.7rem; align-items: baseline; }
   .numero { font-weight: 700; color: var(--color-serra); }
   .detalhe { font-size: 0.875rem; color: var(--color-musgo); }
-  .anulada { font-size: 0.75rem; font-weight: 700; color: #fff; background: var(--color-carmim);
+  .anulada { font-size: 0.75rem; font-weight: 700; color: var(--color-papel); background: var(--color-carmim);
     padding: 0.1rem 0.45rem; border-radius: 2px; }
   .vazio { padding: 1.5rem; border: 1px solid color-mix(in srgb, var(--color-musgo) 25%, transparent); border-radius: 4px; }
 </style>

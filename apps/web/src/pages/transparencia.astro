@@ -17,8 +17,12 @@ import Carreira from '../componentes/Carreira.astro';
 import LinhaTarefa from '../componentes/LinhaTarefa.astro';
 import { SISTEMAS_EXTERNOS } from '../dados/instituicional';
 import { NECESSIDADES } from '../dados/cidade';
+import { selos as selosDoCms } from '../lib/conteudo';
+import { arquivo } from '../lib/directus';
+import { data as formatarData } from '../lib/formato';
 
 const lai = NECESSIDADES.find((n) => n.chave === 'transparencia')!;
+const { dados: selos } = await selosDoCms();
 ---
 
 <Base
@@ -71,6 +75,41 @@ const lai = NECESSIDADES.find((n) => n.chave === 'transparencia')!;
       diferentes para a mesma despesa é pior do que um portal sem a informação.
     </p>
   </Carreira>
+
+  {selos.length > 0 && (
+    <Carreira numero="05" rotulo="Selos e certificações" fundo="papel" id="selos">
+      <ul class="selos entra">
+        {selos.map((s) => (
+          <li class="selo">
+            {s.imagem && (
+              <img
+                class="imagem"
+                src={arquivo(s.imagem, { width: 160, height: 160, fit: 'contain', format: 'webp' })!}
+                alt=""
+                width="80"
+                height="80"
+                loading="lazy"
+                decoding="async"
+              />
+            )}
+            <div class="texto-selo">
+              <p class="nome-selo">{s.nome}</p>
+              <p class="t-micro emissor">
+                {s.orgao_emissor}
+                {s.data_concessao && <> · concedido em {formatarData(s.data_concessao)}</>}
+              </p>
+              {s.descricao && <p class="descricao-selo">{s.descricao}</p>}
+              {s.url_comprovacao && (
+                <a href={s.url_comprovacao} target="_blank" rel="noopener noreferrer" class="comprovacao">
+                  <span class="fio-foco">Ver comprovação</span><span class="sr-only"> — abre em uma nova aba</span>
+                </a>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Carreira>
+  )}
 </Base>
 
 <style>
@@ -90,4 +129,13 @@ const lai = NECESSIDADES.find((n) => n.chave === 'transparencia')!;
     border: 2px solid var(--color-carmim);
   }
   .botao:hover { background: var(--color-serra); border-color: var(--color-serra); }
+
+  .selos { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: 1.75rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
+  .selo { display: flex; gap: 1rem; align-items: flex-start; }
+  .imagem { flex: none; width: 4rem; height: 4rem; object-fit: contain; }
+  .texto-selo { min-width: 0; }
+  .nome-selo { font-weight: 600; font-size: 1.0625rem; }
+  .emissor { color: var(--color-musgo); margin-top: 0.15rem; }
+  .descricao-selo { margin-top: 0.4rem; color: var(--color-musgo); }
+  .comprovacao { display: inline-block; margin-top: 0.5rem; color: var(--color-serra); font-weight: 600; text-decoration: none; }
 </style>

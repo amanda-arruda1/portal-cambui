@@ -1,0 +1,441 @@
+---
+/**
+ * Assistente de contatos institucionais — agora em formato de conversa.
+ *
+ * Continua NÃO sendo IA: `lib/contatos-busca.ts` (`responderContato`) é
+ * busca estruturada com sinônimo e tolerância a erro de digitação, só que
+ * agora devolvida como turno de chat em vez de lista filtrada ao vivo. A
+ * base de dados é a mesma (`lib/contatos.ts`, secretarias do CMS + contato
+ * geral da Prefeitura) — só a interface e a experiência mudaram, a pedido
+ * do usuário: "não transforme isso em chatbot de IA complexo".
+ *
+ * Cor de propósito FORA da paleta institucional (turquesa, não azul/dourado)
+ * — ver `--color-turquesa*` em global.css: o pedido era um acento que se
+ * destacasse como camada interativa própria, não mais um botão azul.
+ *
+ * Nunca inventa telefone/e-mail: quando o campo vem vazio do CMS, a resposta
+ * diz "ainda não publicado" — mesmo tom de `contato.astro` e `Rodape.astro`.
+ */
+import { registrosDeContato } from '../lib/contatos';
+import IconeAssistente from './IconeAssistente.astro';
+
+const { dados, indisponivel } = await registrosDeContato();
+
+// Sugestões rápidas: as do pedido, literais — são perguntas prontas, não
+// nomes de secretaria (por isso "RH" e "Obras", que não existem como título
+// no CMS, mas resolvem certo pelo sinônimo/substring do próprio motor).
+const SUGESTOES = ['Secretaria de Saúde', 'Educação', 'RH', 'Obras'];
+
+// `</script` dentro de um valor do CMS quebraria a tag se fosse embutido cru
+// — nunca deveria acontecer num campo de texto simples como os que este
+// componente usa, mas o escape custa uma linha.
+const dadosJson = JSON.stringify(dados).replace(/</g, '\\u003c');
+---
+
+<div class="assistente-contatos sem-impressao">
+  <button
+    type="button"
+    id="assistente-botao"
+    class="botao"
+    aria-haspopup="dialog"
+    aria-expanded="false"
+    aria-controls="assistente-painel"
+    aria-label="Abrir assistente de contatos"
+  >
+    <span class="halo" aria-hidden="true"></span>
+    <span class="onda" aria-hidden="true"></span>
+    <span class="icone icone-abrir" aria-hidden="true">
+      <IconeAssistente id="botao" tamanho={32} />
+    </span>
+    <span class="icone icone-fechar" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 6 6 18M6 6l12 12" />
+      </svg>
+    </span>
+  </button>
+
+  <div id="assistente-painel" class="painel" role="dialog" aria-modal="true" aria-labelledby="assistente-titulo" inert>
+    <div class="cabeca">
+      <div class="identidade">
+        <span class="avatar" aria-hidden="true">
+          <IconeAssistente id="avatar" tamanho={22} />
+        </span>
+        <h2 id="assistente-titulo" class="t-sub">Assistente de contatos</h2>
+      </div>
+      <button type="button" id="assistente-fechar" class="fechar" aria-label="Fechar assistente">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div id="assistente-mensagens" class="mensagens" role="log" aria-live="polite" aria-label="Conversa">
+      <div class="msg msg-assistente">
+        <p>
+          Olá! 👋<br />
+          Posso te ajudar a encontrar um contato.<br />
+          Qual telefone você está procurando?
+        </p>
+      </div>
+    </div>
+
+    <div id="assistente-digitando" class="digitando" hidden aria-hidden="true">
+      <span></span><span></span><span></span>
+    </div>
+
+    <div class="chips" role="group" aria-label="Perguntas rápidas">
+      {SUGESTOES.map((s) => (
+        <button type="button" class="chip" data-chip={s}>{s}</button>
+      ))}
+    </div>
+
+    <form id="assistente-form" class="form">
+      <label for="assistente-campo" class="sr-only">Digite sua pergunta</label>
+      <div class="campo">
+        <input id="assistente-campo" type="text" autocomplete="off" placeholder="Digite aqui qual setor você procura..." />
+        <button type="submit" class="enviar" aria-label="Enviar pergunta">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 2 11 13" />
+            <path d="M22 2 15 22 11 13 2 9 22 2Z" />
+          </svg>
+        </button>
+      </div>
+    </form>
+
+    {
+      indisponivel && (
+        <p class="t-micro aviso-indisponivel">
+          A lista completa de secretarias está indisponível no momento — o atendimento geral continua funcionando.
+        </p>
+      )
+    }
+  </div>
+</div>
+
+<script type="application/json" id="assistente-dados" set:html={dadosJson} />
+
+<script>
+  import '../scripts/assistente-contatos.ts';
+</script>
+
+<style>
+  .assistente-contatos {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 70;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-end;
+    gap: 0.75rem;
+  }
+  @media (min-width: 48rem) {
+    .assistente-contatos { right: 1.5rem; bottom: 1.5rem; }
+  }
+
+  /* O aviso de cookies (AvisoCookies.astro) é fixo, cobre a base inteira da
+     tela e já usa z-index:60. Em vez de acoplar os dois componentes por JS,
+     o botão simplesmente some enquanto o aviso está visível. */
+  body:has(#aviso-cookies:not([hidden])) .assistente-botao { display: none; }
+
+  /* ── Botão flutuante ──────────────────────────────────────────────────── */
+  .botao {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 4.25rem;
+    height: 4.25rem;
+    border: none;
+    border-radius: 50%;
+    background: radial-gradient(120% 120% at 30% 20%, var(--color-turquesa-brilho) 0%, var(--color-turquesa) 42%, var(--color-turquesa-noite) 100%);
+    /* --color-sobre-escuro: --color-turquesa-noite ancora o degradê e não
+       muda de tom no modo escuro (mesmo raciocínio de --color-serra-noite). */
+    color: var(--color-sobre-escuro);
+    cursor: pointer;
+    box-shadow: 0 0.6rem 1.4rem -0.5rem color-mix(in srgb, var(--color-turquesa-noite) 70%, transparent);
+    transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 250ms ease-out;
+  }
+  .botao:hover { transform: scale(1.08); }
+  .botao:active { transform: scale(0.94); transition-duration: 90ms; }
+  .icone { display: flex; position: relative; z-index: 1; transition: transform 200ms ease-out; }
+  .botao:hover .icone-abrir { transform: rotate(-6deg); }
+  .botao[aria-expanded='true'] .icone-abrir { display: none; }
+  .botao:not([aria-expanded='true']) .icone-fechar { display: none; }
+
+  /* Halo: luz difusa ao redor do botão, respirando bem devagar. Sobe de
+     intensidade no hover; some (vira só a sombra de sempre) com o painel
+     aberto — o pedido foi "o glow fica mais controlado, o foco passa pro
+     painel", e nada diz isso melhor do que ele encolher quando o painel
+     assume o protagonismo visual. */
+  .halo {
+    position: absolute;
+    inset: -0.6rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--color-turquesa-brilho) 55%, transparent) 0%, transparent 72%);
+    filter: blur(4px);
+    opacity: 0.55;
+    animation: respirar-halo 3.6s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes respirar-halo {
+    0%, 100% { opacity: 0.4; transform: scale(0.94); }
+    50% { opacity: 0.75; transform: scale(1.08); }
+  }
+  .botao:hover .halo { opacity: 0.9; animation-duration: 1.8s; }
+  .botao[aria-expanded='true'] .halo { opacity: 0.25; animation: none; transform: none; }
+
+  /* Onda: um anel que se expande e desaparece, de vez em quando — não é
+     "toda hora", é só um lembrete discreto de que ali tem algo interativo.
+     O JS decide o "de vez em quando" (dispara a classe); o CSS só sabe
+     tocar a animação quando ela chega. */
+  .onda {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-turquesa-brilho);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .onda.tocar { animation: ondular 1.8s ease-out; }
+  @keyframes ondular {
+    0% { opacity: 0.55; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.7); }
+  }
+  .botao[aria-expanded='true'] .onda { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* A regra global já zera duração de tudo — isto é só clareza: sem
+       movimento, o halo fica num brilho fixo discreto, nunca 100% apagado
+       (o botão continua parecendo "aceso", só que parado). */
+    .halo { opacity: 0.55; }
+  }
+
+  /* ── Painel ───────────────────────────────────────────────────────────── */
+  .painel {
+    width: min(23rem, calc(100vw - 2rem));
+    height: min(31rem, 75svh);
+    display: flex;
+    flex-direction: column;
+    background: var(--color-papel);
+    border-radius: 20px;
+    border: 1px solid color-mix(in srgb, var(--color-turquesa) 20%, transparent);
+    box-shadow: 0 1.5rem 3.5rem -1rem color-mix(in srgb, var(--color-tinta) 40%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--color-turquesa-brilho) 12%, transparent);
+    overflow: hidden;
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(0.75rem) scale(0.97);
+    transform-origin: bottom right;
+    transition: opacity 200ms ease-out, transform 200ms ease-out, visibility 0s linear 200ms;
+  }
+  .painel.aberto {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: opacity 200ms ease-out, transform 200ms ease-out;
+  }
+
+  @media (max-width: 30rem) {
+    .assistente-contatos { left: 0.75rem; right: 0.75rem; bottom: 0.75rem; }
+    .painel { width: auto; align-self: stretch; height: min(80svh, 33rem); }
+  }
+
+  .cabeca {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex: none;
+    padding: 0.9rem 0.9rem 0.75rem 1.1rem;
+    background: linear-gradient(135deg, var(--color-turquesa-noite), var(--color-turquesa));
+    /* --color-sobre-escuro nesta cabeça inteira: --color-turquesa-noite
+       ancora o degradê e não muda de tom no modo escuro. */
+    color: var(--color-sobre-escuro);
+  }
+  .identidade { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+  .avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    flex: none;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-sobre-escuro) 16%, transparent);
+  }
+  .cabeca h2 { color: var(--color-sobre-escuro); }
+  .fechar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex: none;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--color-sobre-escuro);
+    cursor: pointer;
+  }
+  .fechar:hover { background: color-mix(in srgb, var(--color-sobre-escuro) 18%, transparent); }
+
+  /* ── Conversa ─────────────────────────────────────────────────────────── */
+  .mensagens {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    background: var(--color-neblina);
+  }
+  .msg {
+    max-width: 85%;
+    padding: 0.65rem 0.85rem;
+    border-radius: 14px;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    animation: entra-msg 220ms ease-out both;
+  }
+  @keyframes entra-msg {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+  .msg p { margin: 0; }
+  .msg p + p { margin-top: 0.5rem; }
+  .msg-assistente {
+    align-self: flex-start;
+    background: var(--color-papel);
+    color: var(--color-tinta);
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 0.2rem 0.6rem -0.3rem color-mix(in srgb, var(--color-tinta) 25%, transparent);
+  }
+  .msg-usuario {
+    align-self: flex-end;
+    background: linear-gradient(135deg, var(--color-turquesa), var(--color-turquesa-noite));
+    /* --color-sobre-escuro: --color-turquesa-noite ancora o degradê. */
+    color: var(--color-sobre-escuro);
+    border-bottom-right-radius: 4px;
+  }
+  .msg :global(.telefone) {
+    display: block;
+    margin-top: 0.35rem;
+    font-weight: 700;
+    color: var(--color-turquesa);
+    text-decoration: none;
+  }
+  .msg :global(.telefone:hover) { text-decoration: underline; }
+  .msg :global(.pendente) { color: var(--color-musgo); font-style: italic; font-size: 0.875rem; }
+  .msg :global(.ver-secretaria) {
+    display: inline-block;
+    margin-top: 0.35rem;
+    color: var(--color-turquesa);
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-decoration: none;
+  }
+  .msg :global(.ver-secretaria:hover) { text-decoration: underline; }
+  .msg :global(.bloco-contato) { margin-top: 0.6rem; }
+  .msg :global(.bloco-contato + .bloco-contato) {
+    margin-top: 0.75rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-musgo) 22%, transparent);
+  }
+  .msg :global(.sugestao) {
+    display: block;
+    width: 100%;
+    text-align: left;
+    margin-top: 0.4rem;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid color-mix(in srgb, var(--color-turquesa) 35%, transparent);
+    border-radius: 10px;
+    background: var(--color-papel);
+    color: var(--color-turquesa);
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+  .msg :global(.sugestao:hover) { background: var(--color-turquesa); color: var(--color-papel); }
+
+  /* Indicador de "digitando" — três pontos, rápido e discreto, nunca um
+     spinner nem texto "carregando". */
+  .digitando {
+    flex: none;
+    margin: 0 1rem 0.5rem;
+    display: inline-flex;
+    align-self: flex-start;
+    gap: 0.25rem;
+    padding: 0.6rem 0.8rem;
+    border-radius: 14px;
+    background: var(--color-papel);
+    box-shadow: 0 0.2rem 0.6rem -0.3rem color-mix(in srgb, var(--color-tinta) 25%, transparent);
+  }
+  .digitando span {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: var(--color-turquesa);
+    animation: pulsar-ponto 1s ease-in-out infinite;
+  }
+  .digitando span:nth-child(2) { animation-delay: 0.15s; }
+  .digitando span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes pulsar-ponto {
+    0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+    30% { opacity: 1; transform: translateY(-2px); }
+  }
+
+  /* ── Sugestões rápidas e campo ────────────────────────────────────────── */
+  .chips { flex: none; display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.65rem 1rem 0; }
+  .chip {
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 0.4rem 0.75rem;
+    min-height: 2.1rem;
+    border: 1px solid color-mix(in srgb, var(--color-turquesa) 32%, transparent);
+    border-radius: 999px;
+    background: var(--color-papel);
+    color: var(--color-turquesa);
+    cursor: pointer;
+  }
+  .chip:hover { background: var(--color-turquesa); color: var(--color-papel); border-color: var(--color-turquesa); }
+
+  .form { flex: none; padding: 0.65rem 0.75rem 0.8rem; }
+  .campo { position: relative; display: flex; align-items: center; }
+  .campo input {
+    width: 100%;
+    font: inherit;
+    font-size: 0.9375rem;
+    padding: 0.7rem 3rem 0.7rem 0.9rem;
+    min-height: 2.9rem;
+    border: 2px solid color-mix(in srgb, var(--color-musgo) 30%, transparent);
+    border-radius: 999px;
+    background: var(--color-neblina);
+    color: var(--color-tinta);
+  }
+  .campo input:focus-visible { border-color: var(--color-turquesa); }
+  .campo input::placeholder { color: var(--color-musgo); opacity: 1; }
+  .enviar {
+    position: absolute;
+    right: 0.3rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.3rem;
+    height: 2.3rem;
+    flex: none;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-turquesa);
+    color: var(--color-papel);
+    cursor: pointer;
+    transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1), background 150ms ease-out;
+  }
+  .enviar:hover { transform: scale(1.08); background: var(--color-turquesa-noite); color: var(--color-sobre-escuro); }
+  .enviar:active { transform: scale(0.92); }
+
+  .aviso-indisponivel { flex: none; margin: 0 1rem 0.75rem; color: var(--color-musgo); }
+</style>

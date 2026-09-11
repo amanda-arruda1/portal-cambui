@@ -30,6 +30,9 @@ export interface Secretaria {
   nome: string;
   slug: string;
   sigla: string | null;
+  /** Termos de busca adicionais (sinônimos, siglas informais) — usados só
+   *  pelo assistente de contatos, nunca exibidos numa página. */
+  palavras_chave: string | null;
   descricao: string | null;
   responsavel: string | null;
   cargo_responsavel: string | null;
@@ -86,5 +89,44 @@ export interface LinkUtil {
   url: string;
   descricao: string | null;
   grupo: string | null;
+  ordem: number | null;
+}
+
+export interface Selo {
+  id: string;
+  status: Situacao;
+  nome: string;
+  orgao_emissor: string;
+  descricao: string | null;
+  imagem: string | null;
+  data_concessao: string | null;
+  url_comprovacao: string | null;
+  ordem: number | null;
+}
+
+export type CategoriaPatrimonio = 'livro' | 'dossie' | 'inventario' | 'legislacao' | 'outro';
+
+export interface DocumentoPatrimonio {
+  id: string;
+  status: Situacao;
+  titulo: string;
+  categoria: CategoriaPatrimonio;
+  /** Ano ou período como aparece na fonte — ex.: "2012–2013". Texto livre, não
+   *  data: metade do acervo é biênio, não um dia específico. */
+  periodo: string | null;
+  descricao: string | null;
+  arquivo: string | null;
+  url_externa: string | null;
+  secretaria: { nome: string; slug: string } | null;
+  ordem: number | null;
+}
+
+export interface PerguntaFrequente {
+  id: string;
+  status: Situacao;
+  pergunta: string;
+  resposta: string;
+  categoria: string | null;
+  secretaria: { nome: string; slug: string } | null;
   ordem: number | null;
 }

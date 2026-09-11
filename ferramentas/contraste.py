@@ -6,16 +6,21 @@ def raz(a,b):
     la,lb=lum(a),lum(b); hi,lo=max(la,lb),min(la,lb)
     return (hi+0.05)/(lo+0.05)
 T = {
- 'serra':'#0C5430','serra-noite':'#06301C','carmim':'#A8303C',
- 'neblina':'#E9EDEA','tinta':'#141C18','musgo':'#4C5A51','papel':'#FFFFFF',
+ 'serra':'#304890','serra-noite':'#16234A','carmim':'#6E5220','carmim-brilho':'#D9AB4A',
+ 'neblina':'#E9EBEE','tinta':'#14171F','musgo':'#545B66','papel':'#FFFFFF','preto':'#05070D',
+ 'turquesa':'#086055','turquesa-brilho':'#22D3C5','turquesa-noite':'#04211D',
 }
 pares = [
  ('tinta','neblina','texto corrido'), ('tinta','papel','texto em superfície'),
  ('musgo','neblina','texto secundário'), ('musgo','papel','texto secundário'),
  ('serra','neblina','títulos e links'), ('serra','papel','títulos e links'),
  ('carmim','neblina','ação/destaque'), ('carmim','papel','ação/destaque'),
- ('papel','serra','texto sobre verde'), ('papel','serra-noite','texto sobre verde escuro'),
- ('papel','carmim','texto em botão'), ('neblina','serra','texto sobre verde'),
+ ('papel','serra','texto sobre azul'), ('papel','serra-noite','texto sobre azul escuro'),
+ ('papel','carmim','texto em botão'), ('neblina','serra','texto sobre azul'),
+ ('preto','carmim-brilho','trigo sobre preto'), ('serra-noite','carmim-brilho','trigo sobre azul escuro'),
+ ('carmim-brilho','preto','preto sobre trigo (texto de botão)'),
+ ('turquesa','neblina','assistente/texto'), ('turquesa','papel','assistente/texto'),
+ ('papel','turquesa-noite','texto sobre botão'), ('turquesa-brilho','turquesa-noite','glow sobre botão'),
 ]
 print(f"  {'par':38} {'razão':>7}  AA texto  AA grande/UI")
 for a,b,uso in pares:

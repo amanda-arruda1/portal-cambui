@@ -9,9 +9,9 @@
 import Base from '../layouts/Base.astro';
 import Carreira from '../componentes/Carreira.astro';
 import LinhaTarefa from '../componentes/LinhaTarefa.astro';
-import SerraTecida from '../componentes/SerraTecida.astro';
-import Coleta from '../componentes/Coleta.astro';
 import ChamadaLicitacoes from '../componentes/licitacoes/ChamadaHome.astro';
+import ChamadaObras from '../componentes/obras/ChamadaHome.astro';
+import InstagramFeed from '../componentes/InstagramFeed.astro';
 import { noticiasRecentes } from '../lib/conteudo';
 import { arquivo } from '../lib/directus';
 import { data, iso, recorte } from '../lib/formato';
@@ -25,18 +25,22 @@ const [lider, ...demais] = noticias;
 
 <Base titulo="Prefeitura de Cambuí" colado>
   <!-- ── Hero ──────────────────────────────────────────────────────────── -->
-  <div class="hero">
-    <SerraTecida />
+  <div class="hero sobre-serra">
     <div class="carreira">
       <div class="ourela">
         <span aria-hidden="true"></span>
         <div class="corpo">
+          <p class="selo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" />
+            </svg>
+            1.030m de altitude, Serra da Mantiqueira
+          </p>
           <h1 class="t-display frase">
             Cambuí<br />resolve o seu dia.
           </h1>
           <p class="t-lead sub">
-            Mais de mil metros de altitude, na Mantiqueira. Este é o portal onde você trata com a
-            Prefeitura — sem fila e sem adivinhar em qual secretaria bater.
+            Trate com a Prefeitura sem fila e sem adivinhar em qual secretaria bater.
           </p>
         </div>
       </div>
@@ -44,21 +48,16 @@ const [lider, ...demais] = noticias;
   </div>
 
   <!-- ── 01 · Tarefas ──────────────────────────────────────────────────── -->
-  <Carreira numero="01" rotulo="O que você precisa hoje" fundo="papel" id="tarefas">
+  <Carreira numero="01" rotulo="O que você precisa hoje" fundo="serra" id="tarefas">
     <ul class="lista entra">
-      {TAREFAS.map((t, i) => (
-        <li><LinhaTarefa tarefa={t} indice={i + 1} /></li>
+      {TAREFAS.map((t) => (
+        <li><LinhaTarefa tarefa={t} /></li>
       ))}
     </ul>
     <p class="t-micro nota">
       Não achou? <a href="/servicos"><span class="fio-foco">Veja todos os serviços por necessidade</span></a> —
       organizados pelo que você precisa, não por secretaria.
     </p>
-  </Carreira>
-
-  <!-- ── 02 · Coleta ───────────────────────────────────────────────────── -->
-  <Carreira numero="02" rotulo="Coleta no meu bairro" id="coleta">
-    <Coleta />
   </Carreira>
 
   <!-- ── 03 · Notícias ─────────────────────────────────────────────────── -->
@@ -122,8 +121,14 @@ const [lider, ...demais] = noticias;
     }
   </Carreira>
 
+  <!-- ── Instagram ─────────────────────────────────────────────────────── -->
+  <InstagramFeed />
+
   <!-- ── Licitações: quem entrou por outro motivo pode ter oportunidade ── -->
   <ChamadaLicitacoes />
+
+  <!-- ── Obras públicas ────────────────────────────────────────────────── -->
+  <ChamadaObras />
 
   <!-- ── 04 · A cidade ─────────────────────────────────────────────────── -->
   <Carreira numero="04" rotulo="A cidade" fundo="serra" titulo={A_CIDADE.chamada}>
@@ -155,13 +160,95 @@ const [lider, ...demais] = noticias;
 </Base>
 
 <style>
-  .hero { background: var(--color-neblina); padding-bottom: clamp(2rem, 5vw, 3.5rem); }
-  .frase { margin-top: clamp(1.5rem, 4vw, 2.5rem); }
-  .sub { margin-top: 1.25rem; max-width: 52ch; color: var(--color-musgo); }
+  /* Os minimos destes tres clamp sao o que vale no celular — e era la que
+     custavam caro. Reduzidos so no minimo: do tablet para cima os termos em
+     vw voltam a mandar e o desktop fica identico. */
+  /* Redesenho de 2026-09-01: a serra desenhada (SerraTecida) deu lugar à
+     foto aérea real da neblina sobre a cidade (drone, 2025, cedida pela
+     prefeitura — tratamento sutil de cor/nitidez feito antes de entrar no
+     repo). O degradê que antes pintava o fundo agora é um VÉU por cima da
+     foto: escuro embaixo (onde o texto precisa de contraste), quase
+     transparente em cima (onde a foto respira). `.sobre-serra` (global.css)
+     troca o anel de foco pra branco de graça. */
+  .hero {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* Sem a faixa fixa da SerraTecida, é este mínimo que garante presença da
+       foto — calibrado para não repetir o erro medido em 27/08 (1ª tarefa
+       nascendo 277px abaixo da dobra em 360×640): o piso mobile (16rem) fica
+       MENOR que a altura antiga somada (serra 5,5rem + texto), então não há
+       regressão de rolagem no celular. */
+    min-height: clamp(16rem, 48vw, 30rem);
+    background-image:
+      radial-gradient(60rem 30rem at 82% -8%, color-mix(in srgb, var(--color-carmim-brilho) 22%, transparent), transparent 60%),
+      linear-gradient(180deg,
+        color-mix(in srgb, var(--color-serra-noite) 55%, transparent) 0%,
+        color-mix(in srgb, var(--color-serra-noite) 72%, transparent) 55%,
+        var(--color-serra-noite) 100%),
+      url('/imagens/hero-cambui-neblina.webp');
+    background-size: cover;
+    background-position: center 38%;
+    background-repeat: no-repeat;
+    padding-bottom: clamp(1rem, 5vw, 3.5rem);
+  }
+  @media (max-width: 40rem) {
+    .hero { background-image:
+      radial-gradient(60rem 30rem at 82% -8%, color-mix(in srgb, var(--color-carmim-brilho) 22%, transparent), transparent 60%),
+      linear-gradient(180deg,
+        color-mix(in srgb, var(--color-serra-noite) 55%, transparent) 0%,
+        color-mix(in srgb, var(--color-serra-noite) 72%, transparent) 55%,
+        var(--color-serra-noite) 100%),
+      url('/imagens/hero-cambui-neblina-mobile.webp');
+    }
+  }
+  /* --color-sobre-escuro nos quatro, daqui até .sub: o fundo do hero é uma
+     foto com véu escuro fixo (acima) — não muda de tom no modo escuro, então
+     o texto por cima também não pode. */
+  .selo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: clamp(1rem, 4vw, 2rem);
+    padding: 0.4rem 0.9rem;
+    border: 1px solid color-mix(in srgb, var(--color-sobre-escuro) 45%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-sobre-escuro) 12%, transparent);
+    color: var(--color-sobre-escuro);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .selo svg { width: 0.8rem; height: 0.8rem; flex: none; }
+  .frase {
+    margin-top: clamp(0.6rem, 3vw, 1.25rem);
+    color: var(--color-sobre-escuro);
+  }
+  .sub { margin-top: clamp(0.6rem, 3vw, 1.25rem); max-width: 52ch; color: color-mix(in srgb, var(--color-sobre-escuro) 78%, transparent); }
+  /* Vence a regra global `.sobre-serra :focus-visible` (--color-papel, que
+     muda de tom) — o fundo do hero não muda, o foco também não pode. */
+  .hero :focus-visible { outline-color: var(--color-sobre-escuro); }
+
+  /* A primeira carreira paga o topo da faixa duas vezes: o respiro da secao
+     mais a margem da lista. No celular ela e a unica secao cujo topo disputa
+     com a dobra, entao so ela encolhe — o ritmo das demais nao muda.
+     `:global` e obrigatorio: a <section id="tarefas"> nasce dentro de
+     Carreira.astro, entao NAO carrega o atributo de escopo desta pagina.
+     Sem ele a regra e escrita, compilada e silenciosamente descartada —
+     foi o que aconteceu na primeira medicao deste protótipo. */
+  :global(#tarefas) { padding-block-start: clamp(1.5rem, 6vw, 4.5rem); }
+  :global(#tarefas) .lista { margin-top: clamp(0.9rem, 3vw, 1.5rem); }
 
   .lista { list-style: none; margin: 1.5rem 0 0; padding: 0; }
   .nota { margin-top: 1.25rem; color: var(--color-musgo); }
   .nota a { color: var(--color-serra); text-decoration: none; font-weight: 600; }
+  /* A seção "01" agora nasce escura (fundo="serra") — .nota herdava as cores
+     do texto claro e sumia. Mesmo tratamento que o resto do sistema já dá a
+     texto secundário/link sobre a faixa serra. */
+  :global(.f-serra) .nota { color: color-mix(in srgb, var(--color-papel) 78%, transparent); }
+  :global(.f-serra) .nota a { color: var(--color-papel); text-decoration: underline; }
   .vazio { margin-top: 1.25rem; color: var(--color-musgo); max-width: var(--container-leitura); }
 
   .noticias { margin-top: 1.5rem; display: grid; gap: 2rem; }
