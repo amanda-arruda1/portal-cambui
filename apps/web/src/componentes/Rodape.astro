@@ -10,9 +10,10 @@
 import { CNPJ, ENDERECO, EMAIL_CONTATO, HORARIO_ATENDIMENTO, MUNICIPIO, TELEFONES, AUTARQUIAS } from '../dados/instituicional';
 import { selos as selosDoCms } from '../lib/conteudo';
 import { arquivo } from '../lib/directus';
-import { linkTelefone, linkWhatsapp } from '../lib/formato';
+import { linkMapa, linkTelefone, linkWhatsapp } from '../lib/formato';
 
 const ano = new Date().getFullYear();
+const mapaSede = ENDERECO ? linkMapa(`${ENDERECO.logradouro}, ${ENDERECO.numero} – ${ENDERECO.bairro} – ${ENDERECO.cidade}/${ENDERECO.uf}`) : null;
 
 /* Faixa de confiança: some inteira sem selo cadastrado, nunca aparece com um
    texto de "em publicação" — rodapé não é lugar de placeholder pedindo
@@ -30,10 +31,21 @@ const { dados: selos } = await selosDoCms();
             <p class="nome">{MUNICIPIO.nomeCompleto}</p>
 
             {ENDERECO ? (
-              <address class="endereco">
-                {ENDERECO.logradouro}, {ENDERECO.numero} — {ENDERECO.bairro}<br />
-                {ENDERECO.cidade}/{ENDERECO.uf} — CEP {ENDERECO.cep}
-              </address>
+              mapaSede ? (
+                <address class="endereco">
+                  <a href={mapaSede} target="_blank" rel="noopener noreferrer">
+                    <span class="fio-foco">
+                      {ENDERECO.logradouro}, {ENDERECO.numero} — {ENDERECO.bairro}<br />
+                      {ENDERECO.cidade}/{ENDERECO.uf} — CEP {ENDERECO.cep}
+                    </span>
+                  </a>
+                </address>
+              ) : (
+                <address class="endereco">
+                  {ENDERECO.logradouro}, {ENDERECO.numero} — {ENDERECO.bairro}<br />
+                  {ENDERECO.cidade}/{ENDERECO.uf} — CEP {ENDERECO.cep}
+                </address>
+              )
             ) : (
               <p class="pendente">Endereço em publicação.</p>
             )}
