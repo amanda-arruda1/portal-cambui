@@ -85,6 +85,13 @@ export const CAMPOS: Record<ColecaoEditavel, Campo[]> = {
       ajuda: 'Descreva a cena para quem não enxerga a imagem. Deixe vazio só se ela for puramente decorativa.',
       largura: 'inteira',
     },
+    {
+      nome: 'arquivo',
+      rotulo: 'Documento anexo',
+      tipo: 'arquivo',
+      largura: 'inteira',
+      ajuda: 'Edital, ata, comunicado em PDF — opcional. Aparece como botão de download no fim da notícia.',
+    },
     { nome: 'data_publicacao', rotulo: 'Data da notícia', tipo: 'datahora', obrigatorio: true, largura: 'metade' },
     SECRETARIA,
     { nome: 'destaque', rotulo: 'Destacar na página inicial', tipo: 'booleano', largura: 'inteira' },

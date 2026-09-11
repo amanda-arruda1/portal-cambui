@@ -19,6 +19,8 @@ export interface Noticia {
   conteudo: string | null;
   imagem: string | null;
   imagem_descricao: string | null;
+  /** Documento anexo — edital, ata, comunicado em PDF. Opcional. */
+  arquivo: string | null;
   data_publicacao: string;
   secretaria: { nome: string; slug: string } | null;
   destaque: boolean;

@@ -12,7 +12,7 @@ import type { CategoriaPatrimonio, ColetaLixo, Documento, DocumentoPatrimonio, L
 const PUBLICADO = JSON.stringify({ status: { _eq: 'publicado' } });
 
 const CAMPOS_NOTICIA =
-  'id,status,titulo,slug,resumo,conteudo,imagem,imagem_descricao,data_publicacao,destaque,secretaria.nome,secretaria.slug';
+  'id,status,titulo,slug,resumo,conteudo,imagem,imagem_descricao,arquivo,data_publicacao,destaque,secretaria.nome,secretaria.slug';
 
 export function noticiasRecentes(limite = 9, pagina = 1) {
   return listar<Noticia>('noticias', {

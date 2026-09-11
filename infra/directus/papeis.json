@@ -911,6 +911,7 @@
         "conteudo",
         "imagem",
         "imagem_descricao",
+        "arquivo",
         "data_publicacao",
         "destaque",
         "secretaria"

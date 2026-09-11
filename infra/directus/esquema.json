@@ -123,6 +123,13 @@
           "nota": "Texto alternativo da imagem. Vazio = imagem decorativa."
         },
         {
+          "campo": "arquivo",
+          "tipo": "uuid",
+          "interface": "file",
+          "arquivo": true,
+          "nota": "Documento anexo — edital, ata, comunicado em PDF. Opcional."
+        },
+        {
           "campo": "data_publicacao",
           "tipo": "timestamp",
           "obrigatorio": true
