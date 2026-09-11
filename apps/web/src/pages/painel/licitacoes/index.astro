@@ -20,7 +20,11 @@ const situacaoFiltro = Astro.url.searchParams.get('situacao') ?? '';
 const statusFiltro = Astro.url.searchParams.get('status') ?? '';
 
 const parametros = new URLSearchParams({
-  limit: '200', sort: '-data_publicacao',
+  // Sem teto artificial: o acervo migrado já passa de 200 (o antigo limite
+  // fixo), e diferente da fila genérica esta ordenação não tem o problema do
+  // campo nulo — mesmo assim, um limite baixo escondia licitação antiga sem
+  // ninguém perceber, só a busca cobria a lacuna.
+  limit: '5000', sort: '-data_publicacao',
   fields: 'id,numero_processo,numero,ano,slug,modalidade,objeto_resumo,valor_estimado,orcamento_sigiloso,data_sessao,situacao,status,date_updated',
 });
 if (situacaoFiltro) parametros.set('filter[situacao][_eq]', situacaoFiltro);
