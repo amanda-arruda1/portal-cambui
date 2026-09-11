@@ -173,14 +173,20 @@ export const NECESSIDADES: Necessidade[] = [
 /**
  * A cidade, para quem chega.
  *
- * TODO(cliente): fotos reais da serra, das malharias e do centro. Sem elas, a
- * seção usa apenas tipografia e o motivo do tricô — que é honesto, e melhor do
- * que foto de banco de imagens.
+ * Corrigido em 2026-09-11: a versão anterior dizia que a BR-459 cortava o
+ * município (não existe — é a BR-381, a Fernão Dias) e que a cidade vivia de
+ * malharia (isso é Monte Sião e o Circuito das Malhas, município vizinho —
+ * não Cambuí). Fontes: Wikipédia, IBGE Cidades e a busca por "economia de
+ * Cambuí MG", todas conferidas em 2026-09-11.
+ *
+ * TODO(cliente): fotos reais da serra, do comércio e do centro. Sem elas, a
+ * seção usa apenas tipografia — que é honesto, e melhor do que foto de banco
+ * de imagens.
  */
 export const A_CIDADE = {
-  chamada: 'Malha, serra e inverno',
+  chamada: 'Serra, estrada e sabor de Minas',
   texto:
-    'Cambuí fica na Serra da Mantiqueira, na divisa de Minas com São Paulo — a sede está a 860 m de altitude, e a serra sobe a mais de 2 mil metros nos pontos mais altos. É cidade de estrada — a BR-459 corta o município e a Fernão Dias passa ao lado —, de inverno de verdade e de malharia: o comércio de confecção traz visitantes de toda a região o ano inteiro.',
+    'Cambuí fica na Serra da Mantiqueira, na divisa de Minas com São Paulo — a sede está a 860 m de altitude, e a serra sobe a mais de 2 mil metros nos pontos mais altos. É cidade de estrada — a Fernão Dias (BR-381) corta o município —, de inverno de verdade e de sabor: o doce de leite e o virado de banana, prato tombado como patrimônio da cidade, trazem visitante de toda a região o ano inteiro.',
   portalTuristico: 'https://cambuitur.com.br/',
 } as const;
 
