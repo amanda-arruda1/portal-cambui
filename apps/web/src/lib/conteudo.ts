@@ -42,7 +42,30 @@ export function noticiaPorSlug(slug: string) {
   });
 }
 
-export function secretarias() {
+type DocPayload = { id: string } & Record<string, any>;
+
+/** Secretaria do Payload (camelCase, texto rico em campos `*Html`) no formato que o portal já usa. */
+function secretariaDoPayload(d: DocPayload): Secretaria {
+  return {
+    id: d.id, status: d.status, nome: d.nome, slug: d.slug, sigla: d.sigla ?? null,
+    palavras_chave: d.palavrasChave ?? null,
+    descricao: reescreverMidia(d.descricaoHtml),
+    responsavel: d.responsavel ?? null, cargo_responsavel: d.cargoResponsavel ?? null,
+    biografia_responsavel: reescreverMidia(d.biografiaResponsavelHtml),
+    endereco: d.endereco ?? null, telefone: d.telefone ?? null, email: d.email ?? null,
+    horario_atendimento: d.horarioAtendimento ?? null, ordem: d.ordem ?? null,
+  };
+}
+
+export async function secretarias() {
+  if (fonteCms('secretarias') === 'payload') {
+    const r = await listarPayload<DocPayload>('secretarias', { sort: 'ordem,nome' });
+    return { ...r, dados: r.dados.map(secretariaDoPayload) };
+  }
+  return secretariasDirectus();
+}
+
+function secretariasDirectus() {
   return listar<Secretaria>('secretarias', {
     fields: '*',
     filter: PUBLICADO,
@@ -51,7 +74,15 @@ export function secretarias() {
   });
 }
 
-export function secretariaPorSlug(slug: string) {
+export async function secretariaPorSlug(slug: string) {
+  if (fonteCms('secretarias') === 'payload') {
+    const r = await listarPayload<DocPayload>('secretarias', { limit: 1, onde: { slug } });
+    return { dado: r.dados[0] ? secretariaDoPayload(r.dados[0]) : null, indisponivel: r.indisponivel };
+  }
+  return secretariaPorSlugDirectus(slug);
+}
+
+function secretariaPorSlugDirectus(slug: string) {
   return umPor<Secretaria>('secretarias', {
     fields: '*',
     filter: JSON.stringify({ status: { _eq: 'publicado' }, slug: { _eq: slug } }),
