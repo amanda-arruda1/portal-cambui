@@ -1,0 +1,18 @@
+# Banco ISOLADO do Payload — não compartilha container, volume nem rede com o
+# Postgres de produção (portal-postgres). Só escuta em 127.0.0.1:5433.
+services:
+  payload-postgres:
+    image: postgres:16.15
+    container_name: payload-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: payload
+      POSTGRES_PASSWORD: ${PAYLOAD_DB_PASSWORD}
+      POSTGRES_DB: payload
+    ports:
+      - '127.0.0.1:5433:5432'
+    volumes:
+      - payload_pgdata:/var/lib/postgresql/data
+
+volumes:
+  payload_pgdata:

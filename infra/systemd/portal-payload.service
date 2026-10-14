@@ -1,0 +1,77 @@
+# Portal Cambuí — Payload CMS (novo CMS, em migração a partir do Directus).
+#
+# Roda no host, como o portal-web, e escuta SÓ em 127.0.0.1:3000: o portal-web
+# lê a API pública daqui (CMS_TELEFONES=payload) e a edição de conteúdo é feita
+# no painel /admin. Nada é publicado na internet por esta unit; para o painel
+# ser alcançável de fora é preciso uma rota no Nginx, que é decisão à parte.
+#
+# O banco é o container `payload-postgres` (novo-cms-payload/docker-compose.yml,
+# 127.0.0.1:5433, restart: unless-stopped), separado do Postgres do Directus.
+#
+# Ao fim da migração, o projeto sai de novo-cms-payload/ para a raiz do
+# repositório: ajustar WorkingDirectory, ExecStart, EnvironmentFile e
+# ReadWritePaths abaixo na mesma hora.
+
+[Unit]
+Description=Portal Cambui - Payload CMS
+Documentation=https://payloadcms.com/docs
+After=network-online.target docker.service
+Wants=network-online.target
+# O banco do Payload é um container; sem ele o processo sobe e as chamadas
+# falham. Por isso 'Wants' e não 'Requires', como no portal-web.
+
+[Service]
+Type=simple
+User=portal-payload
+Group=portal-payload
+WorkingDirectory=/opt/portal-cambui/novo-cms-payload
+
+# DATABASE_URL e PAYLOAD_SECRET. Arquivo próprio do Payload, 640 root:portal-payload:
+# o .env geral do portal (senha do Postgres do Directus, chaves) NÃO é lido aqui.
+EnvironmentFile=/opt/portal-cambui/novo-cms-payload/.env
+Environment=NODE_ENV=production
+Environment=NODE_OPTIONS=--no-deprecation
+
+ExecStart=/usr/bin/node /opt/portal-cambui/novo-cms-payload/node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3000
+Restart=always
+RestartSec=5s
+# Next + Payload + sharp (miniaturas e metadados de imagem): folga larga, mas com teto.
+MemoryMax=2G
+
+# --- Confinamento (mesmo conjunto do portal-web) ---
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+# V8 e sharp (libvips) geram código em tempo de execução.
+MemoryDenyWriteExecute=false
+RemoveIPC=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+
+# ProtectSystem=strict deixa tudo somente-leitura. Único lugar onde este processo
+# escreve: os arquivos enviados (media/) e o cache do Next (.next/cache).
+ReadWritePaths=/opt/portal-cambui/novo-cms-payload/media /opt/portal-cambui/novo-cms-payload/.next/cache
+
+# Só fala com o Postgres do Payload (loopback:5433) e com o próprio portal-web.
+IPAddressDeny=any
+IPAddressAllow=localhost
+
+[Install]
+WantedBy=multi-user.target
