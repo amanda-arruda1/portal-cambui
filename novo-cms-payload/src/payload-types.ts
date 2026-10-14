@@ -187,6 +187,7 @@ export interface Secretaria {
     };
     [k: string]: unknown;
   } | null;
+  descricaoHtml?: string | null;
   responsavel?: string | null;
   cargoResponsavel?: string | null;
   biografiaResponsavel?: {
@@ -204,6 +205,7 @@ export interface Secretaria {
     };
     [k: string]: unknown;
   } | null;
+  biografiaResponsavelHtml?: string | null;
   endereco?: string | null;
   telefone?: string | null;
   email?: string | null;
@@ -256,6 +258,8 @@ export interface Noticia {
     };
     [k: string]: unknown;
   } | null;
+  conteudoHtml?: string | null;
+  textoBusca?: string | null;
   imagem?: (number | null) | Media;
   /**
    * Vazio = imagem decorativa.
@@ -679,6 +683,7 @@ export interface ConselhosMunicipai {
     };
     [k: string]: unknown;
   } | null;
+  conteudoHtml?: string | null;
   ordem?: number | null;
   /**
    * Só "Publicado" aparece para o cidadão.
@@ -1366,9 +1371,11 @@ export interface SecretariasSelect<T extends boolean = true> {
   sigla?: T;
   palavrasChave?: T;
   descricao?: T;
+  descricaoHtml?: T;
   responsavel?: T;
   cargoResponsavel?: T;
   biografiaResponsavel?: T;
+  biografiaResponsavelHtml?: T;
   endereco?: T;
   telefone?: T;
   email?: T;
@@ -1389,6 +1396,8 @@ export interface NoticiasSelect<T extends boolean = true> {
   slug?: T;
   resumo?: T;
   conteudo?: T;
+  conteudoHtml?: T;
+  textoBusca?: T;
   imagem?: T;
   imagemDescricao?: T;
   arquivo?: T;
@@ -1562,6 +1571,7 @@ export interface ConselhosMunicipaisSelect<T extends boolean = true> {
   nome?: T;
   categoria?: T;
   conteudo?: T;
+  conteudoHtml?: T;
   ordem?: T;
   status?: T;
   idLegado?: T;

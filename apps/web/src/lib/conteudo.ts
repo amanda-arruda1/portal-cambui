@@ -15,7 +15,30 @@ const PUBLICADO = JSON.stringify({ status: { _eq: 'publicado' } });
 const CAMPOS_NOTICIA =
   'id,status,titulo,slug,resumo,conteudo,imagem,imagem_descricao,arquivo,data_publicacao,destaque,secretaria.nome,secretaria.slug';
 
-export function noticiasRecentes(limite = 9, pagina = 1) {
+/** Notícia do Payload (camelCase, corpo em `conteudoHtml`, arquivos como objetos populados) no formato do portal. */
+function noticiaDoPayload(d: DocPayload): Noticia {
+  const marcador = (m: any): string | null => (m && typeof m === 'object' && m.filename ? `midia:${encodeURIComponent(m.filename)}` : null);
+  const sec = d.secretaria && typeof d.secretaria === 'object' ? d.secretaria : null;
+  return {
+    id: d.id, status: d.status, titulo: d.titulo, slug: d.slug, resumo: d.resumo ?? null,
+    conteudo: reescreverMidia(d.conteudoHtml),
+    imagem: marcador(d.imagem), imagem_descricao: d.imagemDescricao ?? null, arquivo: marcador(d.arquivo),
+    data_publicacao: d.dataPublicacao, destaque: !!d.destaque,
+    secretaria: sec ? { nome: sec.nome, slug: sec.slug } : null,
+  };
+}
+// Datas de publicação repetidas existem (dados importados): o desempate por slug mantém a paginação estável.
+const ORDEM_NOTICIAS_PAYLOAD = '-dataPublicacao,slug';
+
+export async function noticiasRecentes(limite = 9, pagina = 1) {
+  if (fonteCms('noticias') === 'payload') {
+    const r = await listarPayload<DocPayload>('noticias', { sort: ORDEM_NOTICIAS_PAYLOAD, limit: limite, page: pagina, depth: 1 });
+    return { ...r, dados: r.dados.map(noticiaDoPayload) };
+  }
+  return noticiasRecentesDirectus(limite, pagina);
+}
+
+function noticiasRecentesDirectus(limite: number, pagina: number) {
   return listar<Noticia>('noticias', {
     fields: CAMPOS_NOTICIA,
     filter: PUBLICADO,
@@ -35,7 +58,15 @@ export function noticiasEmDestaque(limite = 3) {
   });
 }
 
-export function noticiaPorSlug(slug: string) {
+export async function noticiaPorSlug(slug: string) {
+  if (fonteCms('noticias') === 'payload') {
+    const r = await listarPayload<DocPayload>('noticias', { limit: 1, depth: 1, onde: { slug } });
+    return { dado: r.dados[0] ? noticiaDoPayload(r.dados[0]) : null, indisponivel: r.indisponivel };
+  }
+  return noticiaPorSlugDirectus(slug);
+}
+
+function noticiaPorSlugDirectus(slug: string) {
   return umPor<Noticia>('noticias', {
     fields: CAMPOS_NOTICIA,
     filter: JSON.stringify({ status: { _eq: 'publicado' }, slug: { _eq: slug } }),
@@ -234,7 +265,18 @@ export async function conselhosMunicipais() {
  * configuração `portugues_sem_acento` — é o que faz "educacao" achar
  * "Educação".
  */
-export function buscar(termo: string, limite = 30) {
+export async function buscar(termo: string, limite = 30) {
+  if (fonteCms('noticias') === 'payload') {
+    const r = await listarPayload<DocPayload>('noticias', {
+      sort: ORDEM_NOTICIAS_PAYLOAD, limit: limite, depth: 1,
+      busca: { campos: ['titulo', 'slug', 'resumo', 'imagemDescricao', 'textoBusca'], termo },
+    });
+    return { ...r, dados: r.dados.map(noticiaDoPayload) };
+  }
+  return buscarDirectus(termo, limite);
+}
+
+function buscarDirectus(termo: string, limite: number) {
   return listar<Noticia>('noticias', {
     fields: CAMPOS_NOTICIA,
     filter: PUBLICADO,

@@ -12,7 +12,7 @@ const BASE = (process.env.PAYLOAD_INTERNAL_URL || 'http://127.0.0.1:3000').repla
 const TEMPO_LIMITE_MS = 5000;
 
 /** De onde cada coleção migrada é lida. Padrão `directus`: ligar é decisão explícita. */
-const CHAVES = { telefones_uteis: 'CMS_TELEFONES', coleta_lixo: 'CMS_COLETA_LIXO', conselhos_municipais: 'CMS_CONSELHOS', patrimonio_documentos: 'CMS_PATRIMONIO', secretarias: 'CMS_SECRETARIAS' } as const;
+const CHAVES = { telefones_uteis: 'CMS_TELEFONES', coleta_lixo: 'CMS_COLETA_LIXO', conselhos_municipais: 'CMS_CONSELHOS', patrimonio_documentos: 'CMS_PATRIMONIO', secretarias: 'CMS_SECRETARIAS', noticias: 'CMS_NOTICIAS' } as const;
 export type ColecaoMigravel = keyof typeof CHAVES;
 export const COLECOES_MIGRAVEIS = Object.keys(CHAVES) as ColecaoMigravel[];
 
@@ -49,12 +49,15 @@ export const urlMidia = (m: unknown): string | null =>
  */
 export async function listarPayload<T extends { id: unknown }>(
   colecao: string,
-  opcoes: { sort?: string; limit?: number; depth?: number; onde?: Record<string, string> } = {},
+  opcoes: { sort?: string; limit?: number; page?: number; depth?: number; onde?: Record<string, string>; busca?: { campos: string[]; termo: string } } = {},
 ): Promise<Resposta<T & { id: string }>> {
   const url = new URL(`${BASE}/api/${colecao}`);
   url.searchParams.set('where[status][equals]', 'publicado');
   url.searchParams.set('depth', String(opcoes.depth ?? 0));
   for (const [campo, valor] of Object.entries(opcoes.onde ?? {})) url.searchParams.set(`where[${campo}][equals]`, valor);
+  if (opcoes.page && opcoes.page > 1) url.searchParams.set('page', String(opcoes.page));
+  // Busca: o termo em QUALQUER um dos campos, sem diferenciar maiúsculas (equivale ao `search` do Directus).
+  opcoes.busca?.campos.forEach((campo, i) => url.searchParams.set(`where[or][${i}][${campo}][contains]`, opcoes.busca!.termo));
   url.searchParams.set('limit', String(opcoes.limit ?? 0));
   if (opcoes.sort) url.searchParams.set('sort', opcoes.sort);
 

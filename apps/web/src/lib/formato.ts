@@ -37,9 +37,19 @@ export function iso(valor: string | null | undefined): string {
 }
 
 /** Remove HTML para gerar resumo e meta description a partir do corpo. */
+/* Entidades que o HTML escapa em texto corrido e que, fora do HTML (meta description, resumo da lista,
+ * JSON-LD), têm de voltar a ser o caractere. DE PROPÓSITO sem &lt; e &gt;: o resultado nunca pode virar
+ * marcação, qualquer que seja o contexto em que for escrito. Passada única — "&amp;quot;" vira "&quot;"
+ * (texto), não aspas. */
+const ENTIDADES: Record<string, string> = { '&quot;': '"', '&#34;': '"', '&#39;': "'", '&apos;': "'", '&amp;': '&', '&#38;': '&', '&nbsp;': ' ', '&#160;': ' ' };
+
 export function semHtml(texto: string | null | undefined): string {
   if (!texto) return '';
-  return texto.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  return texto
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&(?:quot|apos|amp|nbsp|#34|#38|#39|#160);/g, (e) => ENTIDADES[e])
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 export function recorte(texto: string | null | undefined, limite = 180): string {
