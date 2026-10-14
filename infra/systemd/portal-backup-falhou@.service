@@ -1,0 +1,10 @@
+# Portal Cambuí — TEMPLATE acionado por OnFailure= (portal-backup-falhou@<unit que falhou>.service). Escreve uma linha CRÍTICA no
+# journal/syslog, que é o que um agente de monitoramento (Wazuh, Zabbix) consegue enxergar. Não há e-mail aqui:
+# se a TrustIT quiser alerta ativo, o ponto de ligação é esta unit.
+
+[Unit]
+Description=Portal Cambui - aviso de falha do backup
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/logger -t portal-backup -p daemon.crit "FALHA no backup do Portal Cambui: unit %i falhou. Veja: journalctl -u %i e /var/backups/portal-cambui/ULTIMO_STATUS.json"

@@ -1,0 +1,13 @@
+# Portal Cambuí — dispara o backup toda madrugada. Persistent=true: se a máquina estiver desligada às 02:30,
+# roda assim que subir, em vez de pular o dia.
+
+[Unit]
+Description=Portal Cambui - backup diario (agenda)
+
+[Timer]
+OnCalendar=*-*-* 02:30:00
+RandomizedDelaySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

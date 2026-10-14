@@ -65,6 +65,30 @@ do zero.
   confirmável por uma fonte real (site antigo, o próprio usuário) — perguntar,
   nunca supor.
 
+## Backup (desde 2026-10-14)
+
+Snapshots diários em `/var/backups/portal-cambui/AAAA-MM-DDTHHMMSS/` (modo 700, só root), às 02:30
+(`portal-backup.timer`). Cada snapshot tem `bancos/` (pg_dump -Fc do Directus e do Payload),
+`arquivos/` (uploads do Directus, media do Payload, acervo do Diário, marco dos avisos) e `segredos/`
+(os `.env`). Arquivo igual ao do dia anterior vira hardlink, então só o que mudou ocupa espaço; por isso
+os arquivos do snapshot são 0400 e **nunca se faz `chmod`/edição dentro dele** (alteraria todos os
+snapshots que compartilham o inode). Retenção: 14 diários + 8 semanais + 6 mensais.
+Instalar/reinstalar: `infra/scripts/14-backup.sh` (idempotente). Rodar agora:
+`systemctl start portal-backup.service`. Estado: `cat /var/backups/portal-cambui/ULTIMO_STATUS.json`.
+- **Ensaio de restauração semanal** (`portal-backup-teste.timer`, domingo 05:00) e sob demanda:
+  `node infra/scripts/backup-testar-restauracao.mjs [snapshot]` — restaura os dumps num Postgres
+  temporário sem rede, compara a contagem de linhas com os bancos reais e confere se todo arquivo
+  referenciado pelo banco existe no snapshot. Falha de backup ou de ensaio = unit `failed` + linha
+  crítica no journal (`journalctl -t portal-backup`), que é o que um agente de monitoramento enxerga.
+- **LIMITE: é backup NO MESMO DISCO.** Protege de erro humano, migração ruim e exclusão acidental;
+  **não protege de perda do disco/VM**. Falta cópia externa e cifrada (o `segredos/` tem senhas): precisa
+  de um destino definido pela TrustIT/prefeitura. Ponto de encaixe documentado no fim de `backup.mjs`.
+- Para restaurar de verdade: `pg_restore --clean --if-exists -d <banco>` do dump no container certo e
+  copiar `arquivos/<x>/` de volta; **teste antes com o ensaio**. O Directus guarda a lista de arquivos no
+  banco (`directus_files`), então banco e uploads têm de vir do MESMO snapshot.
+- `backup.mjs` ignora `directus-health-file` (batimento que o Directus reescreve a cada poucos minutos) e a
+  verificação pula arquivos que a aplicação reescreveu depois da cópia, como `data/avisos/ultima-execucao.json`.
+
 ## Migração Directus → Payload (em andamento desde 2026-10-14)
 
 Detalhes e histórico em `/root/.claude/projects/-root/memory/portal-cambui-migracao-payload.md`.

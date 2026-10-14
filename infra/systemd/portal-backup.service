@@ -1,0 +1,36 @@
+# Portal Cambuí — backup diário (bancos + arquivos + segredos), com verificação.
+#
+# Roda como root: precisa do socket do Docker (pg_dump dentro dos containers) e de ler arquivos de vários
+# donos (.env.web é root:portal-web, .env.diario é root:portal-diario…). Em compensação, o confinamento deixa
+# o processo escrever SOMENTE em /var/backups/portal-cambui.
+#
+# Detalhes de funcionamento e de retenção: cabeçalho de infra/scripts/backup.mjs.
+# Falha = estado "failed" aqui + linha crítica no journal (portal-backup-falhou@.service) + ULTIMO_STATUS.json.
+
+[Unit]
+Description=Portal Cambui - backup diario
+Documentation=file:///opt/portal-cambui/infra/scripts/backup.mjs
+After=docker.service
+Wants=docker.service
+OnFailure=portal-backup-falhou@%n.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/portal-cambui
+ExecStart=/usr/bin/node /opt/portal-cambui/infra/scripts/backup.mjs
+TimeoutStartSec=2h
+
+# Não disputa disco nem CPU com o site em horário de uso.
+Nice=19
+IOSchedulingClass=idle
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/backups/portal-cambui
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+LockPersonality=true

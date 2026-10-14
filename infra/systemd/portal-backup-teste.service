@@ -1,0 +1,26 @@
+# Portal Cambuí — ensaio semanal de RESTAURAÇÃO do backup mais recente. Backup que nunca foi restaurado é
+# uma hipótese, não um backup. Sobe um Postgres temporário isolado da rede; não toca em nada de produção.
+# Detalhes: cabeçalho de infra/scripts/backup-testar-restauracao.mjs.
+
+[Unit]
+Description=Portal Cambui - ensaio de restauracao do backup
+Documentation=file:///opt/portal-cambui/infra/scripts/backup-testar-restauracao.mjs
+After=docker.service
+Wants=docker.service
+OnFailure=portal-backup-falhou@%n.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/portal-cambui
+ExecStart=/usr/bin/node /opt/portal-cambui/infra/scripts/backup-testar-restauracao.mjs
+TimeoutStartSec=1h
+Nice=19
+IOSchedulingClass=idle
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LockPersonality=true
