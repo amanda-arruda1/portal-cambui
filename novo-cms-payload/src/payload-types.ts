@@ -1151,6 +1151,10 @@ export interface ObraMedicoe {
 export interface User {
   id: number;
   nome?: string | null;
+  /**
+   * Administrador gerencia usuários. Editor edita conteúdo.
+   */
+  papel: 'administrador' | 'editor';
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -1795,6 +1799,7 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface UsersSelect<T extends boolean = true> {
   nome?: T;
+  papel?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;

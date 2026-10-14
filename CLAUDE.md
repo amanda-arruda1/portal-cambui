@@ -113,10 +113,43 @@ alguém grava no Directus algo que o site não mostra). **Desfazer = apagar a li
 
 **Operação do Payload.** Serviço `portal-payload` (unit em `infra/systemd/`, instalador
 `infra/scripts/13-payload-servico.sh`, idempotente), só em `127.0.0.1:3000`; banco no container
-`payload-postgres` (`127.0.0.1:5433`). Painel: `/admin`, **sem rota pública**; de fora, só por túnel:
-`ssh -L 3000:127.0.0.1:3000 -p 9025 <usuário>@<servidor>`. Mudou código/coleção do Payload:
+`payload-postgres` (`127.0.0.1:5433`). Painel: `https://portal.cambui.mg.gov.br/cms/admin` (ver "Painel do Payload publicado"). Mudou código/coleção do Payload:
 `npm run build` em `novo-cms-payload`, rodar o script 13 (refaz permissões) e
 `systemctl restart portal-payload`.
+
+**Painel do Payload publicado: `https://portal.cambui.mg.gov.br/cms`** (mesmo domínio do site; nenhum DNS nem site novo no
+Caddy). O Payload roda com `basePath: '/cms'` (`novo-cms-payload/next.config.ts`, FIXO no código: precisa ser igual no
+build e no start): admin em `/cms/admin`, API em `/cms/api`, assets em `/cms/_next`. O Nginx (`snippets/cms-caminho.conf`,
+incluído no server do portal em `conf.d/10-http.conf`) repassa o prefixo SEM tirá-lo (`proxy_pass` sem URI). O `/painel`
+(Astro) NÃO foi tocado: `/painel` é o painel atual (Licitações, Obras, Diário) e `/cms` é o do Payload; quando o atual
+sair, o Payload pode assumir `/painel`. Instalar/reinstalar as regras: `sudo infra/scripts/15-nginx-cms.sh`
+(`--simular`, `--remover`; idempotente, `nginx -t` antes, desfaz se falhar). Túnel (sem passar pelo Nginx):
+`ssh -L 3000:127.0.0.1:3000 -p 9025 <usuário>@<servidor>` e `http://localhost:3000/cms/admin`.
+- **O site lê o Payload por `PAYLOAD_INTERNAL_URL=http://127.0.0.1:3000/cms`** (`.env.web`, e o padrão em `lib/payload.ts`).
+  O prefixo faz parte da URL base: sem ele o site perde telefones, notícias, secretarias etc. SEM erro (cada página mostra
+  "indisponível"). Mudar o `basePath` exige mudar isso junto e reiniciar `portal-payload` e `portal-web` em sequência (a
+  janela foi de ~6 s na virada).
+- **`PAYLOAD_ORIGENS_PERMITIDAS=https://portal.cambui.mg.gov.br` (no `.env` do Payload) NÃO é opcional**: com a lista `csrf`
+  vazia o Payload aceita requisição por cookie de QUALQUER origem (sem proteção CSRF); com a lista, só as dela, e uma
+  requisição com cookie SEM `Origin` e sem `Sec-Fetch-Site` (não é navegador) é tratada como anônima. Sem o nome público
+  na lista o painel abre mas "não deixa fazer nada". Scripts HTTP de teste precisam mandar `Origin`.
+- **IP real atrás do Caddy** (corrigido em 2026-10-14): o `nginx.conf` só confia em `CF-Connecting-IP` (Cloudflare); pelo Caddy
+  (`10.180.0.13`) todo acesso aparecia com o IP do proxy, então o limite de login (`zone=login`, 5/min por IP) era UM
+  contador para todo mundo e restrição por faixa de IP não funcionaria. O Caddy manda o cliente em `X-Forwarded-For`
+  (conferido com tcpdump); o server do `portal.cambui.mg.gov.br` tem `real_ip_header X-Forwarded-For;` (vale só nele; o
+  `set_real_ip_from 10.180.0.13` do `nginx.conf` garante que XFF de outra origem é ignorado). Vale também para o login do
+  `/painel`. **Quando o domínio de produção passar pela Cloudflare → Caddy, rever** (a cadeia terá mais saltos no XFF).
+- **Usuários e papéis**: `users.papel` (`administrador` | `editor`); só administrador cria usuários, vê a lista e muda
+  papel; os demais editam só o próprio cadastro. O PRIMEIRO usuário de um banco novo vira administrador sozinho (hook).
+  Senha mínima de 12 caracteres; 5 erros bloqueiam a conta por 15 min; cookie `Secure` + `SameSite=Lax` (cookie com
+  `Path=/`, então o navegador o envia também ao site e ao `/painel`; é `HttpOnly`); GraphQL fechado no Nginx. Esqueci-a-senha
+  NÃO entrega e-mail (o Payload escreve no console: sem adaptador) — por ora quem administra redefine a senha.
+- **Nginx instalado ≠ repositório**: o `nginx.conf` instalado ainda tem `client_max_body_size 50m`; o do repositório diz
+  200m (nunca aplicado). O snippet do `/cms` fixa 200m só para o painel.
+- **Armadilhas ao mexer no Nginx**: `systemctl reload` só envia o sinal — verificar logo depois devolve a resposta dos
+  processos antigos (espere o `/cms/admin` dar 200); `return 301 /caminho` gera `http://host:porta/…` (use
+  `$esquema_publico://$host/…` atrás do proxy); `curl -I` faz `HEAD`, que várias rotas do Payload não implementam (404 falso);
+  `/_saude` tem `access_log off` (não aparece no log); valide mudanças numa cópia isolada do Nginx em porta alta antes.
 
 **Esquema do banco = MIGRATIONS** (`novo-cms-payload/src/migrations/`; `push: false`). Mudou campo
 ou coleção: `npm run payload -- migrate:create <nome>`, ler o arquivo gerado, `npm run payload --

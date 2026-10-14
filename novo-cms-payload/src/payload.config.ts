@@ -34,7 +34,17 @@ import { comAuditoria } from './hooks-auditoria'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+/* Origens (esquema + domínio) de onde o painel é acessado, separadas por vírgula. O túnel SSH (localhost) sempre vale.
+ * SEM lista, o Payload aceita requisição autenticada por cookie de QUALQUER origem (sem proteção contra CSRF).
+ * Ex.: PAYLOAD_ORIGENS_PERMITIDAS=https://cms.exemplo.mg.gov.br */
+const origensPermitidas = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  ...(process.env.PAYLOAD_ORIGENS_PERMITIDAS ?? '').split(',').map((o) => o.trim()).filter(Boolean),
+]
+
 export default buildConfig({
+  csrf: origensPermitidas,
   admin: {
     user: Users.slug,
     meta: { titleSuffix: ' — Portal Cambuí' },

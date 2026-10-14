@@ -8,7 +8,8 @@
  */
 import type { Resposta } from './directus';
 
-const BASE = (process.env.PAYLOAD_INTERNAL_URL || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+// O Payload responde sob /cms (basePath do Next, ver novo-cms-payload/next.config.ts): o prefixo faz parte da base.
+const BASE = (process.env.PAYLOAD_INTERNAL_URL || 'http://127.0.0.1:3000/cms').replace(/\/+$/, '');
 const TEMPO_LIMITE_MS = 5000;
 
 /** De onde cada coleção migrada é lida. Padrão `directus`: ligar é decisão explícita. */
