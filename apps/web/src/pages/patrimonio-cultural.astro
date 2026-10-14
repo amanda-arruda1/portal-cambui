@@ -100,7 +100,7 @@ const grupos = CATEGORIAS.map((c) => ({
             ) : (
               <ul class="lista">
                 {grupo.itens.map((documento: DocumentoPatrimonio) => {
-                  const destino = documento.url_externa ?? arquivo(documento.arquivo);
+                  const destino = documento.url_externa ?? documento.arquivo_url ?? arquivo(documento.arquivo);
                   return (
                     <li>
                       {destino ? (

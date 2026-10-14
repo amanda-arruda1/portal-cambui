@@ -7,7 +7,7 @@
  * vaze rascunho de secretaria.
  */
 import { listar, umPor } from './directus';
-import { fonteCms, listarPayload, reescreverMidia } from './payload';
+import { fonteCms, listarPayload, reescreverMidia, urlMidia } from './payload';
 import type { CategoriaPatrimonio, ColetaLixo, ConselhoMunicipal, Documento, DocumentoPatrimonio, LinkUtil, Noticia, Pagina, PerguntaFrequente, Secretaria, Selo, Servico, TelefoneUtil } from './tipos';
 
 const PUBLICADO = JSON.stringify({ status: { _eq: 'publicado' } });
@@ -148,7 +148,15 @@ export function telefonesUteis() {
 /** Documentos do Patrimônio Cultural (livros, dossiês de tombamento,
  *  inventários, legislação e outros arquivos), agrupados por categoria na
  *  própria página — mesmo padrão de 'perguntasFrequentes'. */
-export function documentosPatrimonio(categoria?: CategoriaPatrimonio) {
+export async function documentosPatrimonio(categoria?: CategoriaPatrimonio) {
+  if (fonteCms('patrimonio_documentos') === 'payload') {
+    // depth 1 traz o objeto do arquivo (nome) para montar o link /midia/. A secretaria não é exibida nesta página.
+    const r = await listarPayload<Omit<DocumentoPatrimonio, 'arquivo' | 'secretaria' | 'url_externa'> & { arquivo: unknown; urlExterna: string | null }>('patrimonio-cultural', {
+      sort: 'ordem,-periodo,titulo', depth: 1, onde: categoria ? { categoria } : undefined,
+    });
+    // O Payload usa camelCase (urlExterna); o resto do portal espera os nomes do Directus (url_externa).
+    return { ...r, dados: r.dados.map(({ urlExterna, ...d }) => ({ ...d, arquivo: null, arquivo_url: urlMidia(d.arquivo), url_externa: urlExterna, secretaria: null })) as DocumentoPatrimonio[] };
+  }
   const filtro = categoria
     ? { status: { _eq: 'publicado' }, categoria: { _eq: categoria } }
     : { status: { _eq: 'publicado' } };

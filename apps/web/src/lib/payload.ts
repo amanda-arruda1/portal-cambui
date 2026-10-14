@@ -12,7 +12,7 @@ const BASE = (process.env.PAYLOAD_INTERNAL_URL || 'http://127.0.0.1:3000').repla
 const TEMPO_LIMITE_MS = 5000;
 
 /** De onde cada coleção migrada é lida. Padrão `directus`: ligar é decisão explícita. */
-const CHAVES = { telefones_uteis: 'CMS_TELEFONES', coleta_lixo: 'CMS_COLETA_LIXO', conselhos_municipais: 'CMS_CONSELHOS' } as const;
+const CHAVES = { telefones_uteis: 'CMS_TELEFONES', coleta_lixo: 'CMS_COLETA_LIXO', conselhos_municipais: 'CMS_CONSELHOS', patrimonio_documentos: 'CMS_PATRIMONIO' } as const;
 export type ColecaoMigravel = keyof typeof CHAVES;
 export const COLECOES_MIGRAVEIS = Object.keys(CHAVES) as ColecaoMigravel[];
 
@@ -37,17 +37,24 @@ export const PAYLOAD_URL = BASE;
 export const reescreverMidia = (html: string | null | undefined): string | null =>
   html ? html.replaceAll('/api/media/file/', '/midia/') : null;
 
+/** Link público de um arquivo do Payload (objeto `media` já populado com depth>=1). */
+export const urlMidia = (m: unknown): string | null =>
+  m && typeof m === 'object' && 'filename' in m && (m as { filename?: string }).filename
+    ? `/midia/${encodeURIComponent((m as { filename: string }).filename)}`
+    : null;
+
 /**
  * Lista documentos publicados de uma coleção. `sort` aceita vários campos
  * separados por vírgula, como a API do Payload. `limit=0` = sem paginação.
  */
 export async function listarPayload<T extends { id: unknown }>(
   colecao: string,
-  opcoes: { sort?: string; limit?: number } = {},
+  opcoes: { sort?: string; limit?: number; depth?: number; onde?: Record<string, string> } = {},
 ): Promise<Resposta<T & { id: string }>> {
   const url = new URL(`${BASE}/api/${colecao}`);
   url.searchParams.set('where[status][equals]', 'publicado');
-  url.searchParams.set('depth', '0');
+  url.searchParams.set('depth', String(opcoes.depth ?? 0));
+  for (const [campo, valor] of Object.entries(opcoes.onde ?? {})) url.searchParams.set(`where[${campo}][equals]`, valor);
   url.searchParams.set('limit', String(opcoes.limit ?? 0));
   if (opcoes.sort) url.searchParams.set('sort', opcoes.sort);
 

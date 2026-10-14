@@ -120,6 +120,8 @@ export interface DocumentoPatrimonio {
   periodo: string | null;
   descricao: string | null;
   arquivo: string | null;
+  /** Link pronto do arquivo quando o dado vem do Payload (no Directus vale `arquivo`, o UUID). */
+  arquivo_url?: string | null;
   url_externa: string | null;
   secretaria: { nome: string; slug: string } | null;
   ordem: number | null;
