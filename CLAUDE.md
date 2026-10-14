@@ -13,7 +13,11 @@ do zero.
   `infra/directus/esquema.json`, aplicado via `infra/directus/aplicar-esquema.mjs`;
   permissões em `infra/directus/papeis.json`, aplicadas via
   `infra/directus/aplicar-papeis.mjs`
-- PostgreSQL 16, Redis 7, tudo em Docker Compose
+- **Payload CMS 3** (Next.js) — o CMS novo, em `novo-cms-payload/`, em migração
+  coleção a coleção a partir do Directus. **Os dois convivem**: veja a seção
+  "Migração Directus → Payload" abaixo antes de mexer em qualquer conteúdo
+- PostgreSQL 16, Redis 7, tudo em Docker Compose (o Payload tem Postgres próprio:
+  `novo-cms-payload/docker-compose.yml`)
 - Produção: `/opt/portal-cambui`, rodando como root no servidor Rocky Linux,
   branch de trabalho atual `melhoria/dobra-no-celular`
 - Depois de qualquer mudança em `esquema.json` ou `apps/web/src/lib/painel/campos.ts`:
@@ -60,6 +64,80 @@ do zero.
 - Regra permanente do projeto: **nunca inventar dado**. Informação não
   confirmável por uma fonte real (site antigo, o próprio usuário) — perguntar,
   nunca supor.
+
+## Migração Directus → Payload (em andamento desde 2026-10-14)
+
+Detalhes e histórico em `/root/.claude/projects/-root/memory/portal-cambui-migracao-payload.md`.
+
+**Estado.** Lêem do Payload no ar: telefones úteis, coleta de lixo, conselhos municipais,
+patrimônio cultural, secretarias e notícias. Ainda no Directus: licitações (+ anexos, lotes,
+eventos, assinantes), obras, documentos, páginas e o **Diário Oficial** (`diario_*`, fora do
+escopo da migração: imutabilidade no banco + assinatura em serviço separado). `servicos`,
+`links_uteis`, `selos` e `perguntas_frequentes` têm 0 registros e nenhuma página consome
+`links_uteis`: nada a migrar até alguma página precisar. **Não apagar o Directus**: o site, o
+`/painel` de contribuição, o Diário e as permissões dos redatores ainda dependem dele.
+
+**Como o site escolhe a fonte.** Uma variável por coleção em `/opt/portal-cambui/.env.web`
+(`CMS_TELEFONES`, `CMS_COLETA_LIXO`, `CMS_CONSELHOS`, `CMS_PATRIMONIO`, `CMS_SECRETARIAS`,
+`CMS_NOTICIAS`), valor `payload` liga; ausente = Directus. Nomes em `apps/web/src/lib/payload.ts`
+(`COLECOES_MIGRAVEIS`), que também tira a coleção da lista editável do `/painel` antigo (senão
+alguém grava no Directus algo que o site não mostra). **Desfazer = apagar a linha e
+`systemctl restart portal-web`.** Mudou código do site: `npm run build` em `apps/web`, depois
+`chown -R root:portal-web dist && chmod -R u=rwX,g=rX,o= dist` e `systemctl restart portal-web`
+(o `dist` em produção NÃO se atualiza sozinho; guarde uma cópia em `data/backups/` antes).
+
+**Operação do Payload.** Serviço `portal-payload` (unit em `infra/systemd/`, instalador
+`infra/scripts/13-payload-servico.sh`, idempotente), só em `127.0.0.1:3000`; banco no container
+`payload-postgres` (`127.0.0.1:5433`). Painel: `/admin`, **sem rota pública**; de fora, só por túnel:
+`ssh -L 3000:127.0.0.1:3000 -p 9025 <usuário>@<servidor>`. Mudou código/coleção do Payload:
+`npm run build` em `novo-cms-payload`, rodar o script 13 (refaz permissões) e
+`systemctl restart portal-payload`.
+
+**Esquema do banco = MIGRATIONS** (`novo-cms-payload/src/migrations/`; `push: false`). Mudou campo
+ou coleção: `npm run payload -- migrate:create <nome>`, ler o arquivo gerado, `npm run payload --
+migrate`. O serviço roda em produção e NÃO altera esquema sozinho. Reconstruir do zero:
+`docker compose up -d`, `npm run payload -- migrate`, `npx payload run scripts/migrar-dados.ts`.
+O banco atual foi criado por *push* e tem a migration inicial registrada à mão em
+`payload_migrations` (esquema conferido idêntico ao gerado pela migration: colunas, 30 PK, 50 FK,
+198 índices). **Nunca rodar `migrate` num banco que tenha `name='dev'` em `payload_migrations`**: o
+Payload faz uma pergunta que, confirmada, apaga os dados (o script 13 recusa e aborta).
+
+**Migrar a próxima coleção — roteiro.**
+1. Payload: leitura pública só dos publicados (`leituraPublicaPublicados` em
+   `collections/_base.ts`); texto rico → `campoHtmlDe('campo')` (vira `campoHtml` em HTML);
+   mudou campo → migration.
+2. Site: acrescentar a chave em `CHAVES` (`payload.ts`), escolher a fonte na função de
+   `conteudo.ts` e **mapear campo a campo** para o formato que as páginas já usam (ver armadilhas).
+3. **Comparar as páginas nas duas fontes antes de ligar**: subir dois `astro dev` (portas de
+   teste, `IMAGENS_DIR` num diretório temporário), um com a variável em `directus` e outro em
+   `payload`, e comparar título, meta description, links, imagens e texto — **em série**, não em
+   paralelo. Comparar também CONTAGEM de links e baixar os arquivos (SHA-256).
+4. Backup do `dist`, build, variável no `.env.web`, restart, conferir no ar pelo Nginx.
+5. Só commitar/push com aprovação (regra do projeto, abaixo).
+
+**Armadilhas da migração (todas já aconteceram).**
+- **A API do Payload devolve camelCase** (`urlExterna`); as páginas esperam os nomes do Directus
+  (`url_externa`). Campo sem sublinhado passa batido e o campo com sublinhado some em silêncio
+  (um link externo ficou sem `href`). Mapear explicitamente.
+- **Texto rico**: Payload guarda JSON do Lexical; o site precisa de HTML → use `campoHtmlDe` e
+  `reescreverMidia()`. Links de arquivo ficam `/api/media/file/<nome>` no HTML e viram `/midia/<nome>`.
+- **Arquivos e imagens**: `/midia/<nome>` (`apps/web/src/pages/midia/[...nome].ts`) repassa o
+  arquivo do Payload e, com `width/height/quality/fit/format`, redimensiona com `sharp` e cacheia
+  em `/var/lib/portal-cambui/imagens` — equivalente ao `/assets/` do Directus (Nginx). O dado do
+  Payload entra nas páginas como marcador `midia:<nome codificado>` e `arquivo()`
+  (`lib/directus.ts`) o converte; nenhuma página precisou mudar.
+- **Operador de busca**: usar `contains`, nunca `like` (o `like` do Payload exige todas as palavras
+  em qualquer ordem). `textoBusca` (notícias) é texto puro gerado por hook e removido da resposta.
+- **`payload.update` sobrescreve `updatedAt`** mesmo se for passado em `data`. Backfill que
+  precise preservar datas: SQL direto, ou restaurar depois.
+- O Payload (sharp) **recodifica imagens `.webp` ao gravar**: o `migrar-dados.ts` restaura os bytes
+  originais. Soft delete = `status: arquivado` (o `trash` do Payload é incompatível com
+  `delete: () => false`).
+- `docker exec` **sem `-i` descarta o heredoc/stdin** — o SQL "roda" sem fazer nada. Use `-i`.
+- `semHtml()` decodifica só `&quot; &amp; &#39; &nbsp;` e **não** `&lt;`/`&gt;`, de propósito.
+- **Deriva de secretarias**: o Directus mantém a própria tabela `secretarias`, usada por licitações,
+  obras, serviços e pelo escopo do `/painel`. Mudar **nome ou slug** de uma secretaria vale nos DOIS
+  lugares até essas coleções migrarem (a página `/secretarias/[slug]` casa notícias por slug).
 
 ## Sessão de 2026-09-11 — o que foi feito
 

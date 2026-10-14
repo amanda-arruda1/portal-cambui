@@ -54,7 +54,10 @@ export default buildConfig({
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   db: postgresAdapter({
     pool: { connectionString: process.env.DATABASE_URL || '' },
-    // push automático só em dev; a migração roda com o schema já criado
+    // O esquema só muda por MIGRATION (npm run payload -- migrate:create <nome>, revisar, depois migrate).
+    // O push automático do Payload alterava o banco sem deixar histórico e não reconstruía o esquema.
+    push: false,
+    migrationDir: path.resolve(dirname, 'migrations'),
   }),
   sharp,
   plugins: [],

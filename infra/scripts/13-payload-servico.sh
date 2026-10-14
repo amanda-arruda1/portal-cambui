@@ -48,6 +48,17 @@ echo "==> banco do Payload"
 for i in $(seq 1 20); do docker exec payload-postgres pg_isready -U payload >/dev/null 2>&1 && break; sleep 1; done
 docker exec payload-postgres pg_isready -U payload
 
+echo "==> migrations do banco"
+# O esquema só muda por migration. Um banco criado pelo push do Payload (modo dev) traz a marca 'dev' em
+# payload_migrations, e o `migrate` sobre ele faz uma pergunta que, confirmada, APAGA os dados. Em vez de
+# arriscar, aborta: tratar a marca à mão (ver CLAUDE.md, seção Payload).
+if [[ "$(docker exec payload-postgres psql -U payload -d payload -Atc "select count(*) from payload_migrations where name = 'dev'" 2>/dev/null || echo 0)" != "0" ]]; then
+  echo "ERRO: payload_migrations tem a marca 'dev' (banco criado por push). Não rodo o migrate." >&2
+  echo "      Registre a migration inicial como aplicada antes (CLAUDE.md > Payload > Esquema)." >&2
+  exit 1
+fi
+(cd "$PAY" && npm run payload -- migrate 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'Migrat|Done|ERRO|rror' || true)
+
 echo "==> instalando a unit"
 install -m 644 "$REPO/infra/systemd/$UNIT" "/etc/systemd/system/$UNIT"
 systemctl daemon-reload
