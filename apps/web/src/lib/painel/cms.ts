@@ -10,6 +10,7 @@
  * Como em lib/directus.ts, nada aqui lança: o painel precisa dizer "o sistema
  * de conteúdo está fora" em português, não despejar exceção.
  */
+import { COLECOES_MIGRAVEIS, fonteCms, type ColecaoMigravel } from '../payload';
 
 import type { Acao, Sessao } from './sessao.ts';
 import { conflitoDeInteresse } from './sessao.ts';
@@ -22,8 +23,14 @@ export type Saida<T> = { ok: true; dados: T } | { ok: false; motivo: string; sta
 
 /** Coleções que o painel edita. Lista fechada: caminho de coleção não vem da
  *  URL sem passar por aqui, senão vira leitura arbitrária do CMS. */
-export const COLECOES_EDITAVEIS = ['noticias', 'documentos', 'servicos', 'paginas', 'links_uteis', 'secretarias', 'selos', 'perguntas_frequentes', 'patrimonio_documentos', 'telefones_uteis', 'coleta_lixo', 'conselhos_municipais'] as const;
-export type ColecaoEditavel = (typeof COLECOES_EDITAVEIS)[number];
+const TODAS_EDITAVEIS = ['noticias', 'documentos', 'servicos', 'paginas', 'links_uteis', 'secretarias', 'selos', 'perguntas_frequentes', 'patrimonio_documentos', 'telefones_uteis', 'coleta_lixo', 'conselhos_municipais'] as const;
+export type ColecaoEditavel = (typeof TODAS_EDITAVEIS)[number];
+
+/** Coleção já lida do Payload não é mais editada aqui: o painel gravaria no Directus e a mudança
+ *  nunca apareceria no site. Nesse caso a edição passa a ser feita no painel do Payload. */
+export const COLECOES_EDITAVEIS: typeof TODAS_EDITAVEIS = TODAS_EDITAVEIS.filter(
+  (c) => !((COLECOES_MIGRAVEIS as string[]).includes(c) && fonteCms(c as ColecaoMigravel) === 'payload'),
+) as unknown as typeof TODAS_EDITAVEIS;
 
 export function colecaoValida(nome: string): nome is ColecaoEditavel {
   return (COLECOES_EDITAVEIS as readonly string[]).includes(nome);

@@ -7,6 +7,7 @@
  * vaze rascunho de secretaria.
  */
 import { listar, umPor } from './directus';
+import { fonteCms, listarPayload, reescreverMidia } from './payload';
 import type { CategoriaPatrimonio, ColetaLixo, ConselhoMunicipal, Documento, DocumentoPatrimonio, LinkUtil, Noticia, Pagina, PerguntaFrequente, Secretaria, Selo, Servico, TelefoneUtil } from './tipos';
 
 const PUBLICADO = JSON.stringify({ status: { _eq: 'publicado' } });
@@ -132,6 +133,10 @@ export function perguntasFrequentes() {
  *  social, departamentos e diversos. Agrupados por categoria na própria
  *  página — mesmo padrão de 'perguntasFrequentes'. */
 export function telefonesUteis() {
+  // Migração Directus → Payload: CMS_TELEFONES=payload liga a leitura pelo novo CMS.
+  if (fonteCms('telefones_uteis') === 'payload') {
+    return listarPayload<TelefoneUtil>('telefones-uteis', { sort: 'categoria,ordem,nome' });
+  }
   return listar<TelefoneUtil>('telefones_uteis', {
     fields: 'id,status,nome,categoria,endereco,telefone,email,ordem',
     filter: PUBLICADO,
@@ -157,6 +162,9 @@ export function documentosPatrimonio(categoria?: CategoriaPatrimonio) {
 
 /** Cronograma de coleta de lixo por bairro/região. */
 export function coletaLixo() {
+  if (fonteCms('coleta_lixo') === 'payload') {
+    return listarPayload<ColetaLixo>('coleta-lixo', { sort: 'nome' });
+  }
   return listar<ColetaLixo>('coleta_lixo', {
     fields: 'id,status,nome,dias,horario',
     filter: PUBLICADO,
@@ -167,7 +175,12 @@ export function coletaLixo() {
 
 /** Conselhos municipais e a base legal de cada um, agrupados por categoria na
  *  própria página — mesmo padrão de 'perguntasFrequentes' e 'telefonesUteis'. */
-export function conselhosMunicipais() {
+export async function conselhosMunicipais() {
+  if (fonteCms('conselhos_municipais') === 'payload') {
+    // O Payload guarda o texto rico como JSON do Lexical; o campo virtual `conteudoHtml` já vem em HTML.
+    const r = await listarPayload<ConselhoMunicipal & { conteudoHtml: string | null }>('conselhos-municipais', { sort: 'categoria,ordem,nome' });
+    return { ...r, dados: r.dados.map(({ conteudoHtml, ...c }) => ({ ...c, conteudo: reescreverMidia(conteudoHtml) })) };
+  }
   return listar<ConselhoMunicipal>('conselhos_municipais', {
     fields: 'id,status,nome,categoria,conteudo,ordem',
     filter: PUBLICADO,
