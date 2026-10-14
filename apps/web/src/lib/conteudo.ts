@@ -16,8 +16,9 @@ const CAMPOS_NOTICIA =
   'id,status,titulo,slug,resumo,conteudo,imagem,imagem_descricao,arquivo,data_publicacao,destaque,secretaria.nome,secretaria.slug';
 
 /** Notícia do Payload (camelCase, corpo em `conteudoHtml`, arquivos como objetos populados) no formato do portal. */
+const marcador = (m: any): string | null => (m && typeof m === 'object' && m.filename ? `midia:${encodeURIComponent(m.filename)}` : null);
+
 function noticiaDoPayload(d: DocPayload): Noticia {
-  const marcador = (m: any): string | null => (m && typeof m === 'object' && m.filename ? `midia:${encodeURIComponent(m.filename)}` : null);
   const sec = d.secretaria && typeof d.secretaria === 'object' ? d.secretaria : null;
   return {
     id: d.id, status: d.status, titulo: d.titulo, slug: d.slug, resumo: d.resumo ?? null,
@@ -129,7 +130,27 @@ export function servicos(limite = 200) {
   });
 }
 
-export function documentos(tipo?: string, limite = 50, pagina = 1) {
+/** Documento do Payload no formato do portal. `data_documento` volta a ser AAAA-MM-DD (o Payload devolve meia-noite UTC,
+ *  que no fuso de Brasília cairia no dia anterior). */
+function documentoDoPayload(d: DocPayload): Documento {
+  const sec = d.secretaria && typeof d.secretaria === 'object' ? d.secretaria : null;
+  return {
+    id: d.id, status: d.status, titulo: d.titulo, tipo: d.tipo, numero: d.numero ?? null,
+    data_documento: String(d.dataDocumento).slice(0, 10), descricao: d.descricao ?? null,
+    arquivo: marcador(d.arquivo), url_externa: d.urlExterna ?? null,
+    secretaria: sec ? { nome: sec.nome, slug: sec.slug } : null,
+  };
+}
+
+export async function documentos(tipo?: string, limite = 50, pagina = 1) {
+  if (fonteCms('documentos') === 'payload') {
+    const r = await listarPayload<DocPayload>('documentos', { sort: '-dataDocumento', limit: limite, page: pagina, depth: 1, onde: tipo ? { tipo } : undefined });
+    return { ...r, dados: r.dados.map(documentoDoPayload) };
+  }
+  return documentosDirectus(tipo, limite, pagina);
+}
+
+function documentosDirectus(tipo: string | undefined, limite: number, pagina: number) {
   const filtro = tipo
     ? { status: { _eq: 'publicado' }, tipo: { _eq: tipo } }
     : { status: { _eq: 'publicado' } };
@@ -143,7 +164,17 @@ export function documentos(tipo?: string, limite = 50, pagina = 1) {
   });
 }
 
-export function paginaPorSlug(slug: string) {
+export async function paginaPorSlug(slug: string) {
+  if (fonteCms('paginas') === 'payload') {
+    const r = await listarPayload<DocPayload>('paginas', { limit: 1, onde: { slug } });
+    const d = r.dados[0];
+    const dado: Pagina | null = d ? { id: d.id, status: d.status, titulo: d.titulo, slug: d.slug, conteudo: reescreverMidia(d.conteudoHtml), atualizado_em: d.atualizadoEm ?? null } : null;
+    return { dado, indisponivel: r.indisponivel };
+  }
+  return paginaPorSlugDirectus(slug);
+}
+
+function paginaPorSlugDirectus(slug: string) {
   return umPor<Pagina>('paginas', {
     fields: '*',
     filter: JSON.stringify({ status: { _eq: 'publicado' }, slug: { _eq: slug } }),
@@ -153,7 +184,16 @@ export function paginaPorSlug(slug: string) {
 /** Um documento por id — usado quando a página precisa de UM documento
  *  específico (ex.: o Organograma Institucional em /estrutura-administrativa),
  *  não uma listagem. */
-export function documentoPorId(id: string) {
+/** `id` é o UUID que o documento tinha no Directus (fixo no código das páginas): no Payload vale o `idLegado`. */
+export async function documentoPorId(id: string) {
+  if (fonteCms('documentos') === 'payload') {
+    const r = await listarPayload<DocPayload>('documentos', { limit: 1, depth: 1, onde: { idLegado: id } });
+    return { dado: r.dados[0] ? documentoDoPayload(r.dados[0]) : null, indisponivel: r.indisponivel };
+  }
+  return documentoPorIdDirectus(id);
+}
+
+function documentoPorIdDirectus(id: string) {
   return umPor<Documento>('documentos', {
     fields: '*',
     filter: JSON.stringify({ status: { _eq: 'publicado' }, id: { _eq: id } }),

@@ -94,16 +94,17 @@ Instalar/reinstalar: `infra/scripts/14-backup.sh` (idempotente). Rodar agora:
 Detalhes e histórico em `/root/.claude/projects/-root/memory/portal-cambui-migracao-payload.md`.
 
 **Estado.** Lêem do Payload no ar: telefones úteis, coleta de lixo, conselhos municipais,
-patrimônio cultural, secretarias e notícias. Ainda no Directus: licitações (+ anexos, lotes,
-eventos, assinantes), obras, documentos, páginas e o **Diário Oficial** (`diario_*`, fora do
-escopo da migração: imutabilidade no banco + assinatura em serviço separado). `servicos`,
-`links_uteis`, `selos` e `perguntas_frequentes` têm 0 registros e nenhuma página consome
-`links_uteis`: nada a migrar até alguma página precisar. **Não apagar o Directus**: o site, o
-`/painel` de contribuição, o Diário e as permissões dos redatores ainda dependem dele.
+patrimônio cultural, secretarias, notícias, páginas e documentos. Ainda no Directus: licitações (+ anexos,
+lotes, eventos, assinantes), obras e o **Diário Oficial** (`diario_*`, fora do escopo da migração:
+imutabilidade no banco + assinatura em serviço separado). `servicos`, `links_uteis`, `selos` e
+`perguntas_frequentes` têm 0 registros e nenhuma página consome `links_uteis`: nada a migrar até alguma
+página precisar. **Não apagar o Directus**: o `/painel` de contribuição, o Diário, licitações/obras, o
+serviço de avisos e as permissões dos redatores ainda dependem dele. Levantamento de Licitações (por que
+adiar e o que falta decidir): memória do projeto, `portal-cambui-migracao-payload.md`.
 
 **Como o site escolhe a fonte.** Uma variável por coleção em `/opt/portal-cambui/.env.web`
 (`CMS_TELEFONES`, `CMS_COLETA_LIXO`, `CMS_CONSELHOS`, `CMS_PATRIMONIO`, `CMS_SECRETARIAS`,
-`CMS_NOTICIAS`), valor `payload` liga; ausente = Directus. Nomes em `apps/web/src/lib/payload.ts`
+`CMS_NOTICIAS`, `CMS_PAGINAS`, `CMS_DOCUMENTOS`), valor `payload` liga; ausente = Directus. Nomes em `apps/web/src/lib/payload.ts`
 (`COLECOES_MIGRAVEIS`), que também tira a coleção da lista editável do `/painel` antigo (senão
 alguém grava no Directus algo que o site não mostra). **Desfazer = apagar a linha e
 `systemctl restart portal-web`.** Mudou código do site: `npm run build` em `apps/web`, depois
@@ -145,6 +146,16 @@ Payload faz uma pergunta que, confirmada, apaga os dados (o script 13 recusa e a
   (um link externo ficou sem `href`). Mapear explicitamente.
 - **Texto rico**: Payload guarda JSON do Lexical; o site precisa de HTML → use `campoHtmlDe` e
   `reescreverMidia()`. Links de arquivo ficam `/api/media/file/<nome>` no HTML e viram `/midia/<nome>`.
+- **Formatação do texto rico se perde em silêncio**: o conversor padrão do Payload escreve tachado/sublinhado como
+  `<span style="text-decoration…">` e o sanitizador do site REMOVE style e span de propósito — um dispositivo de lei
+  revogado (tachado) aparecia como se estivesse em vigor. `campos-html.ts` tem um conversor de texto próprio
+  (`<s>`, `<u>`). Comparar texto e links NÃO pega isso: compare caractere a caractere (negrito/tachado/em link).
+- **UUIDs do Directus escritos no código do site** (ex.: `ID_ORGANOGRAMA`, `ID_IMAGEM_ORGANOGRAMA` em
+  `estrutura-administrativa.astro`): no Payload valem pelo `idLegado` (`documentoPorId`, `marcadorPorIdLegado`).
+  Arquivo que só o código referencia não é trazido pela migração por coleção: entra em `ARQUIVOS_AVULSOS` de
+  `migrar-dados.ts` (`--somente=avulsos`; uma rodada completa reconverte o texto rico e muda o `updatedAt`).
+- **Datas do tipo `date`**: o Payload devolve meia-noite UTC (`2026-09-11T00:00:00.000Z`), que no fuso de Brasília
+  cai no dia anterior; o site normaliza para `AAAA-MM-DD` (`documentoDoPayload`).
 - **Arquivos e imagens**: `/midia/<nome>` (`apps/web/src/pages/midia/[...nome].ts`) repassa o
   arquivo do Payload e, com `width/height/quality/fit/format`, redimensiona com `sharp` e cacheia
   em `/var/lib/portal-cambui/imagens` — equivalente ao `/assets/` do Directus (Nginx). O dado do

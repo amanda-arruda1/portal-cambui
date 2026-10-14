@@ -426,6 +426,7 @@ export interface Pagina {
     };
     [k: string]: unknown;
   } | null;
+  conteudoHtml?: string | null;
   atualizadoEm?: string | null;
   /**
    * Só "Publicado" aparece para o cidadão.
@@ -1456,6 +1457,7 @@ export interface PaginasSelect<T extends boolean = true> {
   titulo?: T;
   slug?: T;
   conteudo?: T;
+  conteudoHtml?: T;
   atualizadoEm?: T;
   status?: T;
   idLegado?: T;

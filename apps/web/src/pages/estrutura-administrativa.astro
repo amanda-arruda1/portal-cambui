@@ -13,6 +13,7 @@ import LinhaTarefa from '../componentes/LinhaTarefa.astro';
 import TituloPagina from '../componentes/TituloPagina.astro';
 import { documentoPorId, paginaPorSlug } from '../lib/conteudo';
 import { arquivo } from '../lib/directus';
+import { fonteCms, marcadorPorIdLegado } from '../lib/payload';
 import { limpar } from '../lib/sanitizar';
 
 const ID_ORGANOGRAMA = '1c86b430-e1be-429e-a1cc-16b6857c35c9';
@@ -24,7 +25,9 @@ const [{ dado: organograma }, { dado: competencias }] = await Promise.all([
 ]);
 
 const linkOrganograma = organograma ? arquivo(organograma.arquivo) : null;
-const imagemOrganograma = arquivo(ID_IMAGEM_ORGANOGRAMA, { width: 1600, quality: 85, format: 'webp' });
+// Com os documentos no Payload, o UUID fixo do Directus vira o marcador do mesmo arquivo lá (achado pelo idLegado).
+const refImagem = fonteCms('documentos') === 'payload' ? await marcadorPorIdLegado(ID_IMAGEM_ORGANOGRAMA) : ID_IMAGEM_ORGANOGRAMA;
+const imagemOrganograma = arquivo(refImagem, { width: 1600, quality: 85, format: 'webp' });
 ---
 
 <Base

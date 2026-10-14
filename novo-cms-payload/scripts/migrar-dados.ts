@@ -202,6 +202,22 @@ async function migrar(s: Spec) {
   console.log(`  origem ${r.origem} | criados ${r.criados} | já existiam ${r.jaExistiam} | falhas ${r.falhas}${r.links ? ` | links reescritos em ${r.links}` : ''}`)
 }
 
+/* ---------- arquivos referenciados por UUID escrito no CÓDIGO do site ----------
+ * Nenhuma coleção aponta para eles, então a migração por coleção não os traz. Rodar só este passo:
+ *   npx payload run scripts/migrar-dados.ts -- --somente=avulsos
+ * (use --somente: uma rodada completa reconverte o texto rico de notícias/conselhos e muda o updatedAt deles.) */
+const ARQUIVOS_AVULSOS: Array<{ id: string; onde: string }> = [
+  { id: 'c18ace16-28e1-466c-b501-2dca3eb8e0cf', onde: 'apps/web/src/pages/estrutura-administrativa.astro (ID_IMAGEM_ORGANOGRAMA)' },
+];
+if (!SOMENTE || SOMENTE.includes('avulsos')) {
+  console.log('\n▶ arquivos avulsos (UUID fixo no código do site)');
+  for (const a of ARQUIVOS_AVULSOS) {
+    const antes = (mapas.get('media') ?? (await carregarMapa('media'))).has(a.id);
+    await midia(a.id, a.onde);
+    console.log(`  ${a.id}: ${antes ? 'já estava no Payload' : SIMULAR ? 'seria migrado' : 'migrado'}`);
+  }
+}
+
 /* ---------- ordem das coleções (dependências primeiro) ---------- */
 const ESPECIFICACOES: Spec[] = [
   { tabela: 'secretarias', slug: 'secretarias', html: ['descricao', 'biografia_responsavel'] },

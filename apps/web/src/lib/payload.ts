@@ -12,7 +12,7 @@ const BASE = (process.env.PAYLOAD_INTERNAL_URL || 'http://127.0.0.1:3000').repla
 const TEMPO_LIMITE_MS = 5000;
 
 /** De onde cada coleção migrada é lida. Padrão `directus`: ligar é decisão explícita. */
-const CHAVES = { telefones_uteis: 'CMS_TELEFONES', coleta_lixo: 'CMS_COLETA_LIXO', conselhos_municipais: 'CMS_CONSELHOS', patrimonio_documentos: 'CMS_PATRIMONIO', secretarias: 'CMS_SECRETARIAS', noticias: 'CMS_NOTICIAS' } as const;
+const CHAVES = { telefones_uteis: 'CMS_TELEFONES', coleta_lixo: 'CMS_COLETA_LIXO', conselhos_municipais: 'CMS_CONSELHOS', patrimonio_documentos: 'CMS_PATRIMONIO', secretarias: 'CMS_SECRETARIAS', noticias: 'CMS_NOTICIAS', paginas: 'CMS_PAGINAS', documentos: 'CMS_DOCUMENTOS' } as const;
 export type ColecaoMigravel = keyof typeof CHAVES;
 export const COLECOES_MIGRAVEIS = Object.keys(CHAVES) as ColecaoMigravel[];
 
@@ -36,6 +36,25 @@ export const PAYLOAD_URL = BASE;
  */
 export const reescreverMidia = (html: string | null | undefined): string | null =>
   html ? html.replaceAll('/api/media/file/', '/midia/') : null;
+
+/**
+ * Marcador `midia:<nome>` (ver `arquivo()` em directus.ts) de um arquivo do Payload a partir do UUID que ele
+ * tinha no Directus. Para o código do site que ainda carrega UUIDs fixos (ex.: imagem do organograma).
+ */
+export async function marcadorPorIdLegado(idLegado: string): Promise<string | null> {
+  try {
+    const url = new URL(`${BASE}/api/media`);
+    url.searchParams.set('where[idLegado][equals]', idLegado);
+    url.searchParams.set('limit', '1');
+    url.searchParams.set('depth', '0');
+    const r = await fetch(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(TEMPO_LIMITE_MS) });
+    if (!r.ok) return null;
+    const nome = ((await r.json()) as { docs?: Array<{ filename?: string }> }).docs?.[0]?.filename;
+    return nome ? `midia:${encodeURIComponent(nome)}` : null;
+  } catch {
+    return null;
+  }
+}
 
 /** Link público de um arquivo do Payload (objeto `media` já populado com depth>=1). */
 export const urlMidia = (m: unknown): string | null =>
