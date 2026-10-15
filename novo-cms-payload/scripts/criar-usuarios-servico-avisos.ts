@@ -26,7 +26,10 @@ for (const c of contas) {
   const texto = fs.existsSync(c.arquivo) ? fs.readFileSync(c.arquivo, 'utf8') : ''
   const linha = `${c.variavel}=${apiKey}`
   const novo = new RegExp(`^${c.variavel}=.*$`, 'm').test(texto) ? texto.replace(new RegExp(`^${c.variavel}=.*$`, 'm'), linha) : texto.replace(/\n?$/, '\n') + linha + '\n'
-  fs.writeFileSync(c.arquivo, novo)
+  // Arquivo de credencial: preserva o modo que ele já tem (.env.web é 640 root:portal-web, .env é 600) e, se for NOVO, nasce 600.
+  const modo = fs.existsSync(c.arquivo) ? fs.statSync(c.arquivo).mode & 0o777 : 0o600
+  fs.writeFileSync(c.arquivo, novo, { mode: modo })
+  fs.chmodSync(c.arquivo, modo)
   console.log(`OK ${c.papel} → ${c.variavel} gravada em ${c.arquivo}`)
 }
 process.exit(0)

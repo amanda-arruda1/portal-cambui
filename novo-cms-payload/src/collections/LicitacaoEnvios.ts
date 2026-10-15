@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { acessoEnvios } from '../acesso'
+import { acessoEnvios, soServicoAvisos } from '../acesso'
 
 /**
  * Fila de e-mails de licitações (confirmação de cadastro e aviso de nova licitação). O portal escreve; o serviço
@@ -14,8 +14,8 @@ export const LicitacaoEnvios: CollectionConfig = {
   fields: [
     { name: 'destinatario', label: 'Destinatário', type: 'email', required: true },
     { name: 'assunto', label: 'Assunto', type: 'text', required: true },
-    { name: 'corpoTexto', label: 'Corpo (texto)', type: 'textarea', required: true },
-    { name: 'corpoHtml', label: 'Corpo (HTML)', type: 'textarea', required: true },
+    { name: 'corpoTexto', label: 'Corpo (texto)', type: 'textarea', required: true, access: { read: soServicoAvisos } },
+    { name: 'corpoHtml', label: 'Corpo (HTML)', type: 'textarea', required: true, access: { read: soServicoAvisos } },
     { name: 'tipo', label: 'Tipo', type: 'select', required: true, options: [{ label: 'Confirmação', value: 'confirmacao' }, { label: 'Aviso', value: 'aviso' }] },
     { name: 'estado', label: 'Estado', type: 'select', required: true, defaultValue: 'pendente', index: true, options: ['pendente', 'enviado', 'falhou', 'desistiu'].map((v) => ({ label: v, value: v })) },
     { name: 'tentativas', label: 'Tentativas', type: 'number', defaultValue: 0 },

@@ -1,4 +1,4 @@
-import type { Access } from 'payload'
+import type { Access, FieldAccess } from 'payload'
 
 /**
  * Papéis do painel (campo `papel` em `users`).
@@ -44,8 +44,15 @@ const ehPortal = (user: unknown) => papelDe(user) === 'servico_avisos_portal'
 const ehEntrega = (user: unknown) => papelDe(user) === 'servico_avisos_entrega'
 const ehServicoAvisos = (user: unknown) => ehPortal(user) || ehEntrega(user)
 
+/** Quem vê e-mail de assinante e fila: setor/leitor de LICITAÇÕES. `setor_obras` lê licitações só para vincular a origem — não vê cidadão. */
+const PODE_LER_ASSINANTES = ['administrador', 'setor_licitacoes', 'leitor_licitacoes']
+const podeLerAssinantes = (user: unknown) => PODE_LER_ASSINANTES.includes(papelDe(user) ?? '')
+
+/** Campos que são CREDENCIAL (token de confirmar/sair; corpo do e-mail, que embute esses links): só as contas de serviço leem. */
+export const soServicoAvisos: FieldAccess = ({ req: { user } }) => ehServicoAvisos(user)
+
 export const acessoAssinantes = {
-  read: ({ req: { user } }: Parameters<Access>[0]) => podeLerLicitacoes(user) || ehServicoAvisos(user),
+  read: ({ req: { user } }: Parameters<Access>[0]) => podeLerAssinantes(user) || ehServicoAvisos(user),
   create: ({ req: { user } }: Parameters<Access>[0]) => podeEscreverLicitacoes(user) || ehPortal(user),
   update: ({ req: { user } }: Parameters<Access>[0]) => podeEscreverLicitacoes(user) || ehPortal(user),
   // Descadastro APAGA o registro (marcar inativo guardaria o e-mail de quem pediu para sair). Único delete real do sistema.
@@ -53,7 +60,7 @@ export const acessoAssinantes = {
 } as const
 
 export const acessoEnvios = {
-  read: ({ req: { user } }: Parameters<Access>[0]) => podeLerLicitacoes(user) || ehServicoAvisos(user),
+  read: ({ req: { user } }: Parameters<Access>[0]) => podeLerAssinantes(user) || ehServicoAvisos(user),
   create: ({ req: { user } }: Parameters<Access>[0]) => ehServicoAvisos(user),
   update: ({ req: { user } }: Parameters<Access>[0]) => ehEntrega(user),
   delete: () => false,
