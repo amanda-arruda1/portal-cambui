@@ -796,6 +796,10 @@ export interface Licitacoe {
   sistemaSessaoUrl?: string | null;
   demonstracao?: boolean | null;
   /**
+   * Só ao publicar com prazo menor que o do art. 55 (ou sem data de sessão). Não é gravada: vira observação no evento de publicação.
+   */
+  justificativaPrazo?: string | null;
+  /**
    * Só "Publicado" aparece para o cidadão.
    */
   status: 'rascunho' | 'publicado' | 'arquivado';
@@ -1152,9 +1156,9 @@ export interface User {
   id: number;
   nome?: string | null;
   /**
-   * Administrador gerencia usuários. Editor edita conteúdo.
+   * Administrador gerencia usuários. Editor edita conteúdo geral. Setor de licitações cria e altera editais; Leitor só consulta.
    */
-  papel: 'administrador' | 'editor';
+  papel: 'administrador' | 'editor' | 'setor_licitacoes' | 'leitor_licitacoes';
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -1616,6 +1620,7 @@ export interface LicitacoesSelect<T extends boolean = true> {
   pncpUrl?: T;
   sistemaSessaoUrl?: T;
   demonstracao?: T;
+  justificativaPrazo?: T;
   status?: T;
   idLegado?: T;
   autoriaLegado?: T;

@@ -1,10 +1,14 @@
 import type { CollectionConfig } from 'payload'
 import { base, camposComuns } from './_base'
+import { acessoLicitacoes } from '../acesso'
+import { eventoDePublicacao, regrasLicitacao, slugPermanente } from '../hooks-licitacoes'
 import { criterios, modalidades, modosDisputa, situacoesLicitacao } from '../enums'
 
 export const Licitacoes: CollectionConfig = {
   ...base('licitacoes', 'Licitação', 'Licitações', {
-    admin: { useAsTitle: 'objetoResumo', defaultColumns: ['numeroProcesso', 'modalidade', 'situacao', 'dataSessao', 'status'], listSearchableFields: ['numeroProcesso', 'objetoResumo'] },
+    access: acessoLicitacoes,
+    hooks: { beforeValidate: [slugPermanente], beforeChange: [regrasLicitacao], afterChange: [eventoDePublicacao] },
+    admin: { group: 'Licitações', useAsTitle: 'objetoResumo', defaultColumns: ['numeroProcesso', 'modalidade', 'situacao', 'dataSessao', 'status'], listSearchableFields: ['numeroProcesso', 'objetoResumo'] },
   }),
   fields: [
     { type: 'row', fields: [
@@ -35,6 +39,7 @@ export const Licitacoes: CollectionConfig = {
     { name: 'pncpUrl', label: 'URL no PNCP', type: 'text' },
     { name: 'sistemaSessaoUrl', label: 'URL do sistema da sessão', type: 'text' },
     { name: 'demonstracao', label: 'Registro de demonstração', type: 'checkbox', defaultValue: false },
+    { name: 'justificativaPrazo', label: 'Justificativa do prazo', type: 'textarea', virtual: true, admin: { description: 'Só ao publicar com prazo menor que o do art. 55 (ou sem data de sessão). Não é gravada: vira observação no evento de publicação.' } },
     ...camposComuns,
   ],
 }

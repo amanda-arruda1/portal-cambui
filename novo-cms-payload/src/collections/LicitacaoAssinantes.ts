@@ -1,9 +1,10 @@
 import type { CollectionConfig } from 'payload'
 import { base, campoIdLegado } from './_base'
+import { acessoAssinantes } from '../acesso'
 
 /** Base mínima (LGPD): só e-mail e preferências. Duplo opt-in. */
 export const LicitacaoAssinantes: CollectionConfig = {
-  ...base('licitacao-assinantes', 'Assinante de avisos', 'Assinantes de avisos de licitações', { admin: { useAsTitle: 'email', defaultColumns: ['email', 'confirmado'], group: 'Licitações' } }),
+  ...base('licitacao-assinantes', 'Assinante de avisos', 'Assinantes de avisos de licitações', { access: acessoAssinantes, admin: { useAsTitle: 'email', defaultColumns: ['email', 'confirmado'], group: 'Licitações' } }),
   fields: [
     { name: 'email', label: 'E-mail', type: 'email', required: true, unique: true },
     { name: 'modalidades', label: 'Modalidades', type: 'textarea', admin: { description: 'Valores separados por vírgula. Vazio = todas.' } },

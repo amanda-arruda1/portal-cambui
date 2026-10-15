@@ -74,7 +74,7 @@ echo "==> verificando"
 for i in $(seq 1 30); do [[ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/cms/admin)" == "200" ]] && break; sleep 1; done
 printf '  /admin                  -> HTTP %s\n' "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/cms/admin)"
 printf '  telefones (anônimo)     -> %s publicados\n' "$(curl -sg 'http://127.0.0.1:3000/cms/api/telefones-uteis?limit=1' | grep -oP '"totalDocs":\K[0-9]+')"
-printf '  outra coleção (fechada) -> HTTP %s (esperado 403)\n' "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/cms/api/licitacoes?limit=1)"
+printf '  outra coleção (fechada) -> HTTP %s (esperado 403)\n' "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/cms/api/licitacao-assinantes?limit=1)"
 systemctl --no-pager --lines=0 status "$UNIT" | sed -n 1,4p
 echo
 echo "Serviço no ar. Logs: journalctl -u $UNIT -f"

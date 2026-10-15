@@ -1,9 +1,10 @@
 import type { CollectionConfig } from 'payload'
 import { base, camposComuns } from './_base'
+import { acessoLicitacoes } from '../acesso'
 import { situacoesLote } from '../enums'
 
 export const LicitacaoLotes: CollectionConfig = {
-  ...base('licitacao-lotes', 'Lote de licitação', 'Lotes de licitações', { admin: { useAsTitle: 'descricao', defaultColumns: ['numero', 'descricao', 'licitacao', 'situacao'], group: 'Licitações' } }),
+  ...base('licitacao-lotes', 'Lote de licitação', 'Lotes de licitações', { access: acessoLicitacoes, admin: { useAsTitle: 'descricao', defaultColumns: ['numero', 'descricao', 'licitacao', 'situacao'], group: 'Licitações' } }),
   fields: [
     { name: 'licitacao', label: 'Licitação', type: 'relationship', relationTo: 'licitacoes', required: true, index: true },
     { name: 'numero', label: 'Número', type: 'number', required: true },

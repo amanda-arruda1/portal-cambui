@@ -52,10 +52,15 @@ export const Users: CollectionConfig = {
       type: 'select',
       required: true,
       defaultValue: 'editor',
-      options: [{ label: 'Administrador', value: 'administrador' }, { label: 'Editor', value: 'editor' }],
+      options: [
+        { label: 'Administrador', value: 'administrador' },
+        { label: 'Editor', value: 'editor' },
+        { label: 'Setor de licitações', value: 'setor_licitacoes' },
+        { label: 'Leitor de licitações', value: 'leitor_licitacoes' },
+      ],
       // `!user`: só a tela "primeiro usuário" chega aqui sem login (a coleção recusa criação anônima quando já há usuários).
       access: { create: ({ req: { user } }) => !user || ehAdmin(user), update: ({ req: { user } }) => ehAdmin(user) },
-      admin: { description: 'Administrador gerencia usuários. Editor edita conteúdo.' },
+      admin: { description: 'Administrador gerencia usuários. Editor edita conteúdo geral. Setor de licitações cria e altera editais; Leitor só consulta.' },
     },
   ],
 }

@@ -1,9 +1,11 @@
 import type { CollectionConfig } from 'payload'
 import { base, camposComuns } from './_base'
+import { acessoLicitacoes } from '../acesso'
+import { substituicaoDeAnexo } from '../hooks-licitacoes'
 import { tiposAnexoLicitacao } from '../enums'
 
 export const LicitacaoAnexos: CollectionConfig = {
-  ...base('licitacao-anexos', 'Anexo de licitação', 'Anexos de licitações', { admin: { useAsTitle: 'titulo', defaultColumns: ['titulo', 'tipo', 'licitacao', 'dataPublicacao'], group: 'Licitações' } }),
+  ...base('licitacao-anexos', 'Anexo de licitação', 'Anexos de licitações', { access: acessoLicitacoes, hooks: { afterChange: [substituicaoDeAnexo] }, admin: { useAsTitle: 'titulo', defaultColumns: ['titulo', 'tipo', 'licitacao', 'dataPublicacao'], group: 'Licitações' } }),
   fields: [
     { name: 'licitacao', label: 'Licitação', type: 'relationship', relationTo: 'licitacoes', required: true, index: true },
     { name: 'titulo', label: 'Título', type: 'text', required: true },
