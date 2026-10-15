@@ -6,6 +6,7 @@
  */
 import { getPayload } from 'payload'
 import config from '../src/payload.config'
+import { TERMOS_VERSAO } from '../src/termos-de-uso'
 
 const BASE = 'http://127.0.0.1:3000/cms/api', O = 'http://127.0.0.1:3000'
 const SENHA = 'Teste-' + Math.random().toString(36).slice(2) + 'Aa1!'
@@ -23,7 +24,7 @@ const contas: Record<string, { papel: string; modulos?: string[] }> = {
 const tk: Record<string, string> = {}
 for (const [nome, c] of Object.entries(contas)) {
   const email = `teste-fluxo-${nome}@teste.invalid`
-  await payload.create({ collection: 'users', overrideAccess: true, data: { email, password: SENHA, papel: c.papel as any, modulosPermitidos: c.modulos as any, nome: `TESTE ${nome}` } })
+  await payload.create({ collection: 'users', overrideAccess: true, data: { email, password: SENHA, papel: c.papel as any, modulosPermitidos: c.modulos as any, nome: `TESTE ${nome}`, versaoTermosAceita: TERMOS_VERSAO } as any })
   const r = await fetch(`${BASE}/users/login`, { method: 'POST', headers: { 'content-type': 'application/json', origin: O }, body: JSON.stringify({ email, password: SENHA }) })
   tk[nome] = ((await r.json()) as any).token
 }
@@ -155,6 +156,27 @@ const idM = ((await up.json()) as any)?.doc?.id
 ok(up.status === 201, 'autor envia arquivo', idM)
 const up2 = await fetch(`${BASE}/media`, { method: 'POST', headers: { origin: O }, body: (() => { const f = new FormData(); f.append('file', new Blob(['%PDF-1.4\n%%EOF\n'], { type: 'application/pdf' }), 'TESTE-anon.pdf'); return f })() })
 ok(up2.status === 403, 'visitante não envia arquivo', up2.status)
+
+// ───────── aceite do termo de uso: sem aceitar, a API inteira fica fechada (só aceitar e sair)
+{
+  const email = 'teste-fluxo-semaceite@teste.invalid'
+  await payload.create({ collection: 'users', overrideAccess: true, data: { email, password: SENHA, papel: 'admin', nome: 'TESTE sem aceite' } as any })
+  const lg = await fetch(`${BASE}/users/login`, { method: 'POST', headers: { 'content-type': 'application/json', origin: O }, body: JSON.stringify({ email, password: SENHA }) })
+  const t = ((await lg.json()) as any).token
+  r = await req(t, 'POST', '/noticias', { ...noticia, slug: 'teste-fluxo-semaceite' }); ok(r.s === 403, 'admin SEM aceite não cria notícia', r.s)
+  r = await req(t, 'GET', '/noticias?where[status][equals]=rascunho&limit=1'); ok(r.s === 200 && r.j?.totalDocs === 0, 'sem aceite não vê rascunho', r.j?.totalDocs)
+  r = await req(t, 'GET', '/users'); ok(r.s === 200 && r.j?.totalDocs === 1 && r.j.docs[0].email === email, 'sem aceite só enxerga o próprio cadastro (nunca a lista de usuários)', r.j?.totalDocs)
+  r = await req(t, 'GET', '/audit-logs'); ok(r.s === 403, 'sem aceite não lê auditoria', r.s)
+  const f2 = new FormData(); f2.append('file', new Blob(['%PDF-1.4\n%%EOF\n'], { type: 'application/pdf' }), 'TESTE-semaceite.pdf')
+  const u2 = await fetch(`${BASE}/media`, { method: 'POST', headers: { origin: O, authorization: `JWT ${t}` }, body: f2 }); ok(u2.status === 403, 'sem aceite não envia arquivo', u2.status)
+  r = await req(t, 'GET', '/users/me'); ok(r.s === 200 && r.j?.user?.email === email, 'sem aceite ainda consegue /users/me (a tela precisa dele)', r.s)
+  r = await req(t, 'POST', '/users/aceitar-termos', { versao: 'errada' }); ok(r.s === 409, 'aceite com versão errada é recusado', r.s)
+  r = await req(t, 'PATCH', `/users/${(await payload.find({ collection: 'users', where: { email: { equals: email } }, overrideAccess: true, limit: 1 })).docs[0].id}`, { versaoTermosAceita: TERMOS_VERSAO }); ok(r.s === 403, 'não dá para forjar o aceite por PATCH', r.s)
+  r = await req(t, 'POST', '/users/aceitar-termos', { versao: TERMOS_VERSAO }); ok(r.s === 200, 'aceite com a versão atual é registrado', r.s)
+  r = await req(t, 'POST', '/noticias', { ...noticia, slug: 'teste-fluxo-semaceite' }); ok(r.s === 201, 'depois do aceite o admin volta a criar', r.s)
+  const idX = r.j?.doc?.id
+  await payload.delete({ collection: 'noticias', id: idX, overrideAccess: true, context: { semAuditoria: true } }).catch(() => undefined)
+}
 
 // ───────── contas de serviço (coleção própria, sem papel)
 if (process.env.PT && process.env.ET) {

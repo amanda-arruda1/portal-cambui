@@ -1,6 +1,6 @@
 import { APIError } from 'payload'
 import type { Access, CollectionAfterLoginHook, CollectionBeforeValidateHook, CollectionConfig, Endpoint } from 'payload'
-import { MODULOS, ehAdmin, soAdmin } from '../acesso'
+import { MODULOS, ehAdmin, soAdmin, termosPendentes } from '../acesso'
 import { TERMOS_VERSAO } from '../termos-de-uso'
 
 /**
@@ -16,7 +16,9 @@ import { TERMOS_VERSAO } from '../termos-de-uso'
  */
 // `user.collection === 'users'`: conta de serviço (outra coleção) pode ter o MESMO id numérico de uma pessoa — sem esta checagem
 // o filtro `id = <id da conta>` entregaria o cadastro (e as sessões) de outra pessoa.
-const adminOuProprio: Access = ({ req: { user } }) => (ehAdmin(user) ? true : user && user.collection === 'users' ? { id: { equals: user.id } } : false)
+const adminOuProprio: Access = ({ req: { user } }) => (ehAdmin(user) ? true : user && user.collection === 'users' && !termosPendentes(user) ? { id: { equals: user.id } } : false)
+/** Ler o PRÓPRIO cadastro é permitido mesmo sem aceite: a tela do termo precisa saber quem está logado (/users/me). Alterar, não. */
+const lerProprio: Access = ({ req: { user } }) => (user && user.collection === 'users' ? { id: { equals: user.id } } : false)
 
 /** O primeiro usuário de um banco novo (tela "criar primeiro usuário") só pode ser administrador. */
 const primeiroEhAdmin: CollectionBeforeValidateHook = async ({ data, operation, req }) => {
@@ -65,7 +67,7 @@ export const Users: CollectionConfig = {
     tokenExpiration: 8 * 60 * 60, // uma jornada de trabalho
     cookies: { secure: process.env.NODE_ENV === 'production', sameSite: 'Lax' },
   },
-  access: { read: adminOuProprio, create: soAdmin, update: adminOuProprio, delete: () => false },
+  access: { read: (a) => (termosPendentes(a.req.user) ? lerProprio(a) : adminOuProprio(a)), create: soAdmin, update: adminOuProprio, delete: () => false },
   hooks: { beforeValidate: [primeiroEhAdmin, senhaForte], afterLogin: [registrarIp] },
   endpoints: [{ path: '/aceitar-termos', method: 'post', handler: aceitarTermos }],
   fields: [

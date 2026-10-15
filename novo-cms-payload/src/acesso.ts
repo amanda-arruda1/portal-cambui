@@ -1,4 +1,5 @@
 import type { Access, FieldAccess } from 'payload'
+import { TERMOS_VERSAO } from './termos-de-uso'
 
 /**
  * Controle de acesso do painel — CMS institucional com fluxo de aprovação.
@@ -19,10 +20,17 @@ import type { Access, FieldAccess } from 'payload'
  */
 export type Papel = 'admin' | 'revisor' | 'autor'
 
-type Usuario = { papel?: string; modulosPermitidos?: string[]; collection?: string; tipo?: string } | null | undefined
+type Usuario = { papel?: string; modulosPermitidos?: string[]; collection?: string; tipo?: string; versaoTermosAceita?: string | null } | null | undefined
 const u = (user: unknown) => user as Usuario
 
-export const papelDe = (user: unknown): string | undefined => u(user)?.papel
+/**
+ * Pessoa do painel que ainda não aceitou a VERSÃO ATUAL do termo de uso (ver termos-de-uso.ts). Enquanto isso ela não tem papel
+ * nenhum: como TODA regra de acesso parte de `papelDe`, o aceite vale na API inteira, não só na tela. Única coisa que ela
+ * consegue fazer é aceitar (endpoint em Users.ts, que só exige estar logada) e sair. Conta de serviço não é pessoa: não se aplica.
+ */
+export const termosPendentes = (user: unknown): boolean => u(user)?.collection === 'users' && u(user)?.versaoTermosAceita !== TERMOS_VERSAO
+
+export const papelDe = (user: unknown): string | undefined => (termosPendentes(user) ? undefined : u(user)?.papel)
 export const ehAdmin = (user: unknown) => u(user)?.collection !== 'contas-servico' && papelDe(user) === 'admin'
 export const ehRevisor = (user: unknown) => papelDe(user) === 'revisor'
 export const ehAutor = (user: unknown) => papelDe(user) === 'autor'
