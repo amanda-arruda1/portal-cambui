@@ -99,7 +99,12 @@ export interface Config {
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    pastas: {
+      subpastas: 'pastas';
+      arquivos: 'media';
+    };
+  };
   collectionsSelect: {
     secretarias: SecretariasSelect<false> | SecretariasSelect<true>;
     noticias: NoticiasSelect<false> | NoticiasSelect<true>;
@@ -349,6 +354,16 @@ export interface Pasta {
    * Deixe vazio para uma pasta de primeiro nível.
    */
   pastaPai?: (number | null) | Pasta;
+  subpastas?: {
+    docs?: (number | Pasta)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  arquivos?: {
+    docs?: (number | Media)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -1938,6 +1953,8 @@ export interface ObraMedicoesSelect<T extends boolean = true> {
 export interface PastasSelect<T extends boolean = true> {
   nome?: T;
   pastaPai?: T;
+  subpastas?: T;
+  arquivos?: T;
   updatedAt?: T;
   createdAt?: T;
 }

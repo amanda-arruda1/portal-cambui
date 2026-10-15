@@ -9,7 +9,8 @@ const podeEnviar = ({ req: { user } }: { req: { user?: unknown } }) => ehAdmin(u
 export const Media: CollectionConfig = {
   slug: 'media',
   labels: { singular: 'Arquivo', plural: 'Arquivos' },
-  admin: { group: 'Sistema', defaultColumns: ['filename', 'alt', 'pasta', 'mimeType', 'createdAt'] },
+  // Sem item no menu: a navegação é por "Pastas de Arquivos" (a lista plana tinha 2.500+ itens misturados).
+  admin: { hidden: true, group: 'Sistema', defaultColumns: ['filename', 'alt', 'pasta', 'mimeType', 'createdAt'] },
   access: {
     read: () => true,
     create: podeEnviar,
