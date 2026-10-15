@@ -89,6 +89,7 @@ export interface Config {
     obras: Obra;
     'obra-anexos': ObraAnexo;
     'obra-medicoes': ObraMedicoe;
+    pastas: Pasta;
     media: Media;
     users: User;
     'contas-servico': ContasServico;
@@ -121,6 +122,7 @@ export interface Config {
     obras: ObrasSelect<false> | ObrasSelect<true>;
     'obra-anexos': ObraAnexosSelect<false> | ObraAnexosSelect<true>;
     'obra-medicoes': ObraMedicoesSelect<false> | ObraMedicoesSelect<true>;
+    pastas: PastasSelect<false> | PastasSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'contas-servico': ContasServicoSelect<false> | ContasServicoSelect<true>;
@@ -319,6 +321,7 @@ export interface Noticia {
 export interface Media {
   id: number;
   alt?: string | null;
+  pasta?: (number | null) | Pasta;
   /**
    * UUID do Directus. Não editar.
    */
@@ -334,6 +337,20 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pastas".
+ */
+export interface Pasta {
+  id: number;
+  nome: string;
+  /**
+   * Deixe vazio para uma pasta de primeiro nível.
+   */
+  pastaPai?: (number | null) | Pasta;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1411,6 +1428,10 @@ export interface PayloadLockedDocument {
         value: number | ObraMedicoe;
       } | null)
     | ({
+        relationTo: 'pastas';
+        value: number | Pasta;
+      } | null)
+    | ({
         relationTo: 'media';
         value: number | Media;
       } | null)
@@ -1912,10 +1933,21 @@ export interface ObraMedicoesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pastas_select".
+ */
+export interface PastasSelect<T extends boolean = true> {
+  nome?: T;
+  pastaPai?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  pasta?: T;
   idLegado?: T;
   updatedAt?: T;
   createdAt?: T;

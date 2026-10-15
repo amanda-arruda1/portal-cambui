@@ -30,6 +30,7 @@ import { Selos } from './collections/Selos'
 import { Servicos } from './collections/Servicos'
 import { TelefonesUteis } from './collections/TelefonesUteis'
 import { Users } from './collections/Users'
+import { Pastas } from './collections/Pastas'
 import { ContasServico } from './collections/ContasServico'
 import { comAuditoria } from './hooks-auditoria'
 import { comPolitica } from './politica'
@@ -60,7 +61,7 @@ export default buildConfig({
     PatrimonioCultural, TelefonesUteis, ColetaLixo, ConselhosMunicipais,
     Licitacoes, LicitacaoAnexos, LicitacaoLotes, LicitacaoEventos, LicitacaoAssinantes, LicitacaoEnvios,
     Obras, ObraAnexos, ObraMedicoes,
-    Media, Users, ContasServico, AuditLogs,
+    Pastas, Media, Users, ContasServico, AuditLogs,
   ].map(comPolitica).map(comAuditoria),
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

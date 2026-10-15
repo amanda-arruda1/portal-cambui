@@ -9,7 +9,7 @@ const podeEnviar = ({ req: { user } }: { req: { user?: unknown } }) => ehAdmin(u
 export const Media: CollectionConfig = {
   slug: 'media',
   labels: { singular: 'Arquivo', plural: 'Arquivos' },
-  admin: { group: 'Sistema' },
+  admin: { group: 'Sistema', defaultColumns: ['filename', 'alt', 'pasta', 'mimeType', 'createdAt'] },
   access: {
     read: () => true,
     create: podeEnviar,
@@ -19,6 +19,7 @@ export const Media: CollectionConfig = {
   fields: [
     // Opcional: os arquivos migrados do Directus não têm texto alternativo.
     { name: 'alt', label: 'Texto alternativo', type: 'text' },
+    { name: 'pasta', label: 'Pasta', type: 'relationship', relationTo: 'pastas', hasMany: false, admin: { position: 'sidebar' } },
     campoIdLegado,
   ],
   hooks: { beforeOperation: [inspecionarUpload] },

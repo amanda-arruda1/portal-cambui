@@ -4,6 +4,7 @@ import * as migration_20261015_115636_papeis_licitacoes from './20261015_115636_
 import * as migration_20261015_120201_avisos_servico from './20261015_120201_avisos_servico';
 import * as migration_20261015_125842_papeis_obras from './20261015_125842_papeis_obras';
 import * as migration_20261015_135230_fluxo_editorial_papeis from './20261015_135230_fluxo_editorial_papeis';
+import * as migration_20261015_161726_pastas_arquivos from './20261015_161726_pastas_arquivos';
 
 export const migrations = [
   {
@@ -34,6 +35,11 @@ export const migrations = [
   {
     up: migration_20261015_135230_fluxo_editorial_papeis.up,
     down: migration_20261015_135230_fluxo_editorial_papeis.down,
-    name: '20261015_135230_fluxo_editorial_papeis'
+    name: '20261015_135230_fluxo_editorial_papeis',
+  },
+  {
+    up: migration_20261015_161726_pastas_arquivos.up,
+    down: migration_20261015_161726_pastas_arquivos.down,
+    name: '20261015_161726_pastas_arquivos'
   },
 ];
