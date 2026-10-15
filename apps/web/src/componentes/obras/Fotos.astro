@@ -22,7 +22,7 @@ const { fotos } = Astro.props;
     <ul class="grade">
       {fotos.map((f) => {
         const miniatura = f.arquivo && arquivo(f.arquivo.id, { width: 480, height: 360, fit: 'cover', quality: 72, format: 'webp' });
-        const original = f.arquivo && `/assets/${f.arquivo.id}`;
+        const original = f.arquivo && arquivo(f.arquivo.id);
         return (
           <li>
             {miniatura && original ? (

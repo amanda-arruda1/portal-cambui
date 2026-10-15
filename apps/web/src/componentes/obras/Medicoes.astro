@@ -9,6 +9,7 @@
  */
 import { moeda, tamanhoLegivel, type MedicaoObra } from '../../lib/obras';
 import { data as formatarData } from '../../lib/formato';
+import { arquivo as urlArquivo } from '../../lib/directus';
 
 interface Props { medicoes: MedicaoObra[] }
 const { medicoes } = Astro.props;
@@ -41,7 +42,7 @@ const { medicoes } = Astro.props;
               <td class="numerico">{moeda(m.valor_acumulado)}</td>
               <td>
                 {m.boletim ? (
-                  <a href={`/assets/${m.boletim.id}?download`} download>
+                  <a href={`${urlArquivo(m.boletim.id)}?download`} download>
                     Baixar {m.boletim.filesize ? <span class="tecnico">({tamanhoLegivel(Number(m.boletim.filesize))})</span> : null}
                   </a>
                 ) : '—'}

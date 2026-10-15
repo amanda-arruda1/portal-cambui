@@ -15,6 +15,7 @@ import NotaLegal from '../../../componentes/licitacoes/NotaLegal.astro';
 import Contagem from '../../../componentes/licitacoes/Contagem.astro';
 import Anexos from '../../../componentes/licitacoes/Anexos.astro';
 import { limpar } from '../../../lib/sanitizar';
+import { arquivo as urlArquivo } from '../../../lib/directus';
 import { dataHora, data as formatarData } from '../../../lib/formato';
 import {
   CRITERIOS, MODOS_DISPUTA, TIPOS_EVENTO, anexosDe, documentoPublico, eventosDe, lotesDe,
@@ -83,7 +84,7 @@ const compartilhar = `Licitação da Prefeitura de Cambuí — ${titulo}: ${l.ob
             <Contagem quando={l.data_sessao} situacao={l.situacao} />
             <div class="botoes">
               {edital?.arquivo ? (
-                <a class="botao primario" href={`/assets/${edital.arquivo.id}?download`} download>
+                <a class="botao primario" href={`${urlArquivo(edital.arquivo.id)}?download`} download>
                   Baixar o edital
                   <span class="peso">PDF · {Math.round((Number(edital.arquivo.filesize) || 0) / 1024)} KB</span>
                 </a>

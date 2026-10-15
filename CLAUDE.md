@@ -111,6 +111,29 @@ alguém grava no Directus algo que o site não mostra). **Desfazer = apagar a li
 `chown -R root:portal-web dist && chmod -R u=rwX,g=rX,o= dist` e `systemctl restart portal-web`
 (o `dist` em produção NÃO se atualiza sozinho; guarde uma cópia em `data/backups/` antes).
 
+**Avisos por e-mail de licitações (LIGADO desde 2026-10-15).** `CMS_AVISOS=payload` em `.env.web` (portal: cadastro/confirmar/sair,
+chave `PAYLOAD_TOKEN_AVISOS`) **e** em `.env` (serviço `portal-avisos`, chave `PAYLOAD_TOKEN_ENTREGA`) leva assinantes e fila
+(`licitacao-assinantes`, `licitacao-envios`) para o Payload; o serviço passa a detectar licitações novas NO PAYLOAD. O gatilho do aviso é o EVENTO `publicacao` (criado ao publicar), não `dataPublicacao` (data do edital, quase sempre anterior).
+Foi ligado junto com a virada de Licitações. Duas contas de serviço com chave de API
+(`servico-avisos-portal@`/`-entrega@sistema.invalid`, papéis `servico_avisos_*`), criadas/giradas por
+`novo-cms-payload/scripts/criar-usuarios-servico-avisos.ts`. Assinantes e fila ficam FORA da auditoria (e-mail de cidadão; o descadastro
+apaga de verdade). O Diário Oficial continua no Directus.
+
+**Leitura pública de Licitações (LIGADA desde 2026-10-15).** `CMS_LICITACOES=payload` em `.env.web` troca as 4 funções de
+`apps/web/src/lib/licitacoes.ts` (`todas`, `anexosDe`, `lotesDe`, `eventosDe`). Não está em `COLECOES_MIGRAVEIS` de propósito: o
+`/painel/licitacoes` antigo ainda grava no Directus. Ligar na virada, junto com `CMS_AVISOS`. O `id` público é sempre `idLegado`
+(UUID; licitações novas ganham um no hook `uuidPublico`) — é o que `/api/licitacoes` e o `UID:` do `.ics` publicam. Arquivos de anexo
+viram `midia:<nome>` e saem por `arquivo()` (`/midia/…?download`). Filhas ligam por `licitacao.idLegado`.
+
+**Importação do PNCP no painel do Payload (pronta, em produção).** Caixa "Importar do PNCP" no topo do formulário de Licitações
+(`novo-cms-payload/src/components/ImportarPncp.tsx`, registrada por `npm run generate:importmap`) → `POST /cms/api/licitacoes/importar-pncp`
+(`src/pncp.ts`: só `setor_licitacoes`/admin, só o CNPJ do órgão, avisa duplicidade) → serviço `portal-pncp` (127.0.0.1:3100,
+`infra/scripts/pncp-servico.mjs`, instalador `16-pncp-servico.sh`), o ÚNICO com saída para a internet, porque o Payload tem
+`IPAddressDeny=any`. Preenche e NÃO salva. O PNCP não informa o critério de julgamento (o servidor escolhe). `numeroCompra` vem
+"93/2025": número e ANO DO EDITAL saem daí (o ano de registro no PNCP, `anoCompra`, pode ser outro). Horários do PNCP são de Brasília
+sem fuso: o código acrescenta `-03:00`. O slug pode ficar em branco no formulário (hook gera). O painel ANTIGO tinha dois defeitos:
+`/api/pncp/v1/orgaos/…` passou a responder 301 (o certo é `/api/consulta/v1/orgaos/…`) e o `numeroCompra` virava NaN.
+
 **Operação do Payload.** Serviço `portal-payload` (unit em `infra/systemd/`, instalador
 `infra/scripts/13-payload-servico.sh`, idempotente), só em `127.0.0.1:3000`; banco no container
 `payload-postgres` (`127.0.0.1:5433`). Painel: `https://portal.cambui.mg.gov.br/cms/admin` (ver "Painel do Payload publicado"). Mudou código/coleção do Payload:
@@ -277,3 +300,37 @@ responsáveis; limpeza de números 98707 + mapa no rodapé; secretarias em
 na tela inicial do painel; fix do bug de permissão em anexos de licitações e
 obras. As ~555 correções de rótulo de edital foram só dado (gravado direto
 no Directus), sem commit de código associado.
+
+**Virada de Licitações (2026-10-15) — como desfazer.** `.env.web` e `.env` ganharam `CMS_LICITACOES=payload` e `CMS_AVISOS=payload`
+(cópias de antes em `data/backups/env*.antes-virada-licitacoes`; `dist` anterior em `data/backups/web-dist-antes-virada-licitacoes-*`;
+snapshot de backup `2026-10-15T093449`). Efeitos: o site lê licitações do Payload; `middleware.ts` redireciona `/painel/licitacoes*` para
+`/cms/admin/collections/licitacoes` e responde 410 em `/painel/api/licitacao-*` e `/painel/api/pncp`; a edição é só no `/cms/admin`.
+**Desfazer:** apagar as 2 linhas em cada `.env` e `systemctl restart portal-web`; as telas/endpoints do `/painel` de Licitações foram
+REMOVIDOS do código em 2026-10-15 (etapa 6; recuperáveis pelo git, commit anterior à limpeza) e `data/backups/web-dist-antes-limpeza-painel-licitacoes-*`
+guarda o `dist` com eles. O que for criado/editado no Payload depois da virada NÃO volta sozinho para o Directus. `middleware.ts` mantém
+redirecionamento (telas) e 410 (endpoints) para favoritos antigos. Obras e Diário seguem no Directus/`/painel`; o atalho "Licitações" do
+menu e da home do `/painel` aponta para `/cms/admin/collections/licitacoes`.
+
+**Obras públicas no Payload (2026-10-15).** `CMS_OBRAS=payload` em `.env.web` (ligado): leitura pública em `apps/web/src/lib/obras.ts`
+(`todas`, `anexosDe`, `medicoesDe`; anexos/medições ligam por `obra.idLegado`; `id` público = UUID; arquivos `midia:<nome>` via `arquivo()`).
+Edição só no `/cms/admin` (Obras públicas, Anexos de obras, Medições de obras); papéis `setor_obras` (criar/ler/alterar) e `leitor_obras`
+(ler); `setor_obras` também LÊ licitações (vincular a origem). Regras em `novo-cms-payload/src/hooks-obras.ts`: rascunho salva livre; ao
+publicar (e em obra já publicada) erros bloqueiam (convênio estadual/federal sem número, paralisada/cancelada sem motivo, campos
+básicos) — só erros NOVOS; alertas (sem responsável técnico, sem ART/RRT anexada, sem empresa) aparecem no campo "Pendências" da barra
+lateral (só para quem está logado); slug = resumo + 8 primeiros caracteres do UUID, refeito ao publicar o rascunho e fixo depois; nova
+medição calcula o acumulado e, se informar percentual, atualiza execução física e valor pago da obra. O painel antigo de Obras foi
+REMOVIDO do código (`middleware.ts`: `/painel/obras*` → `/cms/admin/collections/obras`, 410 em `/painel/api/obra-*`). Desfazer: apagar
+`CMS_OBRAS` do `.env.web` + restaurar o código do git + `systemctl restart portal-web` (cópias: `data/backups/env.web.antes-virada-obras`,
+`web-dist-antes-obras-*`, `web-dist-antes-limpeza-painel-obras-*`). Teste: `novo-cms-payload/scripts/testar-papeis-obras.ts`.
+O Diário Oficial continua no Directus (e o `/painel/diario`); a única obra de exemplo (`demonstracao: true`) foi mantida a pedido (2026-09-04).
+
+**Upload no painel do Payload.** `media` agora aplica a MESMA política do Directus (lista de permissão, formato real pelo conteúdo, teto por
+tipo, nome seguro, PDF com JavaScript/CSV com fórmula): `src/upload/` é CÓPIA de `apps/web/src/lib/upload/` (manter em sincronia);
+migração/scripts passam `context.semInspecaoUpload`. O antivírus NÃO roda no upload (Payload confinado): `infra/scripts/varrer-uploads.sh`
+(instalado em `/usr/local/sbin/portal-varrer-uploads`) varre `data/directus/uploads` e `novo-cms-payload/media` de hora em hora de forma
+INCREMENTAL (só o que chegou depois do marco `data/quarentena/.ultima-varredura`) e COMPLETA uma vez por semana (`.ultima-completa`).
+Infectado é movido para `data/quarentena/`. Provado com EICAR em `media/`.
+
+**Acesso no painel do Payload.** Conteúdo geral (notícias, páginas, secretarias, telefones…) só `administrador`/`editor` escrevem e veem
+rascunho (`ehDeConteudo` em `collections/_base.ts`); papéis de Licitações/Obras só leem o publicado desses itens (e secretarias, para
+escolher a responsável). `audit-logs`: só administrador (guarda antes/depois de todos os módulos).

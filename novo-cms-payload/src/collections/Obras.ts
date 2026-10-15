@@ -1,18 +1,25 @@
 import type { CollectionConfig } from 'payload'
 import { base, camposComuns } from './_base'
 import { categoriasObra, fontesRecurso, situacoesObra } from '../enums'
+import { acessoObras } from '../acesso'
+import { campoHtmlDe } from '../campos-html'
+import { pendenciasDaObra, regrasObra, slugDaObra } from '../hooks-obras'
+import { uuidPublico } from '../hooks-licitacoes'
 
 export const Obras: CollectionConfig = {
-  ...base('obras', 'Obra pública', 'Obras públicas', { admin: { useAsTitle: 'objetoResumo', defaultColumns: ['objetoResumo', 'categoria', 'situacao', 'percentualExecucao', 'status'], listSearchableFields: ['numeroProcesso', 'objetoResumo'] } }),
+  ...base('obras', 'Obra pública', 'Obras públicas', { access: acessoObras, hooks: { beforeValidate: [uuidPublico, slugDaObra], beforeChange: [regrasObra] }, admin: { group: 'Obras', useAsTitle: 'objetoResumo', defaultColumns: ['objetoResumo', 'categoria', 'situacao', 'percentualExecucao', 'status'], listSearchableFields: ['numeroProcesso', 'objetoResumo'] } }),
   fields: [
     { name: 'numeroProcesso', label: 'Número do processo', type: 'text', required: true },
     { name: 'numeroContrato', label: 'Número do contrato', type: 'text' },
     { name: 'licitacao', label: 'Licitação de origem', type: 'relationship', relationTo: 'licitacoes' },
-    { name: 'slug', label: 'Slug (URL)', type: 'text', required: true, unique: true },
+    // `validate` aceita vazio: o hook `slugDaObra` gera o valor no servidor (a coluna segue NOT NULL).
+    { name: 'slug', label: 'Slug (URL)', type: 'text', required: true, unique: true, validate: () => true as const, admin: { description: 'Gerado sozinho; pode deixar em branco. URL permanente: /obras/<slug>. Nunca mudar depois de publicada.' } },
     { name: 'categoria', label: 'Categoria', type: 'select', required: true, options: categoriasObra },
     { name: 'secretaria', label: 'Secretaria responsável', type: 'relationship', relationTo: 'secretarias' },
     { name: 'objetoResumo', label: 'Objeto (resumo)', type: 'textarea', required: true },
     { name: 'objeto', label: 'Objeto (completo)', type: 'richText' },
+    campoHtmlDe('objeto'),
+    { name: 'pendencias', label: 'Pendências (alertas)', type: 'textarea', virtual: true, access: { read: ({ req: { user } }) => Boolean(user), create: () => false, update: () => false }, hooks: { afterRead: [pendenciasDaObra] }, admin: { position: 'sidebar', readOnly: true, description: 'Alertas que não impedem a publicação, mas um órgão fiscalizador cobra.' } },
     { name: 'endereco', label: 'Endereço', type: 'text' },
     { name: 'empresaExecutora', label: 'Empresa executora', type: 'text' },
     { name: 'empresaCnpj', label: 'CNPJ da empresa', type: 'text' },

@@ -106,7 +106,7 @@ async function midia(idArquivo: string | null, contexto: string): Promise<number
   try {
     const dados = fs.readFileSync(caminho)
     const doc: any = await payload.create({
-      collection: 'media', depth: 0, context: { semAuditoria: true },
+      collection: 'media', depth: 0, context: { semAuditoria: true, semInspecaoUpload: true },
       data: { alt: f.title ?? undefined, idLegado: idArquivo, createdAt: f.uploaded_on ?? undefined } as any,
       file: { data: dados, mimetype: f.type ?? 'application/octet-stream', name: f.filename_download ?? f.filename_disk, size: dados.length },
     })

@@ -69,7 +69,7 @@ export const urlMidia = (m: unknown): string | null =>
  */
 export async function listarPayload<T extends { id: unknown }>(
   colecao: string,
-  opcoes: { sort?: string; limit?: number; page?: number; depth?: number; onde?: Record<string, string>; busca?: { campos: string[]; termo: string } } = {},
+  opcoes: { sort?: string; limit?: number; page?: number; depth?: number; select?: string[]; onde?: Record<string, string>; busca?: { campos: string[]; termo: string } } = {},
 ): Promise<Resposta<T & { id: string }>> {
   const url = new URL(`${BASE}/api/${colecao}`);
   url.searchParams.set('where[status][equals]', 'publicado');
@@ -78,6 +78,7 @@ export async function listarPayload<T extends { id: unknown }>(
   if (opcoes.page && opcoes.page > 1) url.searchParams.set('page', String(opcoes.page));
   // Busca: o termo em QUALQUER um dos campos, sem diferenciar maiúsculas (equivale ao `search` do Directus).
   opcoes.busca?.campos.forEach((campo, i) => url.searchParams.set(`where[or][${i}][${campo}][contains]`, opcoes.busca!.termo));
+  opcoes.select?.forEach((campo) => url.searchParams.set(`select[${campo}]`, 'true'));
   url.searchParams.set('limit', String(opcoes.limit ?? 0));
   if (opcoes.sort) url.searchParams.set('sort', opcoes.sort);
 

@@ -7,6 +7,10 @@
  */
 
 import { listar } from './directus';
+import { listarPayload, reescreverMidia } from './payload';
+
+/* Migração Directus → Payload: `CMS_OBRAS=payload` liga a leitura pública (ver CLAUDE.md). */
+const noPayload = () => process.env.CMS_OBRAS === 'payload';
 import { moeda, numero, documentoPublico, tamanhoLegivel, formatoLegivel } from './licitacoes';
 
 export { moeda, numero, documentoPublico, tamanhoLegivel, formatoLegivel };
@@ -101,7 +105,37 @@ const CAMPOS = [
   'data_publicacao', 'demonstracao', 'date_updated',
 ].join(',');
 
+/** Obra do Payload (camelCase, `objetoHtml`, relações populadas) no formato do portal. `id` público = UUID (`idLegado`). */
+function obraDoPayload(d: any): Obra {
+  const rel = (v: any) => (v && typeof v === 'object' ? v : null);
+  const s = rel(d.secretaria), l = rel(d.licitacao);
+  return {
+    id: d.idLegado ?? String(d.id), numero_processo: d.numeroProcesso, numero_contrato: d.numeroContrato ?? null,
+    licitacao: l ? { id: l.idLegado ?? String(l.id), numero: l.numero, ano: l.ano } : null,
+    slug: d.slug, categoria: d.categoria, secretaria: s ? { nome: s.nome, slug: s.slug } : null,
+    objeto_resumo: d.objetoResumo, objeto: reescreverMidia(d.objetoHtml), endereco: d.endereco ?? null,
+    empresa_executora: d.empresaExecutora ?? null, empresa_cnpj: d.empresaCnpj ?? null,
+    responsavel_tecnico: d.responsavelTecnico ?? null, art_rrt: d.artRrt ?? null,
+    fonte_recurso: d.fonteRecurso, numero_convenio: d.numeroConvenio ?? null,
+    valor_contratado: d.valorContratado ?? null, valor_aditivado: d.valorAditivado ?? null, valor_pago: d.valorPago ?? null,
+    data_ordem_servico: d.dataOrdemServico ?? null, data_prevista_termino: d.dataPrevistaTermino ?? null, data_termino_real: d.dataTerminoReal ?? null,
+    situacao: d.situacao, motivo_situacao: d.motivoSituacao ?? null, percentual_execucao: d.percentualExecucao ?? null,
+    observacoes: d.observacoes ?? null, data_publicacao: d.dataPublicacao, demonstracao: !!d.demonstracao, date_updated: d.updatedAt ?? null,
+  };
+}
+
+/** Arquivo do Payload (objeto `media` populado) no formato do portal: `id` vira o marcador `midia:<nome>` que `arquivo()` entende. */
+const arquivoDoPayload = (m: any): ArquivoAnexo | null =>
+  m && typeof m === 'object' && m.filename ? { id: `midia:${encodeURIComponent(m.filename)}`, type: m.mimeType ?? null, filesize: m.filesize ?? null } : null;
+
+/** Anexos e medições ligam à obra pelo UUID público, não pelo id numérico. */
+const filha = (id: string) => ({ 'obra.idLegado': id });
+
 export async function todas(): Promise<{ dados: Obra[]; indisponivel: boolean }> {
+  if (noPayload()) {
+    const r = await listarPayload<any>('obras', { depth: 1, sort: '-dataPublicacao,slug', limit: 0 });
+    return { dados: r.dados.map(obraDoPayload), indisponivel: r.indisponivel };
+  }
   return listar<Obra>('obras', {
     fields: CAMPOS,
     filter: JSON.stringify({ status: { _eq: 'publicado' } }),
@@ -116,6 +150,13 @@ export async function porSlug(slug: string): Promise<Obra | null> {
 }
 
 export async function anexosDe(id: string): Promise<AnexoObra[]> {
+  if (noPayload()) {
+    const r = await listarPayload<any>('obra-anexos', {
+      depth: 1, sort: 'ordem,dataReferencia,id', onde: filha(id),
+      select: ['titulo', 'categoria', 'arquivo', 'dataReferencia', 'descricao', 'ordem'],
+    });
+    return r.dados.map((d) => ({ id: d.id, titulo: d.titulo, categoria: d.categoria, arquivo: arquivoDoPayload(d.arquivo), data_referencia: d.dataReferencia, descricao: d.descricao ?? null, ordem: d.ordem ?? null }));
+  }
   const r = await listar<AnexoObra>('obra_anexos', {
     // NUNCA pedir arquivo.filename_download: o papel público não tem
     // permissão nesse campo de directus_files, e o Directus recusa a
@@ -130,6 +171,16 @@ export async function anexosDe(id: string): Promise<AnexoObra[]> {
 }
 
 export async function medicoesDe(id: string): Promise<MedicaoObra[]> {
+  if (noPayload()) {
+    const r = await listarPayload<any>('obra-medicoes', {
+      depth: 1, sort: 'numero,id', onde: filha(id),
+      select: ['numero', 'dataReferencia', 'percentualAcumulado', 'valorMedido', 'valorAcumulado', 'boletim', 'observacoes'],
+    });
+    return r.dados.map((d) => ({
+      id: d.id, numero: d.numero, data_referencia: d.dataReferencia, percentual_acumulado: d.percentualAcumulado ?? null,
+      valor_medido: d.valorMedido ?? null, valor_acumulado: d.valorAcumulado ?? null, boletim: arquivoDoPayload(d.boletim), observacoes: d.observacoes ?? null,
+    }));
+  }
   const r = await listar<MedicaoObra>('obra_medicoes', {
     fields: 'id,numero,data_referencia,percentual_acumulado,valor_medido,valor_acumulado,boletim.id,boletim.filesize,observacoes',
     filter: JSON.stringify({ obra: { _eq: id } }),

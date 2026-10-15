@@ -1,6 +1,7 @@
 import type { CollectionAfterChangeHook, CollectionConfig } from 'payload'
 
-const IGNORAR = new Set(['audit-logs', 'payload-preferences', 'payload-migrations', 'payload-locked-documents'])
+// licitacao-assinantes/-envios: e-mail de cidadão; auditar guardaria cópia do endereço após o descadastro (LGPD).
+const IGNORAR = new Set(['licitacao-assinantes', 'licitacao-envios', 'audit-logs', 'payload-preferences', 'payload-migrations', 'payload-locked-documents'])
 
 /** Grava cada criação/alteração (arquivar = soft delete, registrado como 'delete') em `audit-logs`. */
 const registrar: CollectionAfterChangeHook = async ({ collection, doc, previousDoc, operation, req, context }) => {

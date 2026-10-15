@@ -12,6 +12,7 @@ import { ConselhosMunicipais } from './collections/ConselhosMunicipais'
 import { Documentos } from './collections/Documentos'
 import { LicitacaoAnexos } from './collections/LicitacaoAnexos'
 import { LicitacaoAssinantes } from './collections/LicitacaoAssinantes'
+import { LicitacaoEnvios } from './collections/LicitacaoEnvios'
 import { LicitacaoEventos } from './collections/LicitacaoEventos'
 import { LicitacaoLotes } from './collections/LicitacaoLotes'
 import { Licitacoes } from './collections/Licitacoes'
@@ -55,7 +56,7 @@ export default buildConfig({
   collections: [
     Secretarias, Noticias, Servicos, Documentos, Paginas, LinksUteis, Selos, PerguntasFrequentes,
     PatrimonioCultural, TelefonesUteis, ColetaLixo, ConselhosMunicipais,
-    Licitacoes, LicitacaoAnexos, LicitacaoLotes, LicitacaoEventos, LicitacaoAssinantes,
+    Licitacoes, LicitacaoAnexos, LicitacaoLotes, LicitacaoEventos, LicitacaoAssinantes, LicitacaoEnvios,
     Obras, ObraAnexos, ObraMedicoes,
     Media, Users, AuditLogs,
   ].map(comAuditoria),

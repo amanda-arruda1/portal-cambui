@@ -84,6 +84,7 @@ export interface Config {
     'licitacao-lotes': LicitacaoLote;
     'licitacao-eventos': LicitacaoEvento;
     'licitacao-assinantes': LicitacaoAssinante;
+    'licitacao-envios': LicitacaoEnvio;
     obras: Obra;
     'obra-anexos': ObraAnexo;
     'obra-medicoes': ObraMedicoe;
@@ -114,6 +115,7 @@ export interface Config {
     'licitacao-lotes': LicitacaoLotesSelect<false> | LicitacaoLotesSelect<true>;
     'licitacao-eventos': LicitacaoEventosSelect<false> | LicitacaoEventosSelect<true>;
     'licitacao-assinantes': LicitacaoAssinantesSelect<false> | LicitacaoAssinantesSelect<true>;
+    'licitacao-envios': LicitacaoEnviosSelect<false> | LicitacaoEnviosSelect<true>;
     obras: ObrasSelect<false> | ObrasSelect<true>;
     'obra-anexos': ObraAnexosSelect<false> | ObraAnexosSelect<true>;
     'obra-medicoes': ObraMedicoesSelect<false> | ObraMedicoesSelect<true>;
@@ -719,7 +721,7 @@ export interface Licitacoe {
   numero: number;
   ano: number;
   /**
-   * URL permanente: /licitacoes/<ano>/<slug>. Nunca mudar depois de publicada.
+   * Gerado sozinho a partir da modalidade e do número; pode deixar em branco. URL permanente: /licitacoes/<ano>/<slug>. Nunca mudar depois de publicada.
    */
   slug: string;
   modalidade:
@@ -763,6 +765,7 @@ export interface Licitacoe {
     };
     [k: string]: unknown;
   } | null;
+  objetoHtml?: string | null;
   valorEstimado?: number | null;
   /**
    * Oculta o valor no portal sem apagar o dado — art. 24 da Lei 14.133/2021.
@@ -988,6 +991,27 @@ export interface LicitacaoAssinante {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "licitacao-envios".
+ */
+export interface LicitacaoEnvio {
+  id: number;
+  destinatario: string;
+  assunto: string;
+  corpoTexto: string;
+  corpoHtml: string;
+  tipo: 'confirmacao' | 'aviso';
+  estado: 'pendente' | 'enviado' | 'falhou' | 'desistiu';
+  tentativas?: number | null;
+  ultimoErro?: string | null;
+  criadoEm?: string | null;
+  enviadoEm?: string | null;
+  assinante?: (number | null) | LicitacaoAssinante;
+  licitacao?: (number | null) | Licitacoe;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "obras".
  */
 export interface Obra {
@@ -995,6 +1019,9 @@ export interface Obra {
   numeroProcesso: string;
   numeroContrato?: string | null;
   licitacao?: (number | null) | Licitacoe;
+  /**
+   * Gerado sozinho; pode deixar em branco. URL permanente: /obras/<slug>. Nunca mudar depois de publicada.
+   */
   slug: string;
   categoria:
     | 'pavimentacao'
@@ -1024,6 +1051,11 @@ export interface Obra {
     };
     [k: string]: unknown;
   } | null;
+  objetoHtml?: string | null;
+  /**
+   * Alertas que não impedem a publicação, mas um órgão fiscalizador cobra.
+   */
+  pendencias?: string | null;
   endereco?: string | null;
   empresaExecutora?: string | null;
   empresaCnpj?: string | null;
@@ -1156,11 +1188,23 @@ export interface User {
   id: number;
   nome?: string | null;
   /**
-   * Administrador gerencia usuários. Editor edita conteúdo geral. Setor de licitações cria e altera editais; Leitor só consulta.
+   * Administrador gerencia usuários. Editor edita conteúdo geral. Setor de licitações/obras cria e altera; Leitor só consulta.
    */
-  papel: 'administrador' | 'editor' | 'setor_licitacoes' | 'leitor_licitacoes';
+  papel:
+    | 'administrador'
+    | 'editor'
+    | 'setor_licitacoes'
+    | 'leitor_licitacoes'
+    | 'setor_obras'
+    | 'leitor_obras'
+    | 'servico_avisos_portal'
+    | 'servico_avisos_entrega';
   updatedAt: string;
   createdAt: string;
+  enableAPIKey?: boolean | null;
+  apiKey?: string | null;
+  apiKeyIndex?: string | null;
+  hasAPIKey?: boolean | null;
   email: string;
   resetPasswordToken?: string | null;
   resetPasswordExpiration?: string | null;
@@ -1303,6 +1347,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'licitacao-assinantes';
         value: number | LicitacaoAssinante;
+      } | null)
+    | ({
+        relationTo: 'licitacao-envios';
+        value: number | LicitacaoEnvio;
       } | null)
     | ({
         relationTo: 'obras';
@@ -1607,6 +1655,7 @@ export interface LicitacoesSelect<T extends boolean = true> {
   secretaria?: T;
   objetoResumo?: T;
   objeto?: T;
+  objetoHtml?: T;
   valorEstimado?: T;
   orcamentoSigiloso?: T;
   dataPublicacao?: T;
@@ -1704,6 +1753,26 @@ export interface LicitacaoAssinantesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "licitacao-envios_select".
+ */
+export interface LicitacaoEnviosSelect<T extends boolean = true> {
+  destinatario?: T;
+  assunto?: T;
+  corpoTexto?: T;
+  corpoHtml?: T;
+  tipo?: T;
+  estado?: T;
+  tentativas?: T;
+  ultimoErro?: T;
+  criadoEm?: T;
+  enviadoEm?: T;
+  assinante?: T;
+  licitacao?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "obras_select".
  */
 export interface ObrasSelect<T extends boolean = true> {
@@ -1715,6 +1784,8 @@ export interface ObrasSelect<T extends boolean = true> {
   secretaria?: T;
   objetoResumo?: T;
   objeto?: T;
+  objetoHtml?: T;
+  pendencias?: T;
   endereco?: T;
   empresaExecutora?: T;
   empresaCnpj?: T;
@@ -1807,6 +1878,10 @@ export interface UsersSelect<T extends boolean = true> {
   papel?: T;
   updatedAt?: T;
   createdAt?: T;
+  enableAPIKey?: T;
+  apiKey?: T;
+  apiKeyIndex?: T;
+  hasAPIKey?: T;
   email?: T;
   resetPasswordToken?: T;
   resetPasswordExpiration?: T;

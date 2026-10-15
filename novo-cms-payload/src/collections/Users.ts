@@ -36,6 +36,7 @@ export const Users: CollectionConfig = {
   labels: { singular: 'Usuário', plural: 'Usuários' },
   admin: { useAsTitle: 'email', group: 'Sistema', defaultColumns: ['email', 'nome', 'papel'], hidden: ({ user }) => !ehAdmin(user) },
   auth: {
+    useAPIKey: true, // credenciais dos serviços de avisos; contas de pessoas não ganham chave
     // 5 erros bloqueiam a conta por 15 minutos. O Payload já faz isso por padrão; fica explícito para não depender de padrão.
     maxLoginAttempts: 5,
     lockTime: 15 * 60 * 1000,
@@ -57,10 +58,14 @@ export const Users: CollectionConfig = {
         { label: 'Editor', value: 'editor' },
         { label: 'Setor de licitações', value: 'setor_licitacoes' },
         { label: 'Leitor de licitações', value: 'leitor_licitacoes' },
+        { label: 'Setor de obras', value: 'setor_obras' },
+        { label: 'Leitor de obras', value: 'leitor_obras' },
+        { label: 'Serviço: avisos (portal)', value: 'servico_avisos_portal' },
+        { label: 'Serviço: avisos (entrega)', value: 'servico_avisos_entrega' },
       ],
       // `!user`: só a tela "primeiro usuário" chega aqui sem login (a coleção recusa criação anônima quando já há usuários).
       access: { create: ({ req: { user } }) => !user || ehAdmin(user), update: ({ req: { user } }) => ehAdmin(user) },
-      admin: { description: 'Administrador gerencia usuários. Editor edita conteúdo geral. Setor de licitações cria e altera editais; Leitor só consulta.' },
+      admin: { description: 'Administrador gerencia usuários. Editor edita conteúdo geral. Setor de licitações/obras cria e altera; Leitor só consulta.' },
     },
   ],
 }

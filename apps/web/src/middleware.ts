@@ -43,6 +43,27 @@ export const onRequest = defineMiddleware(async (contexto, proxima) => {
     }
   }
 
+  /* --- Licitações e Obras moram no Payload (painel em /cms/admin) ---
+   * As telas e os endpoints dos antigos painéis de Licitações e Obras foram removidos em 2026-10-15. Favoritos e atalhos
+   * antigos não podem cair num 404 seco: telas redirecionam ao painel novo; endpoints respondem 410 com a explicação. */
+  if (caminho.startsWith('/painel/api/licitacao-') || caminho === '/painel/api/pncp') {
+    return new Response(JSON.stringify({ erro: 'As licitações agora são editadas no painel novo: /cms/admin.' }), {
+      status: 410, headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    });
+  }
+  if (caminho === '/painel/licitacoes' || caminho.startsWith('/painel/licitacoes/')) {
+    return contexto.redirect('/cms/admin/collections/licitacoes', 303);
+  }
+  // Obras públicas: mesmo caminho, removidas do painel antigo em 2026-10-15.
+  if (caminho.startsWith('/painel/api/obra-')) {
+    return new Response(JSON.stringify({ erro: 'As obras agora são editadas no painel novo: /cms/admin.' }), {
+      status: 410, headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    });
+  }
+  if (caminho === '/painel/obras' || caminho.startsWith('/painel/obras/')) {
+    return contexto.redirect('/cms/admin/collections/obras', 303);
+  }
+
   let resposta: Response;
 
   if (PUBLICAS.includes(caminho)) {

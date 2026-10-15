@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { campoIdLegado } from './_base'
+import { inspecionarUpload } from '../upload/inspecionar'
 
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -16,5 +17,6 @@ export const Media: CollectionConfig = {
     { name: 'alt', label: 'Texto alternativo', type: 'text' },
     campoIdLegado,
   ],
+  hooks: { beforeOperation: [inspecionarUpload] },
   upload: true,
 }

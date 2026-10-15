@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { APIError } from 'payload'
 import type { CollectionAfterChangeHook, CollectionBeforeChangeHook, CollectionBeforeValidateHook } from 'payload'
 
@@ -77,6 +78,16 @@ export function validar(d: Dados, opcoes: { publicando: boolean; temEdital: bool
 }
 
 const chave = (x: Problema) => `${x.campo}|${x.texto}`
+
+/**
+ * Identificador público e permanente. `/api/licitacoes` devolve `id` e o convite de agenda usa `UID:licitacao-<id>@…`;
+ * trocar o id duplicaria o evento na agenda de quem assina. As 697 migradas já trazem o UUID do Directus em `idLegado`;
+ * as novas ganham um UUID aqui, e o site expõe sempre `idLegado` — o id numérico do Payload nunca vira contrato público.
+ */
+export const uuidPublico: CollectionBeforeValidateHook = ({ data, operation }) => {
+  if (data && operation === 'create' && !data.idLegado) data.idLegado = randomUUID()
+  return data
+}
 
 /** Slug: gerado na criação; refeito ao PUBLICAR um rascunho (comportamento do painel antigo); depois de publicada, nunca muda. */
 export const slugPermanente: CollectionBeforeValidateHook = ({ data, originalDoc, operation, req }) => {

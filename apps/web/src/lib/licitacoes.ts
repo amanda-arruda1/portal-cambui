@@ -18,6 +18,11 @@
  */
 
 import { listar } from './directus';
+import { listarPayload, reescreverMidia } from './payload';
+
+/* Migração Directus → Payload: `CMS_LICITACOES=payload` liga a leitura pública. Só ligar junto com a virada da edição
+ * (o /painel antigo grava no Directus) e dos avisos (CMS_AVISOS) — ver CLAUDE.md. */
+const noPayload = () => process.env.CMS_LICITACOES === 'payload';
 
 /* ─────────────────────────  enums do domínio  ───────────────────────── */
 
@@ -137,7 +142,32 @@ const CAMPOS = [
 
 /** Todas as licitações publicadas. Falha silenciosa: se o CMS cair, a página
  *  mostra estado vazio honesto em vez de erro — mesma regra do resto do portal. */
+/** Licitação do Payload (camelCase, `objetoHtml`, secretaria populada) no formato do portal. O `id` público é SEMPRE o UUID
+ *  (`idLegado`): é o que `/api/licitacoes` e o UID do .ics já publicaram. */
+function licitacaoDoPayload(d: any): Licitacao {
+  const s = d.secretaria && typeof d.secretaria === 'object' ? { nome: d.secretaria.nome, slug: d.secretaria.slug } : null;
+  return {
+    id: d.idLegado ?? String(d.id), numero_processo: d.numeroProcesso, numero: d.numero, ano: d.ano, slug: d.slug,
+    modalidade: d.modalidade, forma: d.forma, justificativa_presencial: d.justificativaPresencial ?? null,
+    criterio_julgamento: d.criterioJulgamento, modo_disputa: d.modoDisputa, registro_precos: !!d.registroPrecos,
+    secretaria: s, objeto_resumo: d.objetoResumo, objeto: reescreverMidia(d.objetoHtml),
+    valor_estimado: d.valorEstimado ?? null, orcamento_sigiloso: !!d.orcamentoSigiloso,
+    data_publicacao: d.dataPublicacao, data_abertura_propostas: d.dataAberturaPropostas ?? null, data_sessao: d.dataSessao ?? null,
+    prazo_impugnacao: d.prazoImpugnacao ?? null, prazo_esclarecimentos: d.prazoEsclarecimentos ?? null,
+    situacao: d.situacao, motivo_situacao: d.motivoSituacao ?? null,
+    pncp_id: d.pncpId ?? null, pncp_url: d.pncpUrl ?? null, sistema_sessao_url: d.sistemaSessaoUrl ?? null,
+    demonstracao: !!d.demonstracao, date_updated: d.updatedAt ?? null,
+  };
+}
+
+/** Filhas (anexos, lotes, eventos) ligam à licitação pelo UUID público, não pelo id numérico. */
+const filha = (id: string) => ({ 'licitacao.idLegado': id });
+
 export async function todas(): Promise<{ dados: Licitacao[]; indisponivel: boolean }> {
+  if (noPayload()) {
+    const r = await listarPayload<any>('licitacoes', { depth: 1, sort: '-dataPublicacao,slug', limit: 0 });
+    return { dados: r.dados.map(licitacaoDoPayload), indisponivel: r.indisponivel };
+  }
   return listar<Licitacao>('licitacoes', {
     fields: CAMPOS,
     filter: JSON.stringify({ status: { _eq: 'publicado' } }),
@@ -152,6 +182,20 @@ export async function porSlug(ano: number, slug: string): Promise<Licitacao | nu
 }
 
 export async function anexosDe(id: string): Promise<Anexo[]> {
+  if (noPayload()) {
+    const r = await listarPayload<any>('licitacao-anexos', {
+      depth: 1, sort: 'ordem,dataPublicacao,id', onde: filha(id),
+      select: ['titulo', 'tipo', 'arquivo', 'urlExterna', 'dataPublicacao', 'versao', 'substitui', 'superado', 'ordem'],
+    });
+    return r.dados.map((d) => ({
+      id: d.id, titulo: d.titulo, tipo: d.tipo,
+      arquivo: d.arquivo && typeof d.arquivo === 'object' && d.arquivo.filename
+        ? { id: `midia:${encodeURIComponent(d.arquivo.filename)}`, type: d.arquivo.mimeType ?? null, filesize: d.arquivo.filesize ?? null } : null,
+      url_externa: d.urlExterna ?? null, data_publicacao: d.dataPublicacao, versao: d.versao ?? 1,
+      substitui: d.substitui ? String(typeof d.substitui === 'object' ? d.substitui.id : d.substitui) : null,
+      superado: !!d.superado, ordem: d.ordem ?? null,
+    }));
+  }
   const r = await listar<Anexo>('licitacao_anexos', {
     // tamanho e formato vêm junto: quem consulta do celular em 4G de serra
     // precisa saber se são 200 KB ou 40 MB ANTES de tocar no link.
@@ -168,6 +212,13 @@ export async function anexosDe(id: string): Promise<Anexo[]> {
 }
 
 export async function lotesDe(id: string): Promise<Lote[]> {
+  if (noPayload()) {
+    const r = await listarPayload<any>('licitacao-lotes', { sort: 'numero', onde: filha(id), depth: 0 });
+    return r.dados.map((d) => ({
+      id: d.id, numero: d.numero, descricao: d.descricao, valor_estimado: d.valorEstimado ?? null, situacao: d.situacao,
+      vencedor_razao_social: d.vencedorRazaoSocial ?? null, vencedor_cnpj: d.vencedorCnpj ?? null, valor_homologado: d.valorHomologado ?? null,
+    }));
+  }
   const r = await listar<Lote>('licitacao_lotes', {
     fields: 'id,numero,descricao,valor_estimado,situacao,vencedor_razao_social,vencedor_cnpj,valor_homologado',
     filter: JSON.stringify({ licitacao: { _eq: id } }), sort: 'numero', limit: 200,
@@ -176,6 +227,10 @@ export async function lotesDe(id: string): Promise<Lote[]> {
 }
 
 export async function eventosDe(id: string): Promise<Evento[]> {
+  if (noPayload()) {
+    const r = await listarPayload<any>('licitacao-eventos', { sort: 'data,id', onde: filha(id), depth: 0 });
+    return r.dados.map((d) => ({ id: d.id, data: d.data, tipo: d.tipo, descricao: d.descricao ?? null, anexo: d.anexo != null ? String(d.anexo) : null }));
+  }
   const r = await listar<Evento>('licitacao_eventos', {
     fields: 'id,data,tipo,descricao,anexo',
     filter: JSON.stringify({ licitacao: { _eq: id } }), sort: 'data', limit: 200,

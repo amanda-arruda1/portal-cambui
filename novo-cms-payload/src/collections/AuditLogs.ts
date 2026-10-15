@@ -9,7 +9,8 @@ export const AuditLogs: CollectionConfig = {
   labels: { singular: 'Registro de auditoria', plural: 'Auditoria' },
   admin: { useAsTitle: 'resumo', defaultColumns: ['createdAt', 'operacao', 'colecao', 'documentoId', 'usuarioEmail'], group: 'Sistema' },
   access: {
-    read: ({ req: { user } }) => Boolean(user),
+    // Só administrador: guarda o antes/depois de TODOS os módulos (rascunhos, valores, contas).
+    read: ({ req: { user } }) => (user as { papel?: string } | null)?.papel === 'administrador',
     create: () => false,
     update: () => false,
     delete: () => false,

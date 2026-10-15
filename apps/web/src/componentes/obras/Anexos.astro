@@ -6,6 +6,7 @@
  */
 import { TIPOS_ANEXO, formatoLegivel, tamanhoLegivel, type AnexoObra } from '../../lib/obras';
 import { data as formatarData } from '../../lib/formato';
+import { arquivo as urlArquivo } from '../../lib/directus';
 
 interface Props { anexos: AnexoObra[] }
 const { anexos } = Astro.props;
@@ -28,7 +29,7 @@ const grupos = TIPOS_ANEXO
             {g.itens.map((a) => (
               <li>
                 {a.arquivo ? (
-                  <a href={`/assets/${a.arquivo.id}?download`} download>
+                  <a href={`${urlArquivo(a.arquivo.id)}?download`} download>
                     <span class="nome"><span class="fio-foco">{a.titulo}</span></span>
                     <span class="meta">
                       <span>{formatarData(a.data_referencia)}</span>

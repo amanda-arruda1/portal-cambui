@@ -1,6 +1,13 @@
 import type { Access, CollectionConfig, Field } from 'payload'
 
-const autenticado: Access = ({ req: { user } }) => Boolean(user)
+/**
+ * Conteúdo geral (notícias, páginas, secretarias, telefones…) é de `administrador` e `editor`. Os papéis de Licitações e
+ * Obras (setor/leitor) NÃO editam nem enxergam rascunho de conteúdo geral — como no Directus, onde esses papéis só têm
+ * permissão nos próprios módulos. Antes qualquer usuário logado escrevia em tudo.
+ */
+const PAPEIS_CONTEUDO = ['administrador', 'editor']
+export const ehDeConteudo = (user: unknown) => PAPEIS_CONTEUDO.includes((user as { papel?: string } | null | undefined)?.papel ?? '')
+const autenticado: Access = ({ req: { user } }) => ehDeConteudo(user)
 
 /**
  * Regras comuns a TODAS as coleções de conteúdo:
@@ -19,7 +26,7 @@ export const acessoSemExclusao: CollectionConfig['access'] = {
 }
 
 /** Leitura pública SÓ do que está publicado (a API que o site consome); rascunho e arquivado exigem login. */
-export const leituraPublicaPublicados: Access = ({ req: { user } }) => (user ? true : { status: { equals: 'publicado' } })
+export const leituraPublicaPublicados: Access = ({ req: { user } }) => (ehDeConteudo(user) ? true : { status: { equals: 'publicado' } })
 
 /** Visibilidade no portal, igual ao campo `status` do Directus. */
 export const campoStatus: Field = {

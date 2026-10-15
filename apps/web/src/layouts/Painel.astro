@@ -58,12 +58,12 @@ const { titulo, sessao } = Astro.props;
                 </a>
               )}
               {PAPEIS_LICITACOES.includes(sessao.usuario.papel ?? '') && (
-                <a href="/painel/licitacoes" class="underline underline-offset-4 hover:text-azul-claro">
+                <a href="/cms/admin/collections/licitacoes" class="underline underline-offset-4 hover:text-azul-claro">
                   Licitações
                 </a>
               )}
               {PAPEIS_OBRAS.includes(sessao.usuario.papel ?? '') && (
-                <a href="/painel/obras" class="underline underline-offset-4 hover:text-azul-claro">
+                <a href="/cms/admin/collections/obras" class="underline underline-offset-4 hover:text-azul-claro">
                   Obras públicas
                 </a>
               )}

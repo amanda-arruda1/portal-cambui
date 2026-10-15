@@ -1,8 +1,10 @@
 import type { CollectionConfig } from 'payload'
 import { base, camposComuns } from './_base'
+import { acessoObras } from '../acesso'
+import { acumuladoDaMedicao, medicaoAtualizaObra } from '../hooks-obras'
 
 export const ObraMedicoes: CollectionConfig = {
-  ...base('obra-medicoes', 'Medição de obra', 'Medições de obras', { admin: { useAsTitle: 'numero', defaultColumns: ['numero', 'obra', 'dataReferencia', 'valorMedido'], group: 'Obras' } }),
+  ...base('obra-medicoes', 'Medição de obra', 'Medições de obras', { access: acessoObras, hooks: { beforeChange: [acumuladoDaMedicao], afterChange: [medicaoAtualizaObra] }, admin: { useAsTitle: 'numero', defaultColumns: ['numero', 'obra', 'dataReferencia', 'valorMedido'], group: 'Obras' } }),
   fields: [
     { name: 'obra', label: 'Obra', type: 'relationship', relationTo: 'obras', required: true, index: true },
     { name: 'numero', label: 'Número', type: 'number', required: true },
