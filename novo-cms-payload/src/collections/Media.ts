@@ -9,7 +9,7 @@ const podeEnviar = ({ req: { user } }: { req: { user?: unknown } }) => ehAdmin(u
 export const Media: CollectionConfig = {
   slug: 'media',
   labels: { singular: 'Arquivo', plural: 'Arquivos' },
-  // Sem item no menu: a navegação é por "Pastas de Arquivos" (a lista plana tinha 2.500+ itens misturados).
+  // `hidden` tira do menu E bloqueia as páginas de lista/edição por URL ("Nada encontrado"): a navegação é só por "Pastas de Arquivos". O envio e a edição seguem pelas gavetas do campo `arquivos` da pasta e dos campos de upload.
   admin: { hidden: true, group: 'Sistema', defaultColumns: ['filename', 'alt', 'pasta', 'mimeType', 'createdAt'] },
   access: {
     read: () => true,
