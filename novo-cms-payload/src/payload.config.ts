@@ -59,6 +59,8 @@ export default buildConfig({
       actions: ['/components/AccessibilityControls#AccessibilityControls'],
       // Tela de aceite do termo de uso (bloqueia o painel até aceitar a versão atual).
       providers: ['/components/TermosDeUso#TermosProvider'],
+      // Página inicial: boas-vindas, atalhos, métricas e, abaixo, a listagem padrão das coleções.
+      views: { dashboard: { Component: '/components/CustomDashboard#default' } },
     },
   },
   // Idioma do painel: a Payload só traz `pt` (sem variante pt-BR separada).

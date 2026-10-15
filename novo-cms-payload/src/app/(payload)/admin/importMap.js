@@ -24,6 +24,7 @@ import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0
 import { ImportarPncp as ImportarPncp_36e461d591bbd6a0855e0db1b2749d9d } from '../../../components/ImportarPncp'
 import { AccessibilityControls as AccessibilityControls_aa8e7ddd07a3ead46018244717843611 } from '../../../components/AccessibilityControls'
 import { TermosProvider as TermosProvider_b0a266aee25571630683a67bd55136ee } from '../../../components/TermosDeUso'
+import { default as default_563cf1b4517ed88740433a46edc248ba } from '../../../components/CustomDashboard'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -54,5 +55,6 @@ export const importMap = {
   "/components/ImportarPncp#ImportarPncp": ImportarPncp_36e461d591bbd6a0855e0db1b2749d9d,
   "/components/AccessibilityControls#AccessibilityControls": AccessibilityControls_aa8e7ddd07a3ead46018244717843611,
   "/components/TermosDeUso#TermosProvider": TermosProvider_b0a266aee25571630683a67bd55136ee,
+  "/components/CustomDashboard#default": default_563cf1b4517ed88740433a46edc248ba,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }
