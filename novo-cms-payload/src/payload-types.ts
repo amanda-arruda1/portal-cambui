@@ -64,6 +64,7 @@ export type SupportedTimezones =
 export interface Config {
   auth: {
     users: UserAuthOperations;
+    'contas-servico': ContasServicoAuthOperations;
   };
   blocks: {};
   collections: {
@@ -90,6 +91,7 @@ export interface Config {
     'obra-medicoes': ObraMedicoe;
     media: Media;
     users: User;
+    'contas-servico': ContasServico;
     'audit-logs': AuditLog;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -121,6 +123,7 @@ export interface Config {
     'obra-medicoes': ObraMedicoesSelect<false> | ObraMedicoesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
+    'contas-servico': ContasServicoSelect<false> | ContasServicoSelect<true>;
     'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -137,13 +140,31 @@ export interface Config {
   widgets: {
     collections: CollectionsWidget;
   };
-  user: User;
+  user: User | ContasServico;
   jobs: {
     tasks: unknown;
     workflows: unknown;
   };
 }
 export interface UserAuthOperations {
+  forgotPassword: {
+    email: string;
+    password: string;
+  };
+  login: {
+    email: string;
+    password: string;
+  };
+  registerFirstUser: {
+    email: string;
+    password: string;
+  };
+  unlock: {
+    email: string;
+    password: string;
+  };
+}
+export interface ContasServicoAuthOperations {
   forgotPassword: {
     email: string;
     password: string;
@@ -214,9 +235,9 @@ export interface Secretaria {
   horarioAtendimento?: string | null;
   ordem?: number | null;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Fluxo: rascunho → aguardando aprovação → publicado. Autor envia para aprovação; só revisor ou administrador publica ou arquiva. Só "Publicado" aparece para o cidadão.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -272,9 +293,9 @@ export interface Noticia {
   destaque?: boolean | null;
   secretaria?: (number | null) | Secretaria;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Fluxo: rascunho → aguardando aprovação → publicado. Autor envia para aprovação; só revisor ou administrador publica ou arquiva. Só "Publicado" aparece para o cidadão.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -349,9 +370,9 @@ export interface Servico {
   urlExterna?: string | null;
   secretaria?: (number | null) | Secretaria;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Fluxo: rascunho → aguardando aprovação → publicado. Autor envia para aprovação; só revisor ou administrador publica ou arquiva. Só "Publicado" aparece para o cidadão.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -386,9 +407,9 @@ export interface Documento {
   urlExterna?: string | null;
   secretaria?: (number | null) | Secretaria;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Fluxo: rascunho → aguardando aprovação → publicado. Autor envia para aprovação; só revisor ou administrador publica ou arquiva. Só "Publicado" aparece para o cidadão.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -431,9 +452,9 @@ export interface Pagina {
   conteudoHtml?: string | null;
   atualizadoEm?: string | null;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Fluxo: rascunho → aguardando aprovação → publicado. Autor envia para aprovação; só revisor ou administrador publica ou arquiva. Só "Publicado" aparece para o cidadão.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -462,9 +483,9 @@ export interface LinksUtei {
   grupo?: string | null;
   ordem?: number | null;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Fluxo: rascunho → aguardando aprovação → publicado. Autor envia para aprovação; só revisor ou administrador publica ou arquiva. Só "Publicado" aparece para o cidadão.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -495,9 +516,9 @@ export interface Selo {
   urlComprovacao?: string | null;
   ordem?: number | null;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Fluxo: rascunho → aguardando aprovação → publicado. Autor envia para aprovação; só revisor ou administrador publica ou arquiva. Só "Publicado" aparece para o cidadão.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -540,9 +561,9 @@ export interface PerguntasFrequente {
   secretaria?: (number | null) | Secretaria;
   ordem?: number | null;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Fluxo: rascunho → aguardando aprovação → publicado. Autor envia para aprovação; só revisor ou administrador publica ou arquiva. Só "Publicado" aparece para o cidadão.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -577,9 +598,9 @@ export interface PatrimonioCultural {
   secretaria?: (number | null) | Secretaria;
   ordem?: number | null;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Fluxo: rascunho → aguardando aprovação → publicado. Autor envia para aprovação; só revisor ou administrador publica ou arquiva. Só "Publicado" aparece para o cidadão.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -609,9 +630,9 @@ export interface TelefonesUtei {
   email?: string | null;
   ordem?: number | null;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Fluxo: rascunho → aguardando aprovação → publicado. Autor envia para aprovação; só revisor ou administrador publica ou arquiva. Só "Publicado" aparece para o cidadão.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -641,9 +662,9 @@ export interface ColetaLixo {
   dias: string;
   horario: string;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Fluxo: rascunho → aguardando aprovação → publicado. Autor envia para aprovação; só revisor ou administrador publica ou arquiva. Só "Publicado" aparece para o cidadão.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -689,9 +710,9 @@ export interface ConselhosMunicipai {
   conteudoHtml?: string | null;
   ordem?: number | null;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Fluxo: rascunho → aguardando aprovação → publicado. Autor envia para aprovação; só revisor ou administrador publica ou arquiva. Só "Publicado" aparece para o cidadão.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -803,9 +824,9 @@ export interface Licitacoe {
    */
   justificativaPrazo?: string | null;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Fluxo: rascunho → aguardando aprovação → publicado. Autor envia para aprovação; só revisor ou administrador publica ou arquiva. Só "Publicado" aparece para o cidadão.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -862,9 +883,9 @@ export interface LicitacaoAnexo {
   ordem?: number | null;
   demonstracao?: boolean | null;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Anexos, lotes, eventos e medições seguem o item principal: aparecem quando ele é publicado. "Arquivado" esconde só este registro.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -900,9 +921,9 @@ export interface LicitacaoLote {
   valorHomologado?: number | null;
   demonstracao?: boolean | null;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Anexos, lotes, eventos e medições seguem o item principal: aparecem quando ele é publicado. "Arquivado" esconde só este registro.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -944,9 +965,9 @@ export interface LicitacaoEvento {
   anexo?: (number | null) | LicitacaoAnexo;
   demonstracao?: boolean | null;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Anexos, lotes, eventos e medições seguem o item principal: aparecem quando ele é publicado. "Arquivado" esconde só este registro.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -1082,9 +1103,9 @@ export interface Obra {
   dataPublicacao: string;
   demonstracao?: boolean | null;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Fluxo: rascunho → aguardando aprovação → publicado. Autor envia para aprovação; só revisor ou administrador publica ou arquiva. Só "Publicado" aparece para o cidadão.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -1126,9 +1147,9 @@ export interface ObraAnexo {
   ordem?: number | null;
   demonstracao?: boolean | null;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Anexos, lotes, eventos e medições seguem o item principal: aparecem quando ele é publicado. "Arquivado" esconde só este registro.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -1161,9 +1182,9 @@ export interface ObraMedicoe {
   observacoes?: string | null;
   demonstracao?: boolean | null;
   /**
-   * Só "Publicado" aparece para o cidadão.
+   * Anexos, lotes, eventos e medições seguem o item principal: aparecem quando ele é publicado. "Arquivado" esconde só este registro.
    */
-  status: 'rascunho' | 'publicado' | 'arquivado';
+  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
   /**
    * UUID do Directus. Não editar.
    */
@@ -1188,23 +1209,32 @@ export interface User {
   id: number;
   nome?: string | null;
   /**
-   * Administrador gerencia usuários. Editor edita conteúdo geral. Setor de licitações/obras cria e altera; Leitor só consulta.
+   * Administrador: tudo. Revisor: publica e arquiva nos módulos liberados. Autor: escreve e envia para aprovação, não publica.
    */
-  papel:
-    | 'administrador'
-    | 'editor'
-    | 'setor_licitacoes'
-    | 'leitor_licitacoes'
-    | 'setor_obras'
-    | 'leitor_obras'
-    | 'servico_avisos_portal'
-    | 'servico_avisos_entrega';
+  papel: 'admin' | 'revisor' | 'autor';
+  /**
+   * Quais coleções este usuário acessa. Licitações e Obras incluem seus anexos, lotes, eventos e medições. Administrador tem todos.
+   */
+  modulosPermitidos?:
+    | (
+        | 'secretarias'
+        | 'noticias'
+        | 'servicos'
+        | 'documentos'
+        | 'paginas'
+        | 'links-uteis'
+        | 'selos'
+        | 'perguntas-frequentes'
+        | 'patrimonio-cultural'
+        | 'telefones-uteis'
+        | 'coleta-lixo'
+        | 'conselhos-municipais'
+        | 'licitacoes'
+        | 'obras'
+      )[]
+    | null;
   updatedAt: string;
   createdAt: string;
-  enableAPIKey?: boolean | null;
-  apiKey?: string | null;
-  apiKeyIndex?: string | null;
-  hasAPIKey?: boolean | null;
   email: string;
   resetPasswordToken?: string | null;
   resetPasswordExpiration?: string | null;
@@ -1222,6 +1252,22 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contas-servico".
+ */
+export interface ContasServico {
+  id: number;
+  nome: string;
+  tipo: 'avisos_portal' | 'avisos_entrega';
+  updatedAt: string;
+  createdAt: string;
+  enableAPIKey?: boolean | null;
+  apiKey?: string | null;
+  apiKeyIndex?: string | null;
+  hasAPIKey?: boolean | null;
+  collection: 'contas-servico';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1373,14 +1419,23 @@ export interface PayloadLockedDocument {
         value: number | User;
       } | null)
     | ({
+        relationTo: 'contas-servico';
+        value: number | ContasServico;
+      } | null)
+    | ({
         relationTo: 'audit-logs';
         value: number | AuditLog;
       } | null);
   globalSlug?: string | null;
-  user: {
-    relationTo: 'users';
-    value: number | User;
-  };
+  user:
+    | {
+        relationTo: 'users';
+        value: number | User;
+      }
+    | {
+        relationTo: 'contas-servico';
+        value: number | ContasServico;
+      };
   updatedAt: string;
   createdAt: string;
 }
@@ -1390,10 +1445,15 @@ export interface PayloadLockedDocument {
  */
 export interface PayloadPreference {
   id: number;
-  user: {
-    relationTo: 'users';
-    value: number | User;
-  };
+  user:
+    | {
+        relationTo: 'users';
+        value: number | User;
+      }
+    | {
+        relationTo: 'contas-servico';
+        value: number | ContasServico;
+      };
   key?: string | null;
   value?:
     | {
@@ -1876,12 +1936,9 @@ export interface MediaSelect<T extends boolean = true> {
 export interface UsersSelect<T extends boolean = true> {
   nome?: T;
   papel?: T;
+  modulosPermitidos?: T;
   updatedAt?: T;
   createdAt?: T;
-  enableAPIKey?: T;
-  apiKey?: T;
-  apiKeyIndex?: T;
-  hasAPIKey?: T;
   email?: T;
   resetPasswordToken?: T;
   resetPasswordExpiration?: T;
@@ -1897,6 +1954,20 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contas-servico_select".
+ */
+export interface ContasServicoSelect<T extends boolean = true> {
+  nome?: T;
+  tipo?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  enableAPIKey?: T;
+  apiKey?: T;
+  apiKeyIndex?: T;
+  hasAPIKey?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -1,32 +1,11 @@
-import type { Access, CollectionConfig, Field } from 'payload'
+import type { CollectionConfig, Field } from 'payload'
 
 /**
- * Conteúdo geral (notícias, páginas, secretarias, telefones…) é de `administrador` e `editor`. Os papéis de Licitações e
- * Obras (setor/leitor) NÃO editam nem enxergam rascunho de conteúdo geral — como no Directus, onde esses papéis só têm
- * permissão nos próprios módulos. Antes qualquer usuário logado escrevia em tudo.
- */
-const PAPEIS_CONTEUDO = ['administrador', 'editor']
-export const ehDeConteudo = (user: unknown) => PAPEIS_CONTEUDO.includes((user as { papel?: string } | null | undefined)?.papel ?? '')
-const autenticado: Access = ({ req: { user } }) => ehDeConteudo(user)
-
-/**
- * Regras comuns a TODAS as coleções de conteúdo:
- *  - `delete: () => false` → ninguém apaga registro, nem administrador.
- *  - SOFT DELETE = status "Arquivado" (campo `status`): o registro some do portal
- *    e continua no banco, restaurável. Não usamos `trash: true` do Payload porque
- *    ele exige permissão de `delete` para mandar à lixeira — incompatível com
- *    `delete: () => false` (verificado em teste).
+ * Acesso NÃO é definido aqui: `politica.ts` aplica a política de acesso (acesso.ts) a cada coleção. Regra que vale para todas:
+ * ninguém apaga registro, nem admin — SOFT DELETE = status "Arquivado" (o registro some do portal e continua no banco).
+ * Não usamos `trash: true` do Payload porque ele exige permissão de `delete` para mandar à lixeira (incompatível, testado).
  * Quem de fato precisar purgar um registro faz por migração/SQL, de propósito.
  */
-export const acessoSemExclusao: CollectionConfig['access'] = {
-  read: autenticado,
-  create: autenticado,
-  update: autenticado,
-  delete: () => false,
-}
-
-/** Leitura pública SÓ do que está publicado (a API que o site consome); rascunho e arquivado exigem login. */
-export const leituraPublicaPublicados: Access = ({ req: { user } }) => (ehDeConteudo(user) ? true : { status: { equals: 'publicado' } })
 
 /** Visibilidade no portal, igual ao campo `status` do Directus. */
 export const campoStatus: Field = {
@@ -38,10 +17,11 @@ export const campoStatus: Field = {
   index: true,
   options: [
     { label: 'Rascunho', value: 'rascunho' },
+    { label: 'Aguardando aprovação', value: 'em_revisao' },
     { label: 'Publicado', value: 'publicado' },
     { label: 'Arquivado', value: 'arquivado' },
   ],
-  admin: { position: 'sidebar', description: 'Só "Publicado" aparece para o cidadão.' },
+  admin: { position: 'sidebar', description: 'Fluxo: rascunho → aguardando aprovação → publicado. Autor envia para aprovação; só revisor ou administrador publica ou arquiva. Só "Publicado" aparece para o cidadão.' },
 }
 
 /** Id do registro no Directus — chave de idempotência e de conferência da migração. */
@@ -68,7 +48,6 @@ export const base = (slug: string, singular: string, plural: string, extra: Part
   ({
     slug,
     labels: { singular, plural },
-      access: acessoSemExclusao,
     timestamps: true,
     ...extra,
   }) satisfies Partial<CollectionConfig>

@@ -70,7 +70,7 @@ async function api(caminho, opcoes = {}) {
 async function apiPayload(caminho, opcoes = {}) {
   const r = await fetch(`${BASE_PAYLOAD}${caminho}`, {
     ...opcoes,
-    headers: { 'Content-Type': 'application/json', Authorization: `users API-Key ${TOKEN_PAYLOAD}`, ...(opcoes.headers ?? {}) },
+    headers: { 'Content-Type': 'application/json', Authorization: `contas-servico API-Key ${TOKEN_PAYLOAD}`, ...(opcoes.headers ?? {}) },
     signal: AbortSignal.timeout(15_000),
   });
   if (!r.ok) throw new Error(`${opcoes.method ?? 'GET'} ${caminho.split('?')[0]} → ${r.status} ${(await r.text()).slice(0, 200)}`);

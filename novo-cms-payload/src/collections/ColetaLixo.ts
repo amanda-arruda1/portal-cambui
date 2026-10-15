@@ -1,9 +1,8 @@
 import type { CollectionConfig } from 'payload'
-import { acessoSemExclusao, base, camposComuns, leituraPublicaPublicados } from './_base'
+import { base, camposComuns } from './_base'
 
 export const ColetaLixo: CollectionConfig = {
   ...base('coleta-lixo', 'Coleta de lixo', 'Coleta de lixo', {
-    access: { ...acessoSemExclusao, read: leituraPublicaPublicados },
     admin: { useAsTitle: 'nome', defaultColumns: ['nome', 'dias', 'horario', 'status'] },
   }),
   fields: [

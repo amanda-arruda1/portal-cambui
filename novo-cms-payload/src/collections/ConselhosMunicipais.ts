@@ -1,11 +1,10 @@
 import type { CollectionConfig } from 'payload'
 import { campoHtmlDe } from '../campos-html'
-import { acessoSemExclusao, base, camposComuns, leituraPublicaPublicados } from './_base'
+import { base, camposComuns } from './_base'
 import { categoriasConselho } from '../enums'
 
 export const ConselhosMunicipais: CollectionConfig = {
   ...base('conselhos-municipais', 'Conselho municipal', 'Conselhos municipais', {
-    access: { ...acessoSemExclusao, read: leituraPublicaPublicados },
     admin: { useAsTitle: 'nome', defaultColumns: ['nome', 'categoria', 'ordem', 'status'] },
   }),
   fields: [

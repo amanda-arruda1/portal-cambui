@@ -53,7 +53,7 @@ async function apiPayload<T>(caminho: string, opcoes: RequestInit = {}): Promise
   try {
     const r = await fetch(`${BASE_PAYLOAD}${caminho}`, {
       ...opcoes,
-      headers: { 'Content-Type': 'application/json', Authorization: `users API-Key ${TOKEN_PAYLOAD}`, ...(opcoes.headers ?? {}) },
+      headers: { 'Content-Type': 'application/json', Authorization: `contas-servico API-Key ${TOKEN_PAYLOAD}`, ...(opcoes.headers ?? {}) },
       signal: AbortSignal.timeout(10_000),
     });
     if (!r.ok) {

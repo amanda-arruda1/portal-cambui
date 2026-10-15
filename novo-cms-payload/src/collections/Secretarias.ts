@@ -1,10 +1,9 @@
 import type { CollectionConfig } from 'payload'
 import { campoHtmlDe } from '../campos-html'
-import { acessoSemExclusao, base, camposComuns, leituraPublicaPublicados } from './_base'
+import { base, camposComuns } from './_base'
 
 export const Secretarias: CollectionConfig = {
   ...base('secretarias', 'Secretaria', 'Secretarias', {
-    access: { ...acessoSemExclusao, read: leituraPublicaPublicados },
     admin: { useAsTitle: 'nome', defaultColumns: ['nome', 'responsavel', 'ordem', 'status'] },
   }),
   fields: [

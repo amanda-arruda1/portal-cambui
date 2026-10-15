@@ -115,7 +115,7 @@ alguém grava no Directus algo que o site não mostra). **Desfazer = apagar a li
 chave `PAYLOAD_TOKEN_AVISOS`) **e** em `.env` (serviço `portal-avisos`, chave `PAYLOAD_TOKEN_ENTREGA`) leva assinantes e fila
 (`licitacao-assinantes`, `licitacao-envios`) para o Payload; o serviço passa a detectar licitações novas NO PAYLOAD. O gatilho do aviso é o EVENTO `publicacao` (criado ao publicar), não `dataPublicacao` (data do edital, quase sempre anterior).
 Foi ligado junto com a virada de Licitações. Duas contas de serviço com chave de API
-(`servico-avisos-portal@`/`-entrega@sistema.invalid`, papéis `servico_avisos_*`), criadas/giradas por
+(coleção `contas-servico`, tipos `avisos_portal`/`avisos_entrega`; cabeçalho `Authorization: contas-servico API-Key <chave>`), criadas/giradas por
 `novo-cms-payload/scripts/criar-usuarios-servico-avisos.ts`. Assinantes e fila ficam FORA da auditoria (e-mail de cidadão; o descadastro
 apaga de verdade). O Diário Oficial continua no Directus.
 
@@ -127,7 +127,7 @@ viram `midia:<nome>` e saem por `arquivo()` (`/midia/…?download`). Filhas liga
 
 **Importação do PNCP no painel do Payload (pronta, em produção).** Caixa "Importar do PNCP" no topo do formulário de Licitações
 (`novo-cms-payload/src/components/ImportarPncp.tsx`, registrada por `npm run generate:importmap`) → `POST /cms/api/licitacoes/importar-pncp`
-(`src/pncp.ts`: só `setor_licitacoes`/admin, só o CNPJ do órgão, avisa duplicidade) → serviço `portal-pncp` (127.0.0.1:3100,
+(`src/pncp.ts`: exige o módulo `licitacoes` liberado (ou admin), só o CNPJ do órgão, avisa duplicidade) → serviço `portal-pncp` (127.0.0.1:3100,
 `infra/scripts/pncp-servico.mjs`, instalador `16-pncp-servico.sh`), o ÚNICO com saída para a internet, porque o Payload tem
 `IPAddressDeny=any`. Preenche e NÃO salva. O PNCP não informa o critério de julgamento (o servidor escolhe). `numeroCompra` vem
 "93/2025": número e ANO DO EDITAL saem daí (o ano de registro no PNCP, `anoCompra`, pode ser outro). Horários do PNCP são de Brasília
@@ -162,8 +162,7 @@ sair, o Payload pode assumir `/painel`. Instalar/reinstalar as regras: `sudo inf
   (conferido com tcpdump); o server do `portal.cambui.mg.gov.br` tem `real_ip_header X-Forwarded-For;` (vale só nele; o
   `set_real_ip_from 10.180.0.13` do `nginx.conf` garante que XFF de outra origem é ignorado). Vale também para o login do
   `/painel`. **Quando o domínio de produção passar pela Cloudflare → Caddy, rever** (a cadeia terá mais saltos no XFF).
-- **Usuários e papéis**: `users.papel` (`administrador` | `editor`); só administrador cria usuários, vê a lista e muda
-  papel; os demais editam só o próprio cadastro. O PRIMEIRO usuário de um banco novo vira administrador sozinho (hook).
+- **Usuários e papéis** — ver a seção "Controle de acesso e fluxo de aprovação" mais abaixo.
   Senha mínima de 12 caracteres; 5 erros bloqueiam a conta por 15 min; cookie `Secure` + `SameSite=Lax` (cookie com
   `Path=/`, então o navegador o envia também ao site e ao `/painel`; é `HttpOnly`); GraphQL fechado no Nginx. Esqueci-a-senha
   NÃO entrega e-mail (o Payload escreve no console: sem adaptador) — por ora quem administra redefine a senha.
@@ -313,8 +312,7 @@ menu e da home do `/painel` aponta para `/cms/admin/collections/licitacoes`.
 
 **Obras públicas no Payload (2026-10-15).** `CMS_OBRAS=payload` em `.env.web` (ligado): leitura pública em `apps/web/src/lib/obras.ts`
 (`todas`, `anexosDe`, `medicoesDe`; anexos/medições ligam por `obra.idLegado`; `id` público = UUID; arquivos `midia:<nome>` via `arquivo()`).
-Edição só no `/cms/admin` (Obras públicas, Anexos de obras, Medições de obras); papéis `setor_obras` (criar/ler/alterar) e `leitor_obras`
-(ler); `setor_obras` também LÊ licitações (vincular a origem). Regras em `novo-cms-payload/src/hooks-obras.ts`: rascunho salva livre; ao
+Edição só no `/cms/admin` (Obras públicas, Anexos de obras, Medições de obras); módulo `obras` (revisor/autor, ver controle de acesso). Regras em `novo-cms-payload/src/hooks-obras.ts`: rascunho salva livre; ao
 publicar (e em obra já publicada) erros bloqueiam (convênio estadual/federal sem número, paralisada/cancelada sem motivo, campos
 básicos) — só erros NOVOS; alertas (sem responsável técnico, sem ART/RRT anexada, sem empresa) aparecem no campo "Pendências" da barra
 lateral (só para quem está logado); slug = resumo + 8 primeiros caracteres do UUID, refeito ao publicar o rascunho e fixo depois; nova
@@ -331,6 +329,27 @@ migração/scripts passam `context.semInspecaoUpload`. O antivírus NÃO roda no
 INCREMENTAL (só o que chegou depois do marco `data/quarentena/.ultima-varredura`) e COMPLETA uma vez por semana (`.ultima-completa`).
 Infectado é movido para `data/quarentena/`. Provado com EICAR em `media/`.
 
-**Acesso no painel do Payload.** Conteúdo geral (notícias, páginas, secretarias, telefones…) só `administrador`/`editor` escrevem e veem
-rascunho (`ehDeConteudo` em `collections/_base.ts`); papéis de Licitações/Obras só leem o publicado desses itens (e secretarias, para
-escolher a responsável). `audit-logs`: só administrador (guarda antes/depois de todos os módulos).
+## Controle de acesso e fluxo de aprovação (Payload) — desde 2026-10-15
+
+**Três papéis** (`users.papel`): `admin` (tudo, menos apagar), `revisor` (chefe de setor) e `autor` (redator). `users.modulosPermitidos`
+(select múltiplo) lista os MÓDULOS que revisor e autor acessam (valor = slug da coleção principal; `licitacoes` inclui anexos, lotes e
+eventos; `obras` inclui anexos e medições). Cadastro de revisor/autor sem módulo é recusado. Só admin cria usuários e muda papel/módulos;
+os demais veem só o próprio cadastro. Política em `src/acesso.ts` (regras) + `src/politica.ts` (aplica a cada coleção a partir de UMA
+tabela: **coleção nova de conteúdo entra em `TOPO`/`FILHOS` de politica.ts e em `MODULOS` de acesso.ts — sem isso fica fechada**).
+
+**Fluxo:** `status` com 4 valores em toda coleção institucional: `rascunho` (padrão) → `em_revisao` ("Aguardando aprovação") → `publicado` →
+`arquivado`. **Autor** só salva `rascunho`/`em_revisao` (hook `guardaDoAutor` recusa o resto com mensagem; vale também na criação) e só
+altera item que esteja em `rascunho`/`em_revisao` — item já publicado ou arquivado só revisor/admin mexe (senão o autor editaria o que está
+no ar sem revisão). **Revisor** leva o item a qualquer status. Só o `publicado` aparece para o público e para quem não tem o módulo.
+**Filhos** (anexo, lote, evento, medição) nascem `publicado` e seguem o PAI: o público só os vê se o pai estiver publicado e o filho não
+arquivado; o autor só os cria/altera enquanto o pai não foi ao ar. As regras de negócio de Licitações/Obras (erros, alertas,
+justificativa de prazo, slug, evento de publicação) valem para quem publica, como antes.
+
+**Ninguém apaga, nem admin** (apagar = arquivar; decisão antiga, vale para licitação, obra, edital e auditoria). Só admin lê `audit-logs`,
+assinantes de avisos e a fila de e-mails (e-mail de cidadão; revisor/autor de Licitações NÃO veem). Arquivos (`media`): admin/revisor/autor
+enviam. **Contas de serviço** não são pessoas e não têm papel: coleção `contas-servico` (sem senha, só chave de API); sem acesso a conteúdo.
+Armadilha vencida: o filtro `id = user.id` do próprio cadastro precisa checar `user.collection === 'users'` (um id numérico de outra coleção
+coincidia com o de uma pessoa e vazava o cadastro e as sessões). Prova: `novo-cms-payload/scripts/testar-fluxo-editorial.ts` (66 verificações).
+O painel não filtra as opções do campo Status por papel: o autor pode escolher "Publicado", mas ao salvar recebe a mensagem do hook.
+
+**Upload e antivírus** — ver "Upload no painel do Payload" acima.

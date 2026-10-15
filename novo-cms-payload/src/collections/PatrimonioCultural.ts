@@ -1,10 +1,9 @@
 import type { CollectionConfig } from 'payload'
-import { acessoSemExclusao, base, camposComuns, leituraPublicaPublicados } from './_base'
+import { base, camposComuns } from './_base'
 import { categoriasPatrimonio } from '../enums'
 
 export const PatrimonioCultural: CollectionConfig = {
   ...base('patrimonio-cultural', 'Documento de patrimônio cultural', 'Patrimônio Cultural', {
-    access: { ...acessoSemExclusao, read: leituraPublicaPublicados },
     admin: { useAsTitle: 'titulo', defaultColumns: ['titulo', 'categoria', 'periodo', 'status'] },
   }),
   fields: [

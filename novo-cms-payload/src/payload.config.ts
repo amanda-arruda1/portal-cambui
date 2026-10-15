@@ -30,7 +30,9 @@ import { Selos } from './collections/Selos'
 import { Servicos } from './collections/Servicos'
 import { TelefonesUteis } from './collections/TelefonesUteis'
 import { Users } from './collections/Users'
+import { ContasServico } from './collections/ContasServico'
 import { comAuditoria } from './hooks-auditoria'
+import { comPolitica } from './politica'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -58,8 +60,8 @@ export default buildConfig({
     PatrimonioCultural, TelefonesUteis, ColetaLixo, ConselhosMunicipais,
     Licitacoes, LicitacaoAnexos, LicitacaoLotes, LicitacaoEventos, LicitacaoAssinantes, LicitacaoEnvios,
     Obras, ObraAnexos, ObraMedicoes,
-    Media, Users, AuditLogs,
-  ].map(comAuditoria),
+    Media, Users, ContasServico, AuditLogs,
+  ].map(comPolitica).map(comAuditoria),
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },

@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { ehAdmin } from '../acesso'
 
 /**
  * Trilha de auditoria IMUTÁVEL. Só os hooks do servidor gravam (Local API com
@@ -10,7 +11,7 @@ export const AuditLogs: CollectionConfig = {
   admin: { useAsTitle: 'resumo', defaultColumns: ['createdAt', 'operacao', 'colecao', 'documentoId', 'usuarioEmail'], group: 'Sistema' },
   access: {
     // Só administrador: guarda o antes/depois de TODOS os módulos (rascunhos, valores, contas).
-    read: ({ req: { user } }) => (user as { papel?: string } | null)?.papel === 'administrador',
+    read: ({ req: { user } }) => ehAdmin(user),
     create: () => false,
     update: () => false,
     delete: () => false,

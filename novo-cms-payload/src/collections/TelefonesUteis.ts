@@ -1,10 +1,9 @@
 import type { CollectionConfig } from 'payload'
-import { acessoSemExclusao, base, camposComuns, leituraPublicaPublicados } from './_base'
+import { base, camposComuns } from './_base'
 import { categoriasTelefone } from '../enums'
 
 export const TelefonesUteis: CollectionConfig = {
   ...base('telefones-uteis', 'Telefone útil', 'Telefones úteis', {
-    access: { ...acessoSemExclusao, read: leituraPublicaPublicados },
     admin: { useAsTitle: 'nome', defaultColumns: ['nome', 'categoria', 'telefone', 'status'] },
   }),
   fields: [

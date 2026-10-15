@@ -1,6 +1,5 @@
 import type { CollectionConfig } from 'payload'
 import { base, camposComuns } from './_base'
-import { acessoLicitacoes } from '../acesso'
 import { campoHtmlDe } from '../campos-html'
 import { importarPncp } from '../pncp'
 import { eventoDePublicacao, regrasLicitacao, slugPermanente, uuidPublico } from '../hooks-licitacoes'
@@ -8,7 +7,6 @@ import { criterios, modalidades, modosDisputa, situacoesLicitacao } from '../enu
 
 export const Licitacoes: CollectionConfig = {
   ...base('licitacoes', 'Licitação', 'Licitações', {
-    access: acessoLicitacoes,
     endpoints: [importarPncp],
     hooks: { beforeValidate: [slugPermanente, uuidPublico], beforeChange: [regrasLicitacao], afterChange: [eventoDePublicacao] },
     admin: { group: 'Licitações', useAsTitle: 'objetoResumo', defaultColumns: ['numeroProcesso', 'modalidade', 'situacao', 'dataSessao', 'status'], listSearchableFields: ['numeroProcesso', 'objetoResumo'] },

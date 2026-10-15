@@ -1,0 +1,7110 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.secretarias": {
+      "name": "secretarias",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sigla": {
+          "name": "sigla",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "palavras_chave": {
+          "name": "palavras_chave",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "responsavel": {
+          "name": "responsavel",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cargo_responsavel": {
+          "name": "cargo_responsavel",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "biografia_responsavel": {
+          "name": "biografia_responsavel",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "endereco": {
+          "name": "endereco",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "telefone": {
+          "name": "telefone",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "horario_atendimento": {
+          "name": "horario_atendimento",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ordem": {
+          "name": "ordem",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_secretarias_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'rascunho'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "secretarias_slug_idx": {
+          "name": "secretarias_slug_idx",
+          "columns": [
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "secretarias_status_idx": {
+          "name": "secretarias_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "secretarias_id_legado_idx": {
+          "name": "secretarias_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "secretarias_updated_at_idx": {
+          "name": "secretarias_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "secretarias_created_at_idx": {
+          "name": "secretarias_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.noticias": {
+      "name": "noticias",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resumo": {
+          "name": "resumo",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "conteudo": {
+          "name": "conteudo",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "texto_busca": {
+          "name": "texto_busca",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "imagem_id": {
+          "name": "imagem_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "imagem_descricao": {
+          "name": "imagem_descricao",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "arquivo_id": {
+          "name": "arquivo_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_publicacao": {
+          "name": "data_publicacao",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "destaque": {
+          "name": "destaque",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "secretaria_id": {
+          "name": "secretaria_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_noticias_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'rascunho'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "noticias_slug_idx": {
+          "name": "noticias_slug_idx",
+          "columns": [
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "noticias_imagem_idx": {
+          "name": "noticias_imagem_idx",
+          "columns": [
+            {
+              "expression": "imagem_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "noticias_arquivo_idx": {
+          "name": "noticias_arquivo_idx",
+          "columns": [
+            {
+              "expression": "arquivo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "noticias_secretaria_idx": {
+          "name": "noticias_secretaria_idx",
+          "columns": [
+            {
+              "expression": "secretaria_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "noticias_status_idx": {
+          "name": "noticias_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "noticias_id_legado_idx": {
+          "name": "noticias_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "noticias_updated_at_idx": {
+          "name": "noticias_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "noticias_created_at_idx": {
+          "name": "noticias_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "noticias_imagem_id_media_id_fk": {
+          "name": "noticias_imagem_id_media_id_fk",
+          "tableFrom": "noticias",
+          "tableTo": "media",
+          "columnsFrom": [
+            "imagem_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "noticias_arquivo_id_media_id_fk": {
+          "name": "noticias_arquivo_id_media_id_fk",
+          "tableFrom": "noticias",
+          "tableTo": "media",
+          "columnsFrom": [
+            "arquivo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "noticias_secretaria_id_secretarias_id_fk": {
+          "name": "noticias_secretaria_id_secretarias_id_fk",
+          "tableFrom": "noticias",
+          "tableTo": "secretarias",
+          "columnsFrom": [
+            "secretaria_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.servicos": {
+      "name": "servicos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "categoria": {
+          "name": "categoria",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "publico_alvo": {
+          "name": "publico_alvo",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "como_solicitar": {
+          "name": "como_solicitar",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "url_externa": {
+          "name": "url_externa",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "secretaria_id": {
+          "name": "secretaria_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_servicos_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'rascunho'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "servicos_slug_idx": {
+          "name": "servicos_slug_idx",
+          "columns": [
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "servicos_secretaria_idx": {
+          "name": "servicos_secretaria_idx",
+          "columns": [
+            {
+              "expression": "secretaria_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "servicos_status_idx": {
+          "name": "servicos_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "servicos_id_legado_idx": {
+          "name": "servicos_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "servicos_updated_at_idx": {
+          "name": "servicos_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "servicos_created_at_idx": {
+          "name": "servicos_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "servicos_secretaria_id_secretarias_id_fk": {
+          "name": "servicos_secretaria_id_secretarias_id_fk",
+          "tableFrom": "servicos",
+          "tableTo": "secretarias",
+          "columnsFrom": [
+            "secretaria_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.documentos": {
+      "name": "documentos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "enum_documentos_tipo",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "numero": {
+          "name": "numero",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_documento": {
+          "name": "data_documento",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "arquivo_id": {
+          "name": "arquivo_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "url_externa": {
+          "name": "url_externa",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "secretaria_id": {
+          "name": "secretaria_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_documentos_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'rascunho'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "documentos_arquivo_idx": {
+          "name": "documentos_arquivo_idx",
+          "columns": [
+            {
+              "expression": "arquivo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "documentos_secretaria_idx": {
+          "name": "documentos_secretaria_idx",
+          "columns": [
+            {
+              "expression": "secretaria_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "documentos_status_idx": {
+          "name": "documentos_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "documentos_id_legado_idx": {
+          "name": "documentos_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "documentos_updated_at_idx": {
+          "name": "documentos_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "documentos_created_at_idx": {
+          "name": "documentos_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "documentos_arquivo_id_media_id_fk": {
+          "name": "documentos_arquivo_id_media_id_fk",
+          "tableFrom": "documentos",
+          "tableTo": "media",
+          "columnsFrom": [
+            "arquivo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "documentos_secretaria_id_secretarias_id_fk": {
+          "name": "documentos_secretaria_id_secretarias_id_fk",
+          "tableFrom": "documentos",
+          "tableTo": "secretarias",
+          "columnsFrom": [
+            "secretaria_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.paginas": {
+      "name": "paginas",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conteudo": {
+          "name": "conteudo",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_paginas_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'rascunho'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "paginas_slug_idx": {
+          "name": "paginas_slug_idx",
+          "columns": [
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "paginas_status_idx": {
+          "name": "paginas_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "paginas_id_legado_idx": {
+          "name": "paginas_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "paginas_updated_at_idx": {
+          "name": "paginas_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "paginas_created_at_idx": {
+          "name": "paginas_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.links_uteis": {
+      "name": "links_uteis",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "url": {
+          "name": "url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "grupo": {
+          "name": "grupo",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ordem": {
+          "name": "ordem",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_links_uteis_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'rascunho'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "links_uteis_status_idx": {
+          "name": "links_uteis_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "links_uteis_id_legado_idx": {
+          "name": "links_uteis_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "links_uteis_updated_at_idx": {
+          "name": "links_uteis_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "links_uteis_created_at_idx": {
+          "name": "links_uteis_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.selos": {
+      "name": "selos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orgao_emissor": {
+          "name": "orgao_emissor",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "imagem_id": {
+          "name": "imagem_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data_concessao": {
+          "name": "data_concessao",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "url_comprovacao": {
+          "name": "url_comprovacao",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ordem": {
+          "name": "ordem",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_selos_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'rascunho'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "selos_imagem_idx": {
+          "name": "selos_imagem_idx",
+          "columns": [
+            {
+              "expression": "imagem_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "selos_status_idx": {
+          "name": "selos_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "selos_id_legado_idx": {
+          "name": "selos_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "selos_updated_at_idx": {
+          "name": "selos_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "selos_created_at_idx": {
+          "name": "selos_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "selos_imagem_id_media_id_fk": {
+          "name": "selos_imagem_id_media_id_fk",
+          "tableFrom": "selos",
+          "tableTo": "media",
+          "columnsFrom": [
+            "imagem_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.perguntas_frequentes": {
+      "name": "perguntas_frequentes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "pergunta": {
+          "name": "pergunta",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resposta": {
+          "name": "resposta",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "categoria": {
+          "name": "categoria",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "secretaria_id": {
+          "name": "secretaria_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ordem": {
+          "name": "ordem",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_perguntas_frequentes_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'rascunho'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "perguntas_frequentes_secretaria_idx": {
+          "name": "perguntas_frequentes_secretaria_idx",
+          "columns": [
+            {
+              "expression": "secretaria_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "perguntas_frequentes_status_idx": {
+          "name": "perguntas_frequentes_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "perguntas_frequentes_id_legado_idx": {
+          "name": "perguntas_frequentes_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "perguntas_frequentes_updated_at_idx": {
+          "name": "perguntas_frequentes_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "perguntas_frequentes_created_at_idx": {
+          "name": "perguntas_frequentes_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "perguntas_frequentes_secretaria_id_secretarias_id_fk": {
+          "name": "perguntas_frequentes_secretaria_id_secretarias_id_fk",
+          "tableFrom": "perguntas_frequentes",
+          "tableTo": "secretarias",
+          "columnsFrom": [
+            "secretaria_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.patrimonio_cultural": {
+      "name": "patrimonio_cultural",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "categoria": {
+          "name": "categoria",
+          "type": "enum_patrimonio_cultural_categoria",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "periodo": {
+          "name": "periodo",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "arquivo_id": {
+          "name": "arquivo_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "url_externa": {
+          "name": "url_externa",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "secretaria_id": {
+          "name": "secretaria_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ordem": {
+          "name": "ordem",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_patrimonio_cultural_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'rascunho'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "patrimonio_cultural_arquivo_idx": {
+          "name": "patrimonio_cultural_arquivo_idx",
+          "columns": [
+            {
+              "expression": "arquivo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "patrimonio_cultural_secretaria_idx": {
+          "name": "patrimonio_cultural_secretaria_idx",
+          "columns": [
+            {
+              "expression": "secretaria_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "patrimonio_cultural_status_idx": {
+          "name": "patrimonio_cultural_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "patrimonio_cultural_id_legado_idx": {
+          "name": "patrimonio_cultural_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "patrimonio_cultural_updated_at_idx": {
+          "name": "patrimonio_cultural_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "patrimonio_cultural_created_at_idx": {
+          "name": "patrimonio_cultural_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "patrimonio_cultural_arquivo_id_media_id_fk": {
+          "name": "patrimonio_cultural_arquivo_id_media_id_fk",
+          "tableFrom": "patrimonio_cultural",
+          "tableTo": "media",
+          "columnsFrom": [
+            "arquivo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "patrimonio_cultural_secretaria_id_secretarias_id_fk": {
+          "name": "patrimonio_cultural_secretaria_id_secretarias_id_fk",
+          "tableFrom": "patrimonio_cultural",
+          "tableTo": "secretarias",
+          "columnsFrom": [
+            "secretaria_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.telefones_uteis": {
+      "name": "telefones_uteis",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "categoria": {
+          "name": "categoria",
+          "type": "enum_telefones_uteis_categoria",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "endereco": {
+          "name": "endereco",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "telefone": {
+          "name": "telefone",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ordem": {
+          "name": "ordem",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_telefones_uteis_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'rascunho'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "telefones_uteis_status_idx": {
+          "name": "telefones_uteis_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "telefones_uteis_id_legado_idx": {
+          "name": "telefones_uteis_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "telefones_uteis_updated_at_idx": {
+          "name": "telefones_uteis_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "telefones_uteis_created_at_idx": {
+          "name": "telefones_uteis_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.coleta_lixo": {
+      "name": "coleta_lixo",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dias": {
+          "name": "dias",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "horario": {
+          "name": "horario",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_coleta_lixo_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'rascunho'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "coleta_lixo_status_idx": {
+          "name": "coleta_lixo_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "coleta_lixo_id_legado_idx": {
+          "name": "coleta_lixo_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "coleta_lixo_updated_at_idx": {
+          "name": "coleta_lixo_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "coleta_lixo_created_at_idx": {
+          "name": "coleta_lixo_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.conselhos_municipais": {
+      "name": "conselhos_municipais",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "categoria": {
+          "name": "categoria",
+          "type": "enum_conselhos_municipais_categoria",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conteudo": {
+          "name": "conteudo",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ordem": {
+          "name": "ordem",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_conselhos_municipais_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'rascunho'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "conselhos_municipais_status_idx": {
+          "name": "conselhos_municipais_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conselhos_municipais_id_legado_idx": {
+          "name": "conselhos_municipais_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conselhos_municipais_updated_at_idx": {
+          "name": "conselhos_municipais_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conselhos_municipais_created_at_idx": {
+          "name": "conselhos_municipais_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.licitacoes": {
+      "name": "licitacoes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "numero_processo": {
+          "name": "numero_processo",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "numero": {
+          "name": "numero",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ano": {
+          "name": "ano",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "modalidade": {
+          "name": "modalidade",
+          "type": "enum_licitacoes_modalidade",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "forma": {
+          "name": "forma",
+          "type": "enum_licitacoes_forma",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'eletronica'"
+        },
+        "justificativa_presencial": {
+          "name": "justificativa_presencial",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "criterio_julgamento": {
+          "name": "criterio_julgamento",
+          "type": "enum_licitacoes_criterio_julgamento",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "modo_disputa": {
+          "name": "modo_disputa",
+          "type": "enum_licitacoes_modo_disputa",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'aberto'"
+        },
+        "registro_precos": {
+          "name": "registro_precos",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "secretaria_id": {
+          "name": "secretaria_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "objeto_resumo": {
+          "name": "objeto_resumo",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "objeto": {
+          "name": "objeto",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valor_estimado": {
+          "name": "valor_estimado",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "orcamento_sigiloso": {
+          "name": "orcamento_sigiloso",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "data_publicacao": {
+          "name": "data_publicacao",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data_abertura_propostas": {
+          "name": "data_abertura_propostas",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_sessao": {
+          "name": "data_sessao",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prazo_impugnacao": {
+          "name": "prazo_impugnacao",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prazo_esclarecimentos": {
+          "name": "prazo_esclarecimentos",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "situacao": {
+          "name": "situacao",
+          "type": "enum_licitacoes_situacao",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'publicada'"
+        },
+        "motivo_situacao": {
+          "name": "motivo_situacao",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pncp_id": {
+          "name": "pncp_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pncp_url": {
+          "name": "pncp_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sistema_sessao_url": {
+          "name": "sistema_sessao_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "demonstracao": {
+          "name": "demonstracao",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_licitacoes_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'rascunho'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "licitacoes_numero_processo_idx": {
+          "name": "licitacoes_numero_processo_idx",
+          "columns": [
+            {
+              "expression": "numero_processo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacoes_ano_idx": {
+          "name": "licitacoes_ano_idx",
+          "columns": [
+            {
+              "expression": "ano",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacoes_slug_idx": {
+          "name": "licitacoes_slug_idx",
+          "columns": [
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacoes_modalidade_idx": {
+          "name": "licitacoes_modalidade_idx",
+          "columns": [
+            {
+              "expression": "modalidade",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacoes_secretaria_idx": {
+          "name": "licitacoes_secretaria_idx",
+          "columns": [
+            {
+              "expression": "secretaria_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacoes_data_publicacao_idx": {
+          "name": "licitacoes_data_publicacao_idx",
+          "columns": [
+            {
+              "expression": "data_publicacao",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacoes_data_sessao_idx": {
+          "name": "licitacoes_data_sessao_idx",
+          "columns": [
+            {
+              "expression": "data_sessao",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacoes_situacao_idx": {
+          "name": "licitacoes_situacao_idx",
+          "columns": [
+            {
+              "expression": "situacao",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacoes_status_idx": {
+          "name": "licitacoes_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacoes_id_legado_idx": {
+          "name": "licitacoes_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacoes_updated_at_idx": {
+          "name": "licitacoes_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacoes_created_at_idx": {
+          "name": "licitacoes_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "licitacoes_secretaria_id_secretarias_id_fk": {
+          "name": "licitacoes_secretaria_id_secretarias_id_fk",
+          "tableFrom": "licitacoes",
+          "tableTo": "secretarias",
+          "columnsFrom": [
+            "secretaria_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.licitacao_anexos": {
+      "name": "licitacao_anexos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "licitacao_id": {
+          "name": "licitacao_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "enum_licitacao_anexos_tipo",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "arquivo_id": {
+          "name": "arquivo_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "url_externa": {
+          "name": "url_externa",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_publicacao": {
+          "name": "data_publicacao",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "versao": {
+          "name": "versao",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 1
+        },
+        "substitui_id": {
+          "name": "substitui_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "superado": {
+          "name": "superado",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "ordem": {
+          "name": "ordem",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "demonstracao": {
+          "name": "demonstracao",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_licitacao_anexos_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'publicado'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "licitacao_anexos_licitacao_idx": {
+          "name": "licitacao_anexos_licitacao_idx",
+          "columns": [
+            {
+              "expression": "licitacao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_anexos_arquivo_idx": {
+          "name": "licitacao_anexos_arquivo_idx",
+          "columns": [
+            {
+              "expression": "arquivo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_anexos_substitui_idx": {
+          "name": "licitacao_anexos_substitui_idx",
+          "columns": [
+            {
+              "expression": "substitui_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_anexos_status_idx": {
+          "name": "licitacao_anexos_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_anexos_id_legado_idx": {
+          "name": "licitacao_anexos_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_anexos_updated_at_idx": {
+          "name": "licitacao_anexos_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_anexos_created_at_idx": {
+          "name": "licitacao_anexos_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "licitacao_anexos_licitacao_id_licitacoes_id_fk": {
+          "name": "licitacao_anexos_licitacao_id_licitacoes_id_fk",
+          "tableFrom": "licitacao_anexos",
+          "tableTo": "licitacoes",
+          "columnsFrom": [
+            "licitacao_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "licitacao_anexos_arquivo_id_media_id_fk": {
+          "name": "licitacao_anexos_arquivo_id_media_id_fk",
+          "tableFrom": "licitacao_anexos",
+          "tableTo": "media",
+          "columnsFrom": [
+            "arquivo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "licitacao_anexos_substitui_id_licitacao_anexos_id_fk": {
+          "name": "licitacao_anexos_substitui_id_licitacao_anexos_id_fk",
+          "tableFrom": "licitacao_anexos",
+          "tableTo": "licitacao_anexos",
+          "columnsFrom": [
+            "substitui_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.licitacao_lotes": {
+      "name": "licitacao_lotes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "licitacao_id": {
+          "name": "licitacao_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "numero": {
+          "name": "numero",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valor_estimado": {
+          "name": "valor_estimado",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "situacao": {
+          "name": "situacao",
+          "type": "enum_licitacao_lotes_situacao",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'em_disputa'"
+        },
+        "vencedor_razao_social": {
+          "name": "vencedor_razao_social",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vencedor_cnpj": {
+          "name": "vencedor_cnpj",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valor_homologado": {
+          "name": "valor_homologado",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "demonstracao": {
+          "name": "demonstracao",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_licitacao_lotes_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'publicado'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "licitacao_lotes_licitacao_idx": {
+          "name": "licitacao_lotes_licitacao_idx",
+          "columns": [
+            {
+              "expression": "licitacao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_lotes_status_idx": {
+          "name": "licitacao_lotes_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_lotes_id_legado_idx": {
+          "name": "licitacao_lotes_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_lotes_updated_at_idx": {
+          "name": "licitacao_lotes_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_lotes_created_at_idx": {
+          "name": "licitacao_lotes_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "licitacao_lotes_licitacao_id_licitacoes_id_fk": {
+          "name": "licitacao_lotes_licitacao_id_licitacoes_id_fk",
+          "tableFrom": "licitacao_lotes",
+          "tableTo": "licitacoes",
+          "columnsFrom": [
+            "licitacao_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.licitacao_eventos": {
+      "name": "licitacao_eventos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "licitacao_id": {
+          "name": "licitacao_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data": {
+          "name": "data",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "enum_licitacao_eventos_tipo",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "anexo_id": {
+          "name": "anexo_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "demonstracao": {
+          "name": "demonstracao",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_licitacao_eventos_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'publicado'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "licitacao_eventos_licitacao_idx": {
+          "name": "licitacao_eventos_licitacao_idx",
+          "columns": [
+            {
+              "expression": "licitacao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_eventos_anexo_idx": {
+          "name": "licitacao_eventos_anexo_idx",
+          "columns": [
+            {
+              "expression": "anexo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_eventos_status_idx": {
+          "name": "licitacao_eventos_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_eventos_id_legado_idx": {
+          "name": "licitacao_eventos_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_eventos_updated_at_idx": {
+          "name": "licitacao_eventos_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_eventos_created_at_idx": {
+          "name": "licitacao_eventos_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "licitacao_eventos_licitacao_id_licitacoes_id_fk": {
+          "name": "licitacao_eventos_licitacao_id_licitacoes_id_fk",
+          "tableFrom": "licitacao_eventos",
+          "tableTo": "licitacoes",
+          "columnsFrom": [
+            "licitacao_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "licitacao_eventos_anexo_id_licitacao_anexos_id_fk": {
+          "name": "licitacao_eventos_anexo_id_licitacao_anexos_id_fk",
+          "tableFrom": "licitacao_eventos",
+          "tableTo": "licitacao_anexos",
+          "columnsFrom": [
+            "anexo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.licitacao_assinantes": {
+      "name": "licitacao_assinantes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "modalidades": {
+          "name": "modalidades",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "palavras_chave": {
+          "name": "palavras_chave",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "confirmado": {
+          "name": "confirmado",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "token": {
+          "name": "token",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "confirmado_em": {
+          "name": "confirmado_em",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "licitacao_assinantes_email_idx": {
+          "name": "licitacao_assinantes_email_idx",
+          "columns": [
+            {
+              "expression": "email",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_assinantes_id_legado_idx": {
+          "name": "licitacao_assinantes_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_assinantes_updated_at_idx": {
+          "name": "licitacao_assinantes_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_assinantes_created_at_idx": {
+          "name": "licitacao_assinantes_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.licitacao_envios": {
+      "name": "licitacao_envios",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "destinatario": {
+          "name": "destinatario",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "assunto": {
+          "name": "assunto",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "corpo_texto": {
+          "name": "corpo_texto",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "corpo_html": {
+          "name": "corpo_html",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "enum_licitacao_envios_tipo",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estado": {
+          "name": "estado",
+          "type": "enum_licitacao_envios_estado",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pendente'"
+        },
+        "tentativas": {
+          "name": "tentativas",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "ultimo_erro": {
+          "name": "ultimo_erro",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "enviado_em": {
+          "name": "enviado_em",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assinante_id": {
+          "name": "assinante_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "licitacao_id": {
+          "name": "licitacao_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "licitacao_envios_estado_idx": {
+          "name": "licitacao_envios_estado_idx",
+          "columns": [
+            {
+              "expression": "estado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_envios_assinante_idx": {
+          "name": "licitacao_envios_assinante_idx",
+          "columns": [
+            {
+              "expression": "assinante_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_envios_licitacao_idx": {
+          "name": "licitacao_envios_licitacao_idx",
+          "columns": [
+            {
+              "expression": "licitacao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_envios_updated_at_idx": {
+          "name": "licitacao_envios_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "licitacao_envios_created_at_idx": {
+          "name": "licitacao_envios_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "licitacao_envios_assinante_id_licitacao_assinantes_id_fk": {
+          "name": "licitacao_envios_assinante_id_licitacao_assinantes_id_fk",
+          "tableFrom": "licitacao_envios",
+          "tableTo": "licitacao_assinantes",
+          "columnsFrom": [
+            "assinante_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "licitacao_envios_licitacao_id_licitacoes_id_fk": {
+          "name": "licitacao_envios_licitacao_id_licitacoes_id_fk",
+          "tableFrom": "licitacao_envios",
+          "tableTo": "licitacoes",
+          "columnsFrom": [
+            "licitacao_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.obras": {
+      "name": "obras",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "numero_processo": {
+          "name": "numero_processo",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "numero_contrato": {
+          "name": "numero_contrato",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "licitacao_id": {
+          "name": "licitacao_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "categoria": {
+          "name": "categoria",
+          "type": "enum_obras_categoria",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "secretaria_id": {
+          "name": "secretaria_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "objeto_resumo": {
+          "name": "objeto_resumo",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "objeto": {
+          "name": "objeto",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "endereco": {
+          "name": "endereco",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "empresa_executora": {
+          "name": "empresa_executora",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "empresa_cnpj": {
+          "name": "empresa_cnpj",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "responsavel_tecnico": {
+          "name": "responsavel_tecnico",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "art_rrt": {
+          "name": "art_rrt",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fonte_recurso": {
+          "name": "fonte_recurso",
+          "type": "enum_obras_fonte_recurso",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "numero_convenio": {
+          "name": "numero_convenio",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valor_contratado": {
+          "name": "valor_contratado",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valor_aditivado": {
+          "name": "valor_aditivado",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "valor_pago": {
+          "name": "valor_pago",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "data_ordem_servico": {
+          "name": "data_ordem_servico",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_prevista_termino": {
+          "name": "data_prevista_termino",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_termino_real": {
+          "name": "data_termino_real",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "situacao": {
+          "name": "situacao",
+          "type": "enum_obras_situacao",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'planejada'"
+        },
+        "motivo_situacao": {
+          "name": "motivo_situacao",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "percentual_execucao": {
+          "name": "percentual_execucao",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "observacoes": {
+          "name": "observacoes",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_publicacao": {
+          "name": "data_publicacao",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "demonstracao": {
+          "name": "demonstracao",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_obras_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'rascunho'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "obras_licitacao_idx": {
+          "name": "obras_licitacao_idx",
+          "columns": [
+            {
+              "expression": "licitacao_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "obras_slug_idx": {
+          "name": "obras_slug_idx",
+          "columns": [
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "obras_secretaria_idx": {
+          "name": "obras_secretaria_idx",
+          "columns": [
+            {
+              "expression": "secretaria_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "obras_situacao_idx": {
+          "name": "obras_situacao_idx",
+          "columns": [
+            {
+              "expression": "situacao",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "obras_status_idx": {
+          "name": "obras_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "obras_id_legado_idx": {
+          "name": "obras_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "obras_updated_at_idx": {
+          "name": "obras_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "obras_created_at_idx": {
+          "name": "obras_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "obras_licitacao_id_licitacoes_id_fk": {
+          "name": "obras_licitacao_id_licitacoes_id_fk",
+          "tableFrom": "obras",
+          "tableTo": "licitacoes",
+          "columnsFrom": [
+            "licitacao_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "obras_secretaria_id_secretarias_id_fk": {
+          "name": "obras_secretaria_id_secretarias_id_fk",
+          "tableFrom": "obras",
+          "tableTo": "secretarias",
+          "columnsFrom": [
+            "secretaria_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.obra_anexos": {
+      "name": "obra_anexos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "obra_id": {
+          "name": "obra_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "categoria": {
+          "name": "categoria",
+          "type": "enum_obra_anexos_categoria",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "arquivo_id": {
+          "name": "arquivo_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_referencia": {
+          "name": "data_referencia",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ordem": {
+          "name": "ordem",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "demonstracao": {
+          "name": "demonstracao",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_obra_anexos_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'publicado'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "obra_anexos_obra_idx": {
+          "name": "obra_anexos_obra_idx",
+          "columns": [
+            {
+              "expression": "obra_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "obra_anexos_arquivo_idx": {
+          "name": "obra_anexos_arquivo_idx",
+          "columns": [
+            {
+              "expression": "arquivo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "obra_anexos_status_idx": {
+          "name": "obra_anexos_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "obra_anexos_id_legado_idx": {
+          "name": "obra_anexos_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "obra_anexos_updated_at_idx": {
+          "name": "obra_anexos_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "obra_anexos_created_at_idx": {
+          "name": "obra_anexos_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "obra_anexos_obra_id_obras_id_fk": {
+          "name": "obra_anexos_obra_id_obras_id_fk",
+          "tableFrom": "obra_anexos",
+          "tableTo": "obras",
+          "columnsFrom": [
+            "obra_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "obra_anexos_arquivo_id_media_id_fk": {
+          "name": "obra_anexos_arquivo_id_media_id_fk",
+          "tableFrom": "obra_anexos",
+          "tableTo": "media",
+          "columnsFrom": [
+            "arquivo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.obra_medicoes": {
+      "name": "obra_medicoes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "obra_id": {
+          "name": "obra_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "numero": {
+          "name": "numero",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data_referencia": {
+          "name": "data_referencia",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "percentual_acumulado": {
+          "name": "percentual_acumulado",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valor_medido": {
+          "name": "valor_medido",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valor_acumulado": {
+          "name": "valor_acumulado",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "boletim_id": {
+          "name": "boletim_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "observacoes": {
+          "name": "observacoes",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "demonstracao": {
+          "name": "demonstracao",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_obra_medicoes_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'publicado'"
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "autoria_legado": {
+          "name": "autoria_legado",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "obra_medicoes_obra_idx": {
+          "name": "obra_medicoes_obra_idx",
+          "columns": [
+            {
+              "expression": "obra_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "obra_medicoes_boletim_idx": {
+          "name": "obra_medicoes_boletim_idx",
+          "columns": [
+            {
+              "expression": "boletim_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "obra_medicoes_status_idx": {
+          "name": "obra_medicoes_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "obra_medicoes_id_legado_idx": {
+          "name": "obra_medicoes_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "obra_medicoes_updated_at_idx": {
+          "name": "obra_medicoes_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "obra_medicoes_created_at_idx": {
+          "name": "obra_medicoes_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "obra_medicoes_obra_id_obras_id_fk": {
+          "name": "obra_medicoes_obra_id_obras_id_fk",
+          "tableFrom": "obra_medicoes",
+          "tableTo": "obras",
+          "columnsFrom": [
+            "obra_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "obra_medicoes_boletim_id_media_id_fk": {
+          "name": "obra_medicoes_boletim_id_media_id_fk",
+          "tableFrom": "obra_medicoes",
+          "tableTo": "media",
+          "columnsFrom": [
+            "boletim_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.media": {
+      "name": "media",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "alt": {
+          "name": "alt",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_legado": {
+          "name": "id_legado",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "url": {
+          "name": "url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "thumbnail_u_r_l": {
+          "name": "thumbnail_u_r_l",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "filename": {
+          "name": "filename",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mime_type": {
+          "name": "mime_type",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "filesize": {
+          "name": "filesize",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "width": {
+          "name": "width",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "height": {
+          "name": "height",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "focal_x": {
+          "name": "focal_x",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "focal_y": {
+          "name": "focal_y",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "media_id_legado_idx": {
+          "name": "media_id_legado_idx",
+          "columns": [
+            {
+              "expression": "id_legado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "media_updated_at_idx": {
+          "name": "media_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "media_created_at_idx": {
+          "name": "media_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "media_filename_idx": {
+          "name": "media_filename_idx",
+          "columns": [
+            {
+              "expression": "filename",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users_modulos_permitidos": {
+      "name": "users_modulos_permitidos",
+      "schema": "",
+      "columns": {
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "enum_users_modulos_permitidos",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "users_modulos_permitidos_order_idx": {
+          "name": "users_modulos_permitidos_order_idx",
+          "columns": [
+            {
+              "expression": "order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "users_modulos_permitidos_parent_idx": {
+          "name": "users_modulos_permitidos_parent_idx",
+          "columns": [
+            {
+              "expression": "parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "users_modulos_permitidos_parent_fk": {
+          "name": "users_modulos_permitidos_parent_fk",
+          "tableFrom": "users_modulos_permitidos",
+          "tableTo": "users",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users_sessions": {
+      "name": "users_sessions",
+      "schema": "",
+      "columns": {
+        "_order": {
+          "name": "_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "_parent_id": {
+          "name": "_parent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "users_sessions_order_idx": {
+          "name": "users_sessions_order_idx",
+          "columns": [
+            {
+              "expression": "_order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "users_sessions_parent_id_idx": {
+          "name": "users_sessions_parent_id_idx",
+          "columns": [
+            {
+              "expression": "_parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "users_sessions_parent_id_fk": {
+          "name": "users_sessions_parent_id_fk",
+          "tableFrom": "users_sessions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "_parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "papel": {
+          "name": "papel",
+          "type": "enum_users_papel",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'autor'"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reset_password_token": {
+          "name": "reset_password_token",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reset_password_expiration": {
+          "name": "reset_password_expiration",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "salt": {
+          "name": "salt",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hash": {
+          "name": "hash",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reset_password_requested_at": {
+          "name": "reset_password_requested_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "login_attempts": {
+          "name": "login_attempts",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "lock_until": {
+          "name": "lock_until",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "users_updated_at_idx": {
+          "name": "users_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "users_created_at_idx": {
+          "name": "users_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "users_email_idx": {
+          "name": "users_email_idx",
+          "columns": [
+            {
+              "expression": "email",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.contas_servico": {
+      "name": "contas_servico",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "enum_contas_servico_tipo",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "enable_a_p_i_key": {
+          "name": "enable_a_p_i_key",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "api_key": {
+          "name": "api_key",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "api_key_index": {
+          "name": "api_key_index",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "contas_servico_tipo_idx": {
+          "name": "contas_servico_tipo_idx",
+          "columns": [
+            {
+              "expression": "tipo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "contas_servico_updated_at_idx": {
+          "name": "contas_servico_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "contas_servico_created_at_idx": {
+          "name": "contas_servico_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.audit_logs": {
+      "name": "audit_logs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "operacao": {
+          "name": "operacao",
+          "type": "enum_audit_logs_operacao",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "colecao": {
+          "name": "colecao",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "documento_id": {
+          "name": "documento_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resumo": {
+          "name": "resumo",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "usuario_id": {
+          "name": "usuario_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "usuario_email": {
+          "name": "usuario_email",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "antes": {
+          "name": "antes",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "depois": {
+          "name": "depois",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "audit_logs_colecao_idx": {
+          "name": "audit_logs_colecao_idx",
+          "columns": [
+            {
+              "expression": "colecao",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "audit_logs_documento_id_idx": {
+          "name": "audit_logs_documento_id_idx",
+          "columns": [
+            {
+              "expression": "documento_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "audit_logs_updated_at_idx": {
+          "name": "audit_logs_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "audit_logs_created_at_idx": {
+          "name": "audit_logs_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.payload_kv": {
+      "name": "payload_kv",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data": {
+          "name": "data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "payload_kv_key_idx": {
+          "name": "payload_kv_key_idx",
+          "columns": [
+            {
+              "expression": "key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.payload_locked_documents": {
+      "name": "payload_locked_documents",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "global_slug": {
+          "name": "global_slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "payload_locked_documents_global_slug_idx": {
+          "name": "payload_locked_documents_global_slug_idx",
+          "columns": [
+            {
+              "expression": "global_slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_updated_at_idx": {
+          "name": "payload_locked_documents_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_created_at_idx": {
+          "name": "payload_locked_documents_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.payload_locked_documents_rels": {
+      "name": "payload_locked_documents_rels",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "path": {
+          "name": "path",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "secretarias_id": {
+          "name": "secretarias_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "noticias_id": {
+          "name": "noticias_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "servicos_id": {
+          "name": "servicos_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "documentos_id": {
+          "name": "documentos_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "paginas_id": {
+          "name": "paginas_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "links_uteis_id": {
+          "name": "links_uteis_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "selos_id": {
+          "name": "selos_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "perguntas_frequentes_id": {
+          "name": "perguntas_frequentes_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "patrimonio_cultural_id": {
+          "name": "patrimonio_cultural_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "telefones_uteis_id": {
+          "name": "telefones_uteis_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "coleta_lixo_id": {
+          "name": "coleta_lixo_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "conselhos_municipais_id": {
+          "name": "conselhos_municipais_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "licitacoes_id": {
+          "name": "licitacoes_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "licitacao_anexos_id": {
+          "name": "licitacao_anexos_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "licitacao_lotes_id": {
+          "name": "licitacao_lotes_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "licitacao_eventos_id": {
+          "name": "licitacao_eventos_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "licitacao_assinantes_id": {
+          "name": "licitacao_assinantes_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "licitacao_envios_id": {
+          "name": "licitacao_envios_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "obras_id": {
+          "name": "obras_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "obra_anexos_id": {
+          "name": "obra_anexos_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "obra_medicoes_id": {
+          "name": "obra_medicoes_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "media_id": {
+          "name": "media_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "users_id": {
+          "name": "users_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contas_servico_id": {
+          "name": "contas_servico_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "audit_logs_id": {
+          "name": "audit_logs_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "payload_locked_documents_rels_order_idx": {
+          "name": "payload_locked_documents_rels_order_idx",
+          "columns": [
+            {
+              "expression": "order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_parent_idx": {
+          "name": "payload_locked_documents_rels_parent_idx",
+          "columns": [
+            {
+              "expression": "parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_path_idx": {
+          "name": "payload_locked_documents_rels_path_idx",
+          "columns": [
+            {
+              "expression": "path",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_secretarias_id_idx": {
+          "name": "payload_locked_documents_rels_secretarias_id_idx",
+          "columns": [
+            {
+              "expression": "secretarias_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_noticias_id_idx": {
+          "name": "payload_locked_documents_rels_noticias_id_idx",
+          "columns": [
+            {
+              "expression": "noticias_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_servicos_id_idx": {
+          "name": "payload_locked_documents_rels_servicos_id_idx",
+          "columns": [
+            {
+              "expression": "servicos_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_documentos_id_idx": {
+          "name": "payload_locked_documents_rels_documentos_id_idx",
+          "columns": [
+            {
+              "expression": "documentos_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_paginas_id_idx": {
+          "name": "payload_locked_documents_rels_paginas_id_idx",
+          "columns": [
+            {
+              "expression": "paginas_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_links_uteis_id_idx": {
+          "name": "payload_locked_documents_rels_links_uteis_id_idx",
+          "columns": [
+            {
+              "expression": "links_uteis_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_selos_id_idx": {
+          "name": "payload_locked_documents_rels_selos_id_idx",
+          "columns": [
+            {
+              "expression": "selos_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_perguntas_frequentes_id_idx": {
+          "name": "payload_locked_documents_rels_perguntas_frequentes_id_idx",
+          "columns": [
+            {
+              "expression": "perguntas_frequentes_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_patrimonio_cultural_id_idx": {
+          "name": "payload_locked_documents_rels_patrimonio_cultural_id_idx",
+          "columns": [
+            {
+              "expression": "patrimonio_cultural_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_telefones_uteis_id_idx": {
+          "name": "payload_locked_documents_rels_telefones_uteis_id_idx",
+          "columns": [
+            {
+              "expression": "telefones_uteis_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_coleta_lixo_id_idx": {
+          "name": "payload_locked_documents_rels_coleta_lixo_id_idx",
+          "columns": [
+            {
+              "expression": "coleta_lixo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_conselhos_municipais_id_idx": {
+          "name": "payload_locked_documents_rels_conselhos_municipais_id_idx",
+          "columns": [
+            {
+              "expression": "conselhos_municipais_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_licitacoes_id_idx": {
+          "name": "payload_locked_documents_rels_licitacoes_id_idx",
+          "columns": [
+            {
+              "expression": "licitacoes_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_licitacao_anexos_id_idx": {
+          "name": "payload_locked_documents_rels_licitacao_anexos_id_idx",
+          "columns": [
+            {
+              "expression": "licitacao_anexos_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_licitacao_lotes_id_idx": {
+          "name": "payload_locked_documents_rels_licitacao_lotes_id_idx",
+          "columns": [
+            {
+              "expression": "licitacao_lotes_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_licitacao_eventos_id_idx": {
+          "name": "payload_locked_documents_rels_licitacao_eventos_id_idx",
+          "columns": [
+            {
+              "expression": "licitacao_eventos_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_licitacao_assinantes_id_idx": {
+          "name": "payload_locked_documents_rels_licitacao_assinantes_id_idx",
+          "columns": [
+            {
+              "expression": "licitacao_assinantes_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_licitacao_envios_id_idx": {
+          "name": "payload_locked_documents_rels_licitacao_envios_id_idx",
+          "columns": [
+            {
+              "expression": "licitacao_envios_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_obras_id_idx": {
+          "name": "payload_locked_documents_rels_obras_id_idx",
+          "columns": [
+            {
+              "expression": "obras_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_obra_anexos_id_idx": {
+          "name": "payload_locked_documents_rels_obra_anexos_id_idx",
+          "columns": [
+            {
+              "expression": "obra_anexos_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_obra_medicoes_id_idx": {
+          "name": "payload_locked_documents_rels_obra_medicoes_id_idx",
+          "columns": [
+            {
+              "expression": "obra_medicoes_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_media_id_idx": {
+          "name": "payload_locked_documents_rels_media_id_idx",
+          "columns": [
+            {
+              "expression": "media_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_users_id_idx": {
+          "name": "payload_locked_documents_rels_users_id_idx",
+          "columns": [
+            {
+              "expression": "users_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_contas_servico_id_idx": {
+          "name": "payload_locked_documents_rels_contas_servico_id_idx",
+          "columns": [
+            {
+              "expression": "contas_servico_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_audit_logs_id_idx": {
+          "name": "payload_locked_documents_rels_audit_logs_id_idx",
+          "columns": [
+            {
+              "expression": "audit_logs_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "payload_locked_documents_rels_parent_fk": {
+          "name": "payload_locked_documents_rels_parent_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "payload_locked_documents",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_secretarias_fk": {
+          "name": "payload_locked_documents_rels_secretarias_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "secretarias",
+          "columnsFrom": [
+            "secretarias_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_noticias_fk": {
+          "name": "payload_locked_documents_rels_noticias_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "noticias",
+          "columnsFrom": [
+            "noticias_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_servicos_fk": {
+          "name": "payload_locked_documents_rels_servicos_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "servicos",
+          "columnsFrom": [
+            "servicos_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_documentos_fk": {
+          "name": "payload_locked_documents_rels_documentos_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "documentos",
+          "columnsFrom": [
+            "documentos_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_paginas_fk": {
+          "name": "payload_locked_documents_rels_paginas_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "paginas",
+          "columnsFrom": [
+            "paginas_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_links_uteis_fk": {
+          "name": "payload_locked_documents_rels_links_uteis_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "links_uteis",
+          "columnsFrom": [
+            "links_uteis_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_selos_fk": {
+          "name": "payload_locked_documents_rels_selos_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "selos",
+          "columnsFrom": [
+            "selos_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_perguntas_frequentes_fk": {
+          "name": "payload_locked_documents_rels_perguntas_frequentes_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "perguntas_frequentes",
+          "columnsFrom": [
+            "perguntas_frequentes_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_patrimonio_cultural_fk": {
+          "name": "payload_locked_documents_rels_patrimonio_cultural_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "patrimonio_cultural",
+          "columnsFrom": [
+            "patrimonio_cultural_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_telefones_uteis_fk": {
+          "name": "payload_locked_documents_rels_telefones_uteis_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "telefones_uteis",
+          "columnsFrom": [
+            "telefones_uteis_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_coleta_lixo_fk": {
+          "name": "payload_locked_documents_rels_coleta_lixo_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "coleta_lixo",
+          "columnsFrom": [
+            "coleta_lixo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_conselhos_municipais_fk": {
+          "name": "payload_locked_documents_rels_conselhos_municipais_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "conselhos_municipais",
+          "columnsFrom": [
+            "conselhos_municipais_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_licitacoes_fk": {
+          "name": "payload_locked_documents_rels_licitacoes_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "licitacoes",
+          "columnsFrom": [
+            "licitacoes_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_licitacao_anexos_fk": {
+          "name": "payload_locked_documents_rels_licitacao_anexos_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "licitacao_anexos",
+          "columnsFrom": [
+            "licitacao_anexos_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_licitacao_lotes_fk": {
+          "name": "payload_locked_documents_rels_licitacao_lotes_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "licitacao_lotes",
+          "columnsFrom": [
+            "licitacao_lotes_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_licitacao_eventos_fk": {
+          "name": "payload_locked_documents_rels_licitacao_eventos_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "licitacao_eventos",
+          "columnsFrom": [
+            "licitacao_eventos_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_licitacao_assinantes_fk": {
+          "name": "payload_locked_documents_rels_licitacao_assinantes_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "licitacao_assinantes",
+          "columnsFrom": [
+            "licitacao_assinantes_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_licitacao_envios_fk": {
+          "name": "payload_locked_documents_rels_licitacao_envios_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "licitacao_envios",
+          "columnsFrom": [
+            "licitacao_envios_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_obras_fk": {
+          "name": "payload_locked_documents_rels_obras_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "obras",
+          "columnsFrom": [
+            "obras_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_obra_anexos_fk": {
+          "name": "payload_locked_documents_rels_obra_anexos_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "obra_anexos",
+          "columnsFrom": [
+            "obra_anexos_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_obra_medicoes_fk": {
+          "name": "payload_locked_documents_rels_obra_medicoes_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "obra_medicoes",
+          "columnsFrom": [
+            "obra_medicoes_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_media_fk": {
+          "name": "payload_locked_documents_rels_media_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "media",
+          "columnsFrom": [
+            "media_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_users_fk": {
+          "name": "payload_locked_documents_rels_users_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "users",
+          "columnsFrom": [
+            "users_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_contas_servico_fk": {
+          "name": "payload_locked_documents_rels_contas_servico_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "contas_servico",
+          "columnsFrom": [
+            "contas_servico_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_audit_logs_fk": {
+          "name": "payload_locked_documents_rels_audit_logs_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "audit_logs",
+          "columnsFrom": [
+            "audit_logs_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.payload_preferences": {
+      "name": "payload_preferences",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "value": {
+          "name": "value",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "payload_preferences_key_idx": {
+          "name": "payload_preferences_key_idx",
+          "columns": [
+            {
+              "expression": "key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_preferences_updated_at_idx": {
+          "name": "payload_preferences_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_preferences_created_at_idx": {
+          "name": "payload_preferences_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.payload_preferences_rels": {
+      "name": "payload_preferences_rels",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "path": {
+          "name": "path",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "users_id": {
+          "name": "users_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contas_servico_id": {
+          "name": "contas_servico_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "payload_preferences_rels_order_idx": {
+          "name": "payload_preferences_rels_order_idx",
+          "columns": [
+            {
+              "expression": "order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_preferences_rels_parent_idx": {
+          "name": "payload_preferences_rels_parent_idx",
+          "columns": [
+            {
+              "expression": "parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_preferences_rels_path_idx": {
+          "name": "payload_preferences_rels_path_idx",
+          "columns": [
+            {
+              "expression": "path",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_preferences_rels_users_id_idx": {
+          "name": "payload_preferences_rels_users_id_idx",
+          "columns": [
+            {
+              "expression": "users_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_preferences_rels_contas_servico_id_idx": {
+          "name": "payload_preferences_rels_contas_servico_id_idx",
+          "columns": [
+            {
+              "expression": "contas_servico_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "payload_preferences_rels_parent_fk": {
+          "name": "payload_preferences_rels_parent_fk",
+          "tableFrom": "payload_preferences_rels",
+          "tableTo": "payload_preferences",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_preferences_rels_users_fk": {
+          "name": "payload_preferences_rels_users_fk",
+          "tableFrom": "payload_preferences_rels",
+          "tableTo": "users",
+          "columnsFrom": [
+            "users_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_preferences_rels_contas_servico_fk": {
+          "name": "payload_preferences_rels_contas_servico_fk",
+          "tableFrom": "payload_preferences_rels",
+          "tableTo": "contas_servico",
+          "columnsFrom": [
+            "contas_servico_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.payload_migrations": {
+      "name": "payload_migrations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "batch": {
+          "name": "batch",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "payload_migrations_updated_at_idx": {
+          "name": "payload_migrations_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_migrations_created_at_idx": {
+          "name": "payload_migrations_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.enum_secretarias_status": {
+      "name": "enum_secretarias_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_noticias_status": {
+      "name": "enum_noticias_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_servicos_status": {
+      "name": "enum_servicos_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_documentos_tipo": {
+      "name": "enum_documentos_tipo",
+      "schema": "public",
+      "values": [
+        "edital",
+        "licitacao",
+        "diario_oficial",
+        "lei",
+        "decreto",
+        "portaria",
+        "outro"
+      ]
+    },
+    "public.enum_documentos_status": {
+      "name": "enum_documentos_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_paginas_status": {
+      "name": "enum_paginas_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_links_uteis_status": {
+      "name": "enum_links_uteis_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_selos_status": {
+      "name": "enum_selos_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_perguntas_frequentes_status": {
+      "name": "enum_perguntas_frequentes_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_patrimonio_cultural_categoria": {
+      "name": "enum_patrimonio_cultural_categoria",
+      "schema": "public",
+      "values": [
+        "livro",
+        "dossie",
+        "inventario",
+        "legislacao",
+        "outro"
+      ]
+    },
+    "public.enum_patrimonio_cultural_status": {
+      "name": "enum_patrimonio_cultural_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_telefones_uteis_categoria": {
+      "name": "enum_telefones_uteis_categoria",
+      "schema": "public",
+      "values": [
+        "emergencias",
+        "escolas_creches",
+        "unidades_saude",
+        "assistencia_social",
+        "departamentos",
+        "diversos"
+      ]
+    },
+    "public.enum_telefones_uteis_status": {
+      "name": "enum_telefones_uteis_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_coleta_lixo_status": {
+      "name": "enum_coleta_lixo_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_conselhos_municipais_categoria": {
+      "name": "enum_conselhos_municipais_categoria",
+      "schema": "public",
+      "values": [
+        "assistencia_social",
+        "educacao",
+        "saude"
+      ]
+    },
+    "public.enum_conselhos_municipais_status": {
+      "name": "enum_conselhos_municipais_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_licitacoes_modalidade": {
+      "name": "enum_licitacoes_modalidade",
+      "schema": "public",
+      "values": [
+        "pregao_eletronico",
+        "pregao_presencial",
+        "concorrencia",
+        "concurso",
+        "leilao",
+        "dialogo_competitivo",
+        "dispensa",
+        "dispensa_eletronica",
+        "inexigibilidade",
+        "chamamento_publico",
+        "credenciamento",
+        "pre_qualificacao",
+        "adesao_ata",
+        "cotacao_eletronica"
+      ]
+    },
+    "public.enum_licitacoes_forma": {
+      "name": "enum_licitacoes_forma",
+      "schema": "public",
+      "values": [
+        "eletronica",
+        "presencial"
+      ]
+    },
+    "public.enum_licitacoes_criterio_julgamento": {
+      "name": "enum_licitacoes_criterio_julgamento",
+      "schema": "public",
+      "values": [
+        "menor_preco",
+        "maior_desconto",
+        "melhor_tecnica",
+        "tecnica_e_preco",
+        "maior_lance",
+        "maior_retorno_economico"
+      ]
+    },
+    "public.enum_licitacoes_modo_disputa": {
+      "name": "enum_licitacoes_modo_disputa",
+      "schema": "public",
+      "values": [
+        "aberto",
+        "fechado",
+        "aberto_fechado",
+        "fechado_aberto",
+        "nao_se_aplica"
+      ]
+    },
+    "public.enum_licitacoes_situacao": {
+      "name": "enum_licitacoes_situacao",
+      "schema": "public",
+      "values": [
+        "publicada",
+        "aberta",
+        "em_sessao",
+        "em_julgamento",
+        "homologada",
+        "adjudicada",
+        "contratada",
+        "suspensa",
+        "retificada",
+        "revogada",
+        "anulada",
+        "fracassada",
+        "deserta"
+      ]
+    },
+    "public.enum_licitacoes_status": {
+      "name": "enum_licitacoes_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_licitacao_anexos_tipo": {
+      "name": "enum_licitacao_anexos_tipo",
+      "schema": "public",
+      "values": [
+        "edital",
+        "anexo_do_edital",
+        "termo_de_referencia",
+        "planilha",
+        "minuta_de_contrato",
+        "retificacao",
+        "errata",
+        "impugnacao",
+        "resposta_a_impugnacao",
+        "esclarecimento",
+        "ata_da_sessao",
+        "resultado_do_julgamento",
+        "mapa_de_lances",
+        "homologacao",
+        "contrato",
+        "ata_de_registro_de_precos"
+      ]
+    },
+    "public.enum_licitacao_anexos_status": {
+      "name": "enum_licitacao_anexos_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_licitacao_lotes_situacao": {
+      "name": "enum_licitacao_lotes_situacao",
+      "schema": "public",
+      "values": [
+        "em_disputa",
+        "homologado",
+        "fracassado",
+        "deserto",
+        "cancelado"
+      ]
+    },
+    "public.enum_licitacao_lotes_status": {
+      "name": "enum_licitacao_lotes_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_licitacao_eventos_tipo": {
+      "name": "enum_licitacao_eventos_tipo",
+      "schema": "public",
+      "values": [
+        "publicacao",
+        "retificacao",
+        "suspensao",
+        "impugnacao",
+        "esclarecimento",
+        "sessao",
+        "resultado",
+        "homologacao",
+        "adjudicacao",
+        "contratacao",
+        "revogacao",
+        "anulacao"
+      ]
+    },
+    "public.enum_licitacao_eventos_status": {
+      "name": "enum_licitacao_eventos_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_licitacao_envios_tipo": {
+      "name": "enum_licitacao_envios_tipo",
+      "schema": "public",
+      "values": [
+        "confirmacao",
+        "aviso"
+      ]
+    },
+    "public.enum_licitacao_envios_estado": {
+      "name": "enum_licitacao_envios_estado",
+      "schema": "public",
+      "values": [
+        "pendente",
+        "enviado",
+        "falhou",
+        "desistiu"
+      ]
+    },
+    "public.enum_obras_categoria": {
+      "name": "enum_obras_categoria",
+      "schema": "public",
+      "values": [
+        "pavimentacao",
+        "construcao",
+        "reforma",
+        "drenagem",
+        "saneamento",
+        "iluminacao_publica",
+        "praca_area_lazer",
+        "edificacao_publica",
+        "ponte_viaduto",
+        "outra"
+      ]
+    },
+    "public.enum_obras_fonte_recurso": {
+      "name": "enum_obras_fonte_recurso",
+      "schema": "public",
+      "values": [
+        "municipal",
+        "estadual",
+        "federal",
+        "financiamento",
+        "misto"
+      ]
+    },
+    "public.enum_obras_situacao": {
+      "name": "enum_obras_situacao",
+      "schema": "public",
+      "values": [
+        "planejada",
+        "em_licitacao",
+        "nao_iniciada",
+        "em_execucao",
+        "paralisada",
+        "concluida",
+        "cancelada"
+      ]
+    },
+    "public.enum_obras_status": {
+      "name": "enum_obras_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_obra_anexos_categoria": {
+      "name": "enum_obra_anexos_categoria",
+      "schema": "public",
+      "values": [
+        "projeto_basico",
+        "projeto_executivo",
+        "art_rrt",
+        "edital_licitacao",
+        "contrato",
+        "aditivo",
+        "ordem_servico",
+        "relatorio_fiscalizacao",
+        "foto",
+        "outro"
+      ]
+    },
+    "public.enum_obra_anexos_status": {
+      "name": "enum_obra_anexos_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_obra_medicoes_status": {
+      "name": "enum_obra_medicoes_status",
+      "schema": "public",
+      "values": [
+        "rascunho",
+        "em_revisao",
+        "publicado",
+        "arquivado"
+      ]
+    },
+    "public.enum_users_modulos_permitidos": {
+      "name": "enum_users_modulos_permitidos",
+      "schema": "public",
+      "values": [
+        "secretarias",
+        "noticias",
+        "servicos",
+        "documentos",
+        "paginas",
+        "links-uteis",
+        "selos",
+        "perguntas-frequentes",
+        "patrimonio-cultural",
+        "telefones-uteis",
+        "coleta-lixo",
+        "conselhos-municipais",
+        "licitacoes",
+        "obras"
+      ]
+    },
+    "public.enum_users_papel": {
+      "name": "enum_users_papel",
+      "schema": "public",
+      "values": [
+        "admin",
+        "revisor",
+        "autor"
+      ]
+    },
+    "public.enum_contas_servico_tipo": {
+      "name": "enum_contas_servico_tipo",
+      "schema": "public",
+      "values": [
+        "avisos_portal",
+        "avisos_entrega"
+      ]
+    },
+    "public.enum_audit_logs_operacao": {
+      "name": "enum_audit_logs_operacao",
+      "schema": "public",
+      "values": [
+        "create",
+        "update",
+        "delete"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "id": "f75e6818-1291-4261-978d-9604c3955c91",
+  "prevId": "00000000-0000-0000-0000-000000000000"
+}

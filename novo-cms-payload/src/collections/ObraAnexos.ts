@@ -1,10 +1,9 @@
 import type { CollectionConfig } from 'payload'
 import { base, camposComuns } from './_base'
-import { acessoObras } from '../acesso'
 import { tiposAnexoObra } from '../enums'
 
 export const ObraAnexos: CollectionConfig = {
-  ...base('obra-anexos', 'Anexo de obra', 'Anexos de obras', { access: acessoObras, admin: { useAsTitle: 'titulo', defaultColumns: ['titulo', 'categoria', 'obra'], group: 'Obras' } }),
+  ...base('obra-anexos', 'Anexo de obra', 'Anexos de obras', { admin: { useAsTitle: 'titulo', defaultColumns: ['titulo', 'categoria', 'obra'], group: 'Obras' } }),
   fields: [
     { name: 'obra', label: 'Obra', type: 'relationship', relationTo: 'obras', required: true, index: true },
     { name: 'titulo', label: 'Título', type: 'text', required: true },

@@ -1,5 +1,5 @@
 import type { Endpoint } from 'payload'
-import { podeEscreverLicitacoes } from './acesso'
+import { podeCriarEm } from './acesso'
 
 /**
  * Importação assistida do PNCP (portada de `apps/web/src/lib/painel/licitacoes.ts`, painel antigo).
@@ -70,7 +70,7 @@ export const importarPncp: Endpoint = {
   path: '/importar-pncp',
   method: 'post',
   handler: async (req) => {
-    if (!podeEscreverLicitacoes(req.user)) return json({ erro: 'Sua função no portal não permite importar licitações.' }, 403)
+    if (!podeCriarEm('licitacoes')(req.user)) return json({ erro: 'Você não tem o módulo de Licitações liberado. Peça ao administrador.' }, 403)
 
     const corpo = (await req.json?.().catch(() => ({}))) as { referencia?: string } | undefined
     const referencia = String(corpo?.referencia ?? '').trim()
@@ -102,7 +102,7 @@ export const importarPncp: Endpoint = {
     if (!dados.modalidade) avisos.push('A modalidade do PNCP não tem correspondente no portal: escolha a modalidade manualmente.')
     avisos.push('Escolha o critério de julgamento: o PNCP não o informa nesta consulta.')
 
-    req.payload.logger.info(`[pncp] ${req.user?.email} importou ${referencia}`)
+    req.payload.logger.info(`[pncp] ${(req.user as { email?: string } | null)?.email} importou ${referencia}`)
     return json({ dados, avisos })
   },
 }

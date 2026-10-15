@@ -1,10 +1,9 @@
 import type { CollectionConfig } from 'payload'
-import { acessoSemExclusao, base, camposComuns, leituraPublicaPublicados } from './_base'
+import { base, camposComuns } from './_base'
 import { tiposDocumento } from '../enums'
 
 export const Documentos: CollectionConfig = {
   ...base('documentos', 'Documento ou edital', 'Documentos e editais', {
-    access: { ...acessoSemExclusao, read: leituraPublicaPublicados },
     admin: { useAsTitle: 'titulo', defaultColumns: ['titulo', 'tipo', 'numero', 'dataDocumento', 'status'] },
   }),
   fields: [

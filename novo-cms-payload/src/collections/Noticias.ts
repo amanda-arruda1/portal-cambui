@@ -1,11 +1,10 @@
 import type { CollectionConfig } from 'payload'
 import { convertLexicalToPlaintext } from '@payloadcms/richtext-lexical/plaintext'
 import { campoHtmlDe } from '../campos-html'
-import { acessoSemExclusao, base, camposComuns, leituraPublicaPublicados } from './_base'
+import { base, camposComuns } from './_base'
 
 export const Noticias: CollectionConfig = {
   ...base('noticias', 'Notícia', 'Notícias', {
-    access: { ...acessoSemExclusao, read: leituraPublicaPublicados },
     admin: { useAsTitle: 'titulo', defaultColumns: ['titulo', 'dataPublicacao', 'destaque', 'status'], listSearchableFields: ['titulo', 'slug', 'resumo'] },
     defaultSort: '-dataPublicacao',
     hooks: {

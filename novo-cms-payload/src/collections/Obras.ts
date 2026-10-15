@@ -1,13 +1,12 @@
 import type { CollectionConfig } from 'payload'
 import { base, camposComuns } from './_base'
 import { categoriasObra, fontesRecurso, situacoesObra } from '../enums'
-import { acessoObras } from '../acesso'
 import { campoHtmlDe } from '../campos-html'
 import { pendenciasDaObra, regrasObra, slugDaObra } from '../hooks-obras'
 import { uuidPublico } from '../hooks-licitacoes'
 
 export const Obras: CollectionConfig = {
-  ...base('obras', 'Obra pública', 'Obras públicas', { access: acessoObras, hooks: { beforeValidate: [uuidPublico, slugDaObra], beforeChange: [regrasObra] }, admin: { group: 'Obras', useAsTitle: 'objetoResumo', defaultColumns: ['objetoResumo', 'categoria', 'situacao', 'percentualExecucao', 'status'], listSearchableFields: ['numeroProcesso', 'objetoResumo'] } }),
+  ...base('obras', 'Obra pública', 'Obras públicas', { hooks: { beforeValidate: [uuidPublico, slugDaObra], beforeChange: [regrasObra] }, admin: { group: 'Obras', useAsTitle: 'objetoResumo', defaultColumns: ['objetoResumo', 'categoria', 'situacao', 'percentualExecucao', 'status'], listSearchableFields: ['numeroProcesso', 'objetoResumo'] } }),
   fields: [
     { name: 'numeroProcesso', label: 'Número do processo', type: 'text', required: true },
     { name: 'numeroContrato', label: 'Número do contrato', type: 'text' },

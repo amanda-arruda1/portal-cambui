@@ -1,6 +1,10 @@
 import type { CollectionConfig } from 'payload'
 import { campoIdLegado } from './_base'
 import { inspecionarUpload } from '../upload/inspecionar'
+import { ehAdmin, ehAutor, ehRevisor } from '../acesso'
+
+/** Enviar arquivo: admin, revisor ou autor (precisam anexar documentos e fotos nos módulos). Serviços e visitantes, não. */
+const podeEnviar = ({ req: { user } }: { req: { user?: unknown } }) => ehAdmin(user) || ehRevisor(user) || ehAutor(user)
 
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -8,8 +12,8 @@ export const Media: CollectionConfig = {
   admin: { group: 'Sistema' },
   access: {
     read: () => true,
-    create: ({ req: { user } }) => Boolean(user),
-    update: ({ req: { user } }) => Boolean(user),
+    create: podeEnviar,
+    update: podeEnviar,
     delete: () => false,
   },
   fields: [

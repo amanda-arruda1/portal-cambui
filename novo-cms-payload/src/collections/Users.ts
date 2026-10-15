@@ -1,26 +1,27 @@
 import { APIError } from 'payload'
 import type { Access, CollectionBeforeValidateHook, CollectionConfig } from 'payload'
+import { MODULOS, ehAdmin, soAdmin } from '../acesso'
 
 /**
- * Usuários do painel.
+ * Usuários do painel (pessoas). Três papéis — ver acesso.ts:
+ *  - admin: tudo; gerencia usuários;
+ *  - revisor (chefe de setor): cria/edita nos módulos liberados e leva o item a qualquer status (publica, arquiva);
+ *  - autor (redator): cria/edita nos módulos liberados, só entre rascunho e "aguardando aprovação".
+ * `modulosPermitidos` lista os módulos (coleções) que revisor e autor acessam; admin ignora.
  *
- * SEM isto, qualquer conta de servidor criava outros usuários e trocava e-mail e senha de qualquer um,
- * inclusive do administrador — o painel seria a porta de entrada de uma tomada de conta. Por isso:
- *  - só `administrador` cria usuários, vê a lista inteira e muda `papel`;
- *  - os demais veem e editam só o PRÓPRIO cadastro;
- *  - ninguém apaga (arquivar fica por conta de quem administra, por SQL ou migração).
- * Os papéis do fluxo editorial (redator, revisor, publicador, escopo por secretaria) entram com Licitações.
+ * Só `admin` cria usuários, vê a lista inteira e muda `papel`/`modulosPermitidos`; os demais veem e editam só o PRÓPRIO
+ * cadastro (senão qualquer conta trocaria a senha do administrador). Ninguém apaga. Contas de serviço NÃO moram aqui
+ * (ver ContasServico.ts).
  */
-const ehAdmin = (user: unknown) => (user as { papel?: string } | null | undefined)?.papel === 'administrador'
-
-const soAdmin: Access = ({ req: { user } }) => ehAdmin(user)
-const adminOuProprio: Access = ({ req: { user } }) => (ehAdmin(user) ? true : user ? { id: { equals: user.id } } : false)
+// `user.collection === 'users'`: conta de serviço (outra coleção) pode ter o MESMO id numérico de uma pessoa — sem esta checagem
+// o filtro `id = <id da conta>` entregaria o cadastro (e as sessões) de outra pessoa.
+const adminOuProprio: Access = ({ req: { user } }) => (ehAdmin(user) ? true : user && user.collection === 'users' ? { id: { equals: user.id } } : false)
 
 /** O primeiro usuário de um banco novo (tela "criar primeiro usuário") só pode ser administrador. */
 const primeiroEhAdmin: CollectionBeforeValidateHook = async ({ data, operation, req }) => {
   if (operation !== 'create') return data
   const { totalDocs } = await req.payload.count({ collection: 'users', overrideAccess: true })
-  return totalDocs === 0 ? { ...data, papel: 'administrador' } : data
+  return totalDocs === 0 ? { ...data, papel: 'admin' } : data
 }
 
 const SENHA_MINIMA = 12
@@ -36,7 +37,6 @@ export const Users: CollectionConfig = {
   labels: { singular: 'Usuário', plural: 'Usuários' },
   admin: { useAsTitle: 'email', group: 'Sistema', defaultColumns: ['email', 'nome', 'papel'], hidden: ({ user }) => !ehAdmin(user) },
   auth: {
-    useAPIKey: true, // credenciais dos serviços de avisos; contas de pessoas não ganham chave
     // 5 erros bloqueiam a conta por 15 minutos. O Payload já faz isso por padrão; fica explícito para não depender de padrão.
     maxLoginAttempts: 5,
     lockTime: 15 * 60 * 1000,
@@ -52,20 +52,27 @@ export const Users: CollectionConfig = {
       label: 'Papel',
       type: 'select',
       required: true,
-      defaultValue: 'editor',
+      defaultValue: 'autor',
       options: [
-        { label: 'Administrador', value: 'administrador' },
-        { label: 'Editor', value: 'editor' },
-        { label: 'Setor de licitações', value: 'setor_licitacoes' },
-        { label: 'Leitor de licitações', value: 'leitor_licitacoes' },
-        { label: 'Setor de obras', value: 'setor_obras' },
-        { label: 'Leitor de obras', value: 'leitor_obras' },
-        { label: 'Serviço: avisos (portal)', value: 'servico_avisos_portal' },
-        { label: 'Serviço: avisos (entrega)', value: 'servico_avisos_entrega' },
+        { label: 'Administrador', value: 'admin' },
+        { label: 'Revisor (chefe de setor)', value: 'revisor' },
+        { label: 'Autor (redator)', value: 'autor' },
       ],
       // `!user`: só a tela "primeiro usuário" chega aqui sem login (a coleção recusa criação anônima quando já há usuários).
       access: { create: ({ req: { user } }) => !user || ehAdmin(user), update: ({ req: { user } }) => ehAdmin(user) },
-      admin: { description: 'Administrador gerencia usuários. Editor edita conteúdo geral. Setor de licitações/obras cria e altera; Leitor só consulta.' },
+      admin: { description: 'Administrador: tudo. Revisor: publica e arquiva nos módulos liberados. Autor: escreve e envia para aprovação, não publica.' },
+    },
+    {
+      name: 'modulosPermitidos',
+      label: 'Módulos permitidos',
+      type: 'select',
+      hasMany: true,
+      options: [...MODULOS],
+      // Revisor e autor sem nenhum módulo não conseguiriam fazer nada: melhor recusar na criação do que descobrir depois.
+      validate: (valor: unknown, { siblingData }: { siblingData: { papel?: string } }) =>
+        siblingData?.papel !== 'admin' && (!Array.isArray(valor) || valor.length === 0) ? 'Revisor e autor precisam de pelo menos um módulo liberado.' : true,
+      access: { create: ({ req: { user } }) => !user || ehAdmin(user), update: ({ req: { user } }) => ehAdmin(user) },
+      admin: { condition: (_, siblingData) => siblingData?.papel !== 'admin', description: 'Quais coleções este usuário acessa. Licitações e Obras incluem seus anexos, lotes, eventos e medições. Administrador tem todos.' },
     },
   ],
 }

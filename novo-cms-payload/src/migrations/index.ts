@@ -3,6 +3,7 @@ import * as migration_20261014_190544_papel_usuarios from './20261014_190544_pap
 import * as migration_20261015_115636_papeis_licitacoes from './20261015_115636_papeis_licitacoes';
 import * as migration_20261015_120201_avisos_servico from './20261015_120201_avisos_servico';
 import * as migration_20261015_125842_papeis_obras from './20261015_125842_papeis_obras';
+import * as migration_20261015_135230_fluxo_editorial_papeis from './20261015_135230_fluxo_editorial_papeis';
 
 export const migrations = [
   {
@@ -28,6 +29,11 @@ export const migrations = [
   {
     up: migration_20261015_125842_papeis_obras.up,
     down: migration_20261015_125842_papeis_obras.down,
-    name: '20261015_125842_papeis_obras'
+    name: '20261015_125842_papeis_obras',
+  },
+  {
+    up: migration_20261015_135230_fluxo_editorial_papeis.up,
+    down: migration_20261015_135230_fluxo_editorial_papeis.down,
+    name: '20261015_135230_fluxo_editorial_papeis'
   },
 ];
