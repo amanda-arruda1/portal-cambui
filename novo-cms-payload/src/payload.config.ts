@@ -55,7 +55,11 @@ export default buildConfig({
     meta: { titleSuffix: ' — Portal Cambuí' },
     importMap: { baseDir: path.resolve(dirname) },
     // Controle de tamanho da fonte (A- / A / A+) no cabeçalho do painel.
-    components: { actions: ['/components/AccessibilityControls#AccessibilityControls'] },
+    components: {
+      actions: ['/components/AccessibilityControls#AccessibilityControls'],
+      // Tela de aceite do termo de uso (bloqueia o painel até aceitar a versão atual).
+      providers: ['/components/TermosDeUso#TermosProvider'],
+    },
   },
   // Idioma do painel: a Payload só traz `pt` (sem variante pt-BR separada).
   i18n: { supportedLanguages: { pt }, fallbackLanguage: 'pt' },

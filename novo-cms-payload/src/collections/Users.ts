@@ -1,6 +1,7 @@
 import { APIError } from 'payload'
-import type { Access, CollectionAfterLoginHook, CollectionBeforeValidateHook, CollectionConfig } from 'payload'
+import type { Access, CollectionAfterLoginHook, CollectionBeforeValidateHook, CollectionConfig, Endpoint } from 'payload'
 import { MODULOS, ehAdmin, soAdmin } from '../acesso'
+import { TERMOS_VERSAO } from '../termos-de-uso'
 
 /**
  * Usuários do painel (pessoas). Três papéis — ver acesso.ts:
@@ -40,7 +41,18 @@ const registrarIp: CollectionAfterLoginHook = async ({ req, user }) => {
   return user
 }
 
-const soAdminEdita = { create: ({ req: { user } }: { req: { user?: unknown } }) => !user || ehAdmin(user), update: ({ req: { user } }: { req: { user?: unknown } }) => ehAdmin(user) }
+
+/** O próprio usuário registra o aceite da versão ATUAL do termo (o campo é protegido contra PATCH comum). */
+const aceitarTermos: Endpoint['handler'] = async (req) => {
+  if (!req.user || req.user.collection !== 'users') return Response.json({ erro: 'Entre no painel primeiro.' }, { status: 401 })
+  const corpo = (await req.json?.().catch(() => ({}))) as { versao?: string }
+  if (corpo?.versao !== TERMOS_VERSAO) return Response.json({ erro: 'Versão do termo desatualizada. Recarregue a página.' }, { status: 409 })
+  await req.payload.update({
+    collection: 'users', id: req.user.id, overrideAccess: true, depth: 0, context: { semAuditoria: true },
+    data: { dataAceiteTermos: new Date().toISOString(), versaoTermosAceita: TERMOS_VERSAO } as never,
+  })
+  return Response.json({ ok: true })
+}
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -55,6 +67,7 @@ export const Users: CollectionConfig = {
   },
   access: { read: adminOuProprio, create: soAdmin, update: adminOuProprio, delete: () => false },
   hooks: { beforeValidate: [primeiroEhAdmin, senhaForte], afterLogin: [registrarIp] },
+  endpoints: [{ path: '/aceitar-termos', method: 'post', handler: aceitarTermos }],
   fields: [
     {
       type: 'tabs',
@@ -105,7 +118,8 @@ export const Users: CollectionConfig = {
           label: 'Privacidade e Segurança',
           description: 'Somente leitura para você. O registro é feito pelo sistema.',
           fields: [
-            { name: 'dataAceiteTermos', label: 'Data de aceite dos termos', type: 'date', access: soAdminEdita, admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' }, description: 'Preenchida pela administração quando o termo de uso for aceito.' } },
+            { name: 'dataAceiteTermos', label: 'Data de aceite dos termos', type: 'date', access: { create: () => false, update: () => false }, admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' }, description: 'Registrada quando você aceita o termo de uso (tela exibida no primeiro acesso).' } },
+            { name: 'versaoTermosAceita', label: 'Versão do termo aceita', type: 'text', access: { create: () => false, update: () => false }, admin: { readOnly: true } },
             { name: 'ultimoLoginIp', label: 'IP do último acesso', type: 'text', access: { create: () => false, update: () => false }, admin: { readOnly: true, description: 'Registrado automaticamente a cada login.' } },
           ],
         },

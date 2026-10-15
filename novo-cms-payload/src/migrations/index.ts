@@ -6,6 +6,7 @@ import * as migration_20261015_125842_papeis_obras from './20261015_125842_papei
 import * as migration_20261015_135230_fluxo_editorial_papeis from './20261015_135230_fluxo_editorial_papeis';
 import * as migration_20261015_161726_pastas_arquivos from './20261015_161726_pastas_arquivos';
 import * as migration_20261015_181927_perfil_usuario from './20261015_181927_perfil_usuario';
+import * as migration_20261015_183255_termos_aceite from './20261015_183255_termos_aceite';
 
 export const migrations = [
   {
@@ -46,6 +47,11 @@ export const migrations = [
   {
     up: migration_20261015_181927_perfil_usuario.up,
     down: migration_20261015_181927_perfil_usuario.down,
-    name: '20261015_181927_perfil_usuario'
+    name: '20261015_181927_perfil_usuario',
+  },
+  {
+    up: migration_20261015_183255_termos_aceite.up,
+    down: migration_20261015_183255_termos_aceite.down,
+    name: '20261015_183255_termos_aceite'
   },
 ];

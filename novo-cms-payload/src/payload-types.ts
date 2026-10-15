@@ -1306,9 +1306,10 @@ export interface User {
       )[]
     | null;
   /**
-   * Preenchida pela administração quando o termo de uso for aceito.
+   * Registrada quando você aceita o termo de uso (tela exibida no primeiro acesso).
    */
   dataAceiteTermos?: string | null;
+  versaoTermosAceita?: string | null;
   /**
    * Registrado automaticamente a cada login.
    */
@@ -2074,6 +2075,7 @@ export interface UsersSelect<T extends boolean = true> {
   papel?: T;
   modulosPermitidos?: T;
   dataAceiteTermos?: T;
+  versaoTermosAceita?: T;
   ultimoLoginIp?: T;
   updatedAt?: T;
   createdAt?: T;
