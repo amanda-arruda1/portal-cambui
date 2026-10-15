@@ -21,7 +21,7 @@ const propor = (media: unknown, caminho: Alvo, motivo: string) => {
   const id = idDe(media)
   if (id == null) return
   if (!alvos.has(id)) alvos.set(id, new Map())
-  alvos.get(id)!.set(caminho.join(' / '), motivo)
+  alvos.get(id)!.set(caminho.join(' › '), motivo)
 }
 
 /* 1) USO REGISTRADO */
@@ -100,8 +100,8 @@ for (const d of decididos) porPasta[d.caminho] = (porPasta[d.caminho] ?? 0) + 1
 const cache = new Map<string, number>()
 const garantir = async (caminho: string): Promise<number> => {
   if (cache.has(caminho)) return cache.get(caminho)!
-  const partes = caminho.split(' / ')
-  const pai = partes.length > 1 ? await garantir(partes.slice(0, -1).join(' / ')) : null
+  const partes = caminho.split(' › ')
+  const pai = partes.length > 1 ? await garantir(partes.slice(0, -1).join(' › ')) : null
   const nome = partes[partes.length - 1]
   const achou = await payload.find({
     collection: 'pastas', depth: 0, limit: 1, overrideAccess: true,
