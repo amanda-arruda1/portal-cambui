@@ -353,3 +353,9 @@ coincidia com o de uma pessoa e vazava o cadastro e as sessões). Prova: `novo-c
 O painel não filtra as opções do campo Status por papel: o autor pode escolher "Publicado", mas ao salvar recebe a mensagem do hook.
 
 **Upload e antivírus** — ver "Upload no painel do Payload" acima.
+
+### Perfil do usuário e acessibilidade do painel (Payload)
+- `users`: abas "Dados Pessoais" (`nome`, `nomeExibicao`, `matricula`, `fotoPerfil`), "Acesso" (`papel`, `modulosPermitidos`, só admin altera) e "Privacidade e Segurança" (`dataAceiteTermos` só admin grava; `ultimoLoginIp` só o sistema grava, no `afterLogin`, via `db.updateOne` **com `req`** — sem `req` o login trava esperando o lock da própria transação). O IP vem de `X-Real-IP` (nginx).
+- Foto de perfil: coleção `fotos-perfil` (só usuários logados leem; sem update/delete), arquivos em `novo-cms-payload/media/perfil/` (dentro do ReadWritePaths; o antivírus incremental agora varre `-maxdepth 2`).
+- `components/AccessibilityControls.tsx` (header do painel, `admin.components.actions`): A-/A/A+ = 14/16/18px, variável `--acessibilidade-fonte`, guardado nas preferências do usuário (`usePreferences`) e em localStorage. Padrão passou de 13px (Payload) para 16px.
+- `media` e `fotos-perfil` têm `admin.hidden` (some do menu e a página de lista/edição por URL dá "Nada encontrado"); a edição é pelas gavetas dos campos.

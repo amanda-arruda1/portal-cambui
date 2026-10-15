@@ -31,6 +31,7 @@ import { Servicos } from './collections/Servicos'
 import { TelefonesUteis } from './collections/TelefonesUteis'
 import { Users } from './collections/Users'
 import { Pastas } from './collections/Pastas'
+import { FotosPerfil } from './collections/FotosPerfil'
 import { ContasServico } from './collections/ContasServico'
 import { comAuditoria } from './hooks-auditoria'
 import { comPolitica } from './politica'
@@ -53,6 +54,8 @@ export default buildConfig({
     user: Users.slug,
     meta: { titleSuffix: ' — Portal Cambuí' },
     importMap: { baseDir: path.resolve(dirname) },
+    // Controle de tamanho da fonte (A- / A / A+) no cabeçalho do painel.
+    components: { actions: ['/components/AccessibilityControls#AccessibilityControls'] },
   },
   // Idioma do painel: a Payload só traz `pt` (sem variante pt-BR separada).
   i18n: { supportedLanguages: { pt }, fallbackLanguage: 'pt' },
@@ -61,7 +64,7 @@ export default buildConfig({
     PatrimonioCultural, TelefonesUteis, ColetaLixo, ConselhosMunicipais,
     Licitacoes, LicitacaoAnexos, LicitacaoLotes, LicitacaoEventos, LicitacaoAssinantes, LicitacaoEnvios,
     Obras, ObraAnexos, ObraMedicoes,
-    Pastas, Media, Users, ContasServico, AuditLogs,
+    Pastas, Media, FotosPerfil, Users, ContasServico, AuditLogs,
   ].map(comPolitica).map(comAuditoria),
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

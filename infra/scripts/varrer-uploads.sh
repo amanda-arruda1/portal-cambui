@@ -34,7 +34,7 @@ for DIR in "${DIRS[@]}"; do
     clamdscan --fdpass --infected --no-summary --move="$QUARENTENA" "$DIR" || saida=$?
     modo="completa"
   else
-    find "$DIR" -maxdepth 1 -type f -newer "$MARCO" -print0 \
+    find "$DIR" -maxdepth 2 -type f -newer "$MARCO" -print0 \
       | xargs -0 -r clamdscan --fdpass --infected --no-summary --move="$QUARENTENA" || saida=$?
     modo="incremental"
   fi

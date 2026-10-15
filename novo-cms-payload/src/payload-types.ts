@@ -91,6 +91,7 @@ export interface Config {
     'obra-medicoes': ObraMedicoe;
     pastas: Pasta;
     media: Media;
+    'fotos-perfil': FotosPerfil;
     users: User;
     'contas-servico': ContasServico;
     'audit-logs': AuditLog;
@@ -129,6 +130,7 @@ export interface Config {
     'obra-medicoes': ObraMedicoesSelect<false> | ObraMedicoesSelect<true>;
     pastas: PastasSelect<false> | PastasSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    'fotos-perfil': FotosPerfilSelect<false> | FotosPerfilSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'contas-servico': ContasServicoSelect<false> | ContasServicoSelect<true>;
     'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
@@ -1235,11 +1237,49 @@ export interface ObraMedicoe {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "fotos-perfil".
+ */
+export interface FotosPerfil {
+  id: number;
+  alt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    avatar?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
   id: number;
   nome?: string | null;
+  /**
+   * Como você quer ser chamado(a) no painel.
+   */
+  nomeExibicao?: string | null;
+  matricula?: string | null;
+  /**
+   * PNG, JPG ou WebP. Visível só para quem tem conta no painel.
+   */
+  fotoPerfil?: (number | null) | FotosPerfil;
   /**
    * Administrador: tudo. Revisor: publica e arquiva nos módulos liberados. Autor: escreve e envia para aprovação, não publica.
    */
@@ -1265,6 +1305,14 @@ export interface User {
         | 'obras'
       )[]
     | null;
+  /**
+   * Preenchida pela administração quando o termo de uso for aceito.
+   */
+  dataAceiteTermos?: string | null;
+  /**
+   * Registrado automaticamente a cada login.
+   */
+  ultimoLoginIp?: string | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -1449,6 +1497,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'fotos-perfil';
+        value: number | FotosPerfil;
       } | null)
     | ({
         relationTo: 'users';
@@ -1980,12 +2032,49 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "fotos-perfil_select".
+ */
+export interface FotosPerfilSelect<T extends boolean = true> {
+  alt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?:
+    | T
+    | {
+        avatar?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
   nome?: T;
+  nomeExibicao?: T;
+  matricula?: T;
+  fotoPerfil?: T;
   papel?: T;
   modulosPermitidos?: T;
+  dataAceiteTermos?: T;
+  ultimoLoginIp?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
