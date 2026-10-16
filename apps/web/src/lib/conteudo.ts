@@ -8,7 +8,7 @@
  */
 import { listar, umPor } from './directus';
 import { fonteCms, listarPayload, reescreverMidia, urlMidia } from './payload';
-import type { CategoriaPatrimonio, ColetaLixo, ConselhoMunicipal, Documento, DocumentoPatrimonio, LinkUtil, Noticia, Pagina, PerguntaFrequente, Secretaria, Selo, Servico, TelefoneUtil } from './tipos';
+import type { CategoriaPatrimonio, ColetaLixo, ConselhoMunicipal, Documento, DocumentoPatrimonio, Noticia, Pagina, PerguntaFrequente, Secretaria, Selo, Servico, TelefoneUtil } from './tipos';
 
 const PUBLICADO = JSON.stringify({ status: { _eq: 'publicado' } });
 
@@ -121,13 +121,27 @@ function secretariaPorSlugDirectus(slug: string) {
   });
 }
 
-export function servicos(limite = 200) {
+export async function servicos(limite = 200) {
+  if (fonteCms('servicos') === 'payload') {
+    const r = await listarPayload<DocPayload>('servicos', { sort: 'categoria,ordem,nome', limit: limite, depth: 1 });
+    return { ...r, dados: r.dados.map(servicoDoPayload) };
+  }
   return listar<Servico>('servicos', {
     fields: 'id,status,nome,slug,descricao,categoria,publico_alvo,url_externa,como_solicitar,secretaria.nome,secretaria.slug',
     filter: PUBLICADO,
     sort: 'categoria,nome',
     limit: limite,
   });
+}
+
+function servicoDoPayload(d: DocPayload): Servico {
+  const sec = d.secretaria && typeof d.secretaria === 'object' ? d.secretaria : null;
+  return {
+    id: d.id, status: d.status, nome: d.nome, slug: d.slug, descricao: d.descricao ?? null, categoria: d.categoria ?? null,
+    publico_alvo: d.publicoAlvo ?? null, url_externa: d.urlExterna ?? null, como_solicitar: reescreverMidia(d.comoSolicitarHtml),
+    secretaria: sec ? { nome: sec.nome, slug: sec.slug } : null,
+    necessidade: d.necessidade ?? null, detalhe: d.detalhe ?? null, destino: d.destino ?? null, ordem: d.ordem ?? null,
+  };
 }
 
 /** Documento do Payload no formato do portal. `data_documento` volta a ser AAAA-MM-DD (o Payload devolve meia-noite UTC,
@@ -200,18 +214,19 @@ function documentoPorIdDirectus(id: string) {
   });
 }
 
-export function linksUteis() {
-  return listar<LinkUtil>('links_uteis', {
-    fields: '*',
-    filter: PUBLICADO,
-    sort: 'grupo,ordem,nome',
-    limit: 100,
-  });
-}
-
 /** Selos e certificações institucionais — exibidos no rodapé (todas as
  *  páginas) e em detalhe na página de Transparência. */
-export function selos() {
+export async function selos() {
+  if (fonteCms('selos') === 'payload') {
+    const r = await listarPayload<DocPayload>('selos', { sort: 'ordem,nome', limit: 50, depth: 1 });
+    return {
+      ...r,
+      dados: r.dados.map((d): Selo => ({
+        id: d.id, status: d.status, nome: d.nome, orgao_emissor: d.orgaoEmissor, descricao: d.descricao ?? null, imagem: marcador(d.imagem),
+        data_concessao: d.dataConcessao ?? null, url_comprovacao: d.urlComprovacao ?? null, ordem: d.ordem ?? null,
+      })),
+    };
+  }
   return listar<Selo>('selos', {
     fields: '*',
     filter: PUBLICADO,
@@ -221,7 +236,17 @@ export function selos() {
 }
 
 /** Perguntas frequentes, agrupadas por categoria na própria página. */
-export function perguntasFrequentes() {
+export async function perguntasFrequentes() {
+  if (fonteCms('perguntas_frequentes') === 'payload') {
+    const r = await listarPayload<DocPayload>('perguntas-frequentes', { sort: 'categoria,ordem,pergunta', limit: 300, depth: 1 });
+    return {
+      ...r,
+      dados: r.dados.map((d): PerguntaFrequente => {
+        const sec = d.secretaria && typeof d.secretaria === 'object' ? d.secretaria : null;
+        return { id: d.id, status: d.status, pergunta: d.pergunta, resposta: reescreverMidia(d.respostaHtml) ?? '', categoria: d.categoria ?? null, secretaria: sec ? { nome: sec.nome, slug: sec.slug } : null, ordem: d.ordem ?? null };
+      }),
+    };
+  }
   return listar<PerguntaFrequente>('perguntas_frequentes', {
     fields: 'id,status,pergunta,resposta,categoria,ordem,secretaria.nome,secretaria.slug',
     filter: PUBLICADO,

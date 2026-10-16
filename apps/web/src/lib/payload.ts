@@ -13,7 +13,7 @@ const BASE = (process.env.PAYLOAD_INTERNAL_URL || 'http://127.0.0.1:3000/cms').r
 const TEMPO_LIMITE_MS = 5000;
 
 /** De onde cada coleção migrada é lida. Padrão `directus`: ligar é decisão explícita. */
-const CHAVES = { telefones_uteis: 'CMS_TELEFONES', coleta_lixo: 'CMS_COLETA_LIXO', conselhos_municipais: 'CMS_CONSELHOS', patrimonio_documentos: 'CMS_PATRIMONIO', secretarias: 'CMS_SECRETARIAS', noticias: 'CMS_NOTICIAS', paginas: 'CMS_PAGINAS', documentos: 'CMS_DOCUMENTOS' } as const;
+const CHAVES = { telefones_uteis: 'CMS_TELEFONES', coleta_lixo: 'CMS_COLETA_LIXO', conselhos_municipais: 'CMS_CONSELHOS', patrimonio_documentos: 'CMS_PATRIMONIO', secretarias: 'CMS_SECRETARIAS', noticias: 'CMS_NOTICIAS', paginas: 'CMS_PAGINAS', documentos: 'CMS_DOCUMENTOS', servicos: 'CMS_SERVICOS', selos: 'CMS_SELOS', perguntas_frequentes: 'CMS_FAQ' } as const;
 export type ColecaoMigravel = keyof typeof CHAVES;
 export const COLECOES_MIGRAVEIS = Object.keys(CHAVES) as ColecaoMigravel[];
 

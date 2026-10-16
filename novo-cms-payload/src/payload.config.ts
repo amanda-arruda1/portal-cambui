@@ -16,7 +16,6 @@ import { LicitacaoEnvios } from './collections/LicitacaoEnvios'
 import { LicitacaoEventos } from './collections/LicitacaoEventos'
 import { LicitacaoLotes } from './collections/LicitacaoLotes'
 import { Licitacoes } from './collections/Licitacoes'
-import { LinksUteis } from './collections/LinksUteis'
 import { Media } from './collections/Media'
 import { Noticias } from './collections/Noticias'
 import { ObraAnexos } from './collections/ObraAnexos'
@@ -33,6 +32,10 @@ import { Users } from './collections/Users'
 import { Pastas } from './collections/Pastas'
 import { FotosPerfil } from './collections/FotosPerfil'
 import { ContasServico } from './collections/ContasServico'
+import { ConfiguracoesPortal } from './globals/ConfiguracoesPortal'
+import { LinksExternos } from './globals/LinksExternos'
+import { Navegacao } from './globals/Navegacao'
+import { PaginaInicial } from './globals/PaginaInicial'
 import { comAuditoria } from './hooks-auditoria'
 import { comPolitica } from './politica'
 
@@ -66,12 +69,13 @@ export default buildConfig({
   // Idioma do painel: a Payload só traz `pt` (sem variante pt-BR separada).
   i18n: { supportedLanguages: { pt }, fallbackLanguage: 'pt' },
   collections: [
-    Secretarias, Noticias, Servicos, Documentos, Paginas, LinksUteis, Selos, PerguntasFrequentes,
+    Secretarias, Noticias, Servicos, Documentos, Paginas, Selos, PerguntasFrequentes,
     PatrimonioCultural, TelefonesUteis, ColetaLixo, ConselhosMunicipais,
     Licitacoes, LicitacaoAnexos, LicitacaoLotes, LicitacaoEventos, LicitacaoAssinantes, LicitacaoEnvios,
     Obras, ObraAnexos, ObraMedicoes,
     Pastas, Media, FotosPerfil, Users, ContasServico, AuditLogs,
   ].map(comPolitica).map(comAuditoria),
+  globals: [ConfiguracoesPortal, Navegacao, LinksExternos, PaginaInicial],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },

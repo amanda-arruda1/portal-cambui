@@ -38,6 +38,8 @@ export const Obras: CollectionConfig = {
     { name: 'observacoes', label: 'Observações', type: 'textarea' },
     { name: 'dataPublicacao', label: 'Data de publicação', type: 'date', required: true },
     { name: 'demonstracao', label: 'Demonstração', type: 'checkbox', defaultValue: false },
+    { name: 'anexosDaObra', label: 'Anexos (ART, projetos, fotos)', type: 'join', collection: 'obra-anexos', on: 'obra', defaultLimit: 50, admin: { defaultColumns: ['titulo', 'categoria'], allowCreate: true } },
+    { name: 'medicoesDaObra', label: 'Medições', type: 'join', collection: 'obra-medicoes', on: 'obra', defaultLimit: 50, admin: { defaultColumns: ['numero'], allowCreate: true } },
     ...camposComuns,
   ],
 }

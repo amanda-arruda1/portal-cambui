@@ -93,18 +93,30 @@ Instalar/reinstalar: `infra/scripts/14-backup.sh` (idempotente). Rodar agora:
 
 Detalhes e histórico em `/root/.claude/projects/-root/memory/portal-cambui-migracao-payload.md`.
 
-**Estado.** Lêem do Payload no ar: telefones úteis, coleta de lixo, conselhos municipais,
-patrimônio cultural, secretarias, notícias, páginas e documentos. Ainda no Directus: licitações (+ anexos,
-lotes, eventos, assinantes), obras e o **Diário Oficial** (`diario_*`, fora do escopo da migração:
-imutabilidade no banco + assinatura em serviço separado). `servicos`, `links_uteis`, `selos` e
-`perguntas_frequentes` têm 0 registros e nenhuma página consome `links_uteis`: nada a migrar até alguma
-página precisar. **Não apagar o Directus**: o `/painel` de contribuição, o Diário, licitações/obras, o
-serviço de avisos e as permissões dos redatores ainda dependem dele. Levantamento de Licitações (por que
-adiar e o que falta decidir): memória do projeto, `portal-cambui-migracao-payload.md`.
+**Estado.** Lêem do Payload no ar: telefones úteis, coleta de lixo, conselhos municipais, patrimônio cultural, secretarias,
+notícias, páginas, documentos, serviços, selos, perguntas frequentes, licitações, obras e os quatro Globals (ver abaixo).
+Ainda no Directus: só o que sobrou do `/painel` antigo. **O módulo Diário Oficial foi RETIRADO do site em 2026-10-16** (telas públicas,
+`/painel/diario`, `lib/diario`): o Diário Oficial é o link externo da AMM-MG (`diariomunicipal.com.br/amm-mg/`), controlado no Global
+"Links externos" (`diarioAmm`) e usado pelo menu, rodapé e `/servicos`. O código antigo está no histórico do git (commits `1e59e34` e
+`6e0aa4a`). Tabelas `diario_*` (todas de demonstração), serviço `portal-diario` e o trecho de avisos do Diário em
+`infra/scripts/enviar-avisos.mjs` continuam no servidor SEM uso; apagar exige o procedimento de imutabilidade (`infra/directus/diario/`).
+`links_uteis` foi removida do Payload (migration `servicos_catalogo_sem_links_uteis`); o painel antigo ainda a lista por causa do
+`verificar-campos`. **Não apagar o Directus**: o `/painel` de contribuição e as permissões dos redatores ainda dependem dele.
+
+**Globals do Payload (2026-10-16).** Textos e links que estavam fixos no código: `configuracoes-portal` (título, CNPJ, endereço, telefones,
+e-mail, horário, autarquias), `navegacao` (menu principal e colunas do rodapé), `links-externos` (um grupo por sistema de terceiro; em branco =
+o link some do site) e `pagina-inicial` (herói, atalhos, bloco "A cidade"). Leitura pública, só o administrador altera, cada gravação vai para
+`audit-logs`. O site lê por `apps/web/src/lib/globais.ts` com cache de 60 s, ligado por `CMS_GLOBAIS=payload`; sem a chave ou com o CMS fora do ar usa
+a reserva de `dados/instituicional.ts` e `dados/cidade.ts`. Destinos de menu/atalho aceitam `@chave` (ex.: `@ouvidoria`, `@diarioAmm`) para
+citar um link externo. Carga inicial: `scripts/semear-globais.ts` (só preenche Global vazio; `--forcar` sobrescreve).
+`/servicos`: os atalhos por necessidade vêm da coleção Serviços (campos `necessidade`, `detalhe`, `destino`, `ordem`; `scripts/semear-servicos.ts`);
+títulos dos 6 grupos continuam em `NECESSIDADES`. Textos longos de acessibilidade, privacidade e transparência estão na coleção Páginas
+(`scripts/semear-paginas-institucionais.ts`); o markup original fica como reserva nos modelos. Menu do CMS agrupado em `politica.ts` (`GRUPOS`);
+anexos/lotes/eventos/medições ficam ocultos e são editados por `join` dentro de Licitação/Obra.
 
 **Como o site escolhe a fonte.** Uma variável por coleção em `/opt/portal-cambui/.env.web`
 (`CMS_TELEFONES`, `CMS_COLETA_LIXO`, `CMS_CONSELHOS`, `CMS_PATRIMONIO`, `CMS_SECRETARIAS`,
-`CMS_NOTICIAS`, `CMS_PAGINAS`, `CMS_DOCUMENTOS`), valor `payload` liga; ausente = Directus. Nomes em `apps/web/src/lib/payload.ts`
+`CMS_NOTICIAS`, `CMS_PAGINAS`, `CMS_DOCUMENTOS`, `CMS_SERVICOS`, `CMS_SELOS`, `CMS_FAQ`; mais `CMS_GLOBAIS`), valor `payload` liga; ausente = Directus. Nomes em `apps/web/src/lib/payload.ts`
 (`COLECOES_MIGRAVEIS`), que também tira a coleção da lista editável do `/painel` antigo (senão
 alguém grava no Directus algo que o site não mostra). **Desfazer = apagar a linha e
 `systemctl restart portal-web`.** Mudou código do site: `npm run build` em `apps/web`, depois
@@ -117,7 +129,7 @@ chave `PAYLOAD_TOKEN_AVISOS`) **e** em `.env` (serviço `portal-avisos`, chave `
 Foi ligado junto com a virada de Licitações. Duas contas de serviço com chave de API
 (coleção `contas-servico`, tipos `avisos_portal`/`avisos_entrega`; cabeçalho `Authorization: contas-servico API-Key <chave>`), criadas/giradas por
 `novo-cms-payload/scripts/criar-usuarios-servico-avisos.ts`. Assinantes e fila ficam FORA da auditoria (e-mail de cidadão; o descadastro
-apaga de verdade). O Diário Oficial continua no Directus.
+apaga de verdade).
 
 **Leitura pública de Licitações (LIGADA desde 2026-10-15).** `CMS_LICITACOES=payload` em `.env.web` troca as 4 funções de
 `apps/web/src/lib/licitacoes.ts` (`todas`, `anexosDe`, `lotesDe`, `eventosDe`). Não está em `COLECOES_MIGRAVEIS` de propósito: o
@@ -144,7 +156,7 @@ sem fuso: o código acrescenta `-03:00`. O slug pode ficar em branco no formulá
 Caddy). O Payload roda com `basePath: '/cms'` (`novo-cms-payload/next.config.ts`, FIXO no código: precisa ser igual no
 build e no start): admin em `/cms/admin`, API em `/cms/api`, assets em `/cms/_next`. O Nginx (`snippets/cms-caminho.conf`,
 incluído no server do portal em `conf.d/10-http.conf`) repassa o prefixo SEM tirá-lo (`proxy_pass` sem URI). O `/painel`
-(Astro) NÃO foi tocado: `/painel` é o painel atual (Licitações, Obras, Diário) e `/cms` é o do Payload; quando o atual
+(Astro) NÃO foi tocado: `/painel` é o painel atual (o antigo, em retirada) e `/cms` é o do Payload; quando o atual
 sair, o Payload pode assumir `/painel`. Instalar/reinstalar as regras: `sudo infra/scripts/15-nginx-cms.sh`
 (`--simular`, `--remover`; idempotente, `nginx -t` antes, desfaz se falhar). Túnel (sem passar pelo Nginx):
 `ssh -L 3000:127.0.0.1:3000 -p 9025 <usuário>@<servidor>` e `http://localhost:3000/cms/admin`.

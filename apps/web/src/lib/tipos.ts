@@ -59,6 +59,11 @@ export interface Servico {
   url_externa: string | null;
   como_solicitar: string | null;
   secretaria: { nome: string; slug: string } | null;
+  /** Só no Payload: grupo do atalho em /servicos, e o texto do atalho. Sem `necessidade` = só no inventário. */
+  necessidade?: string | null;
+  detalhe?: string | null;
+  destino?: string | null;
+  ordem?: number | null;
 }
 
 export type TipoDocumento = 'edital' | 'licitacao' | 'diario_oficial' | 'lei' | 'decreto' | 'portaria' | 'outro';
@@ -84,16 +89,6 @@ export interface Pagina {
   slug: string;
   conteudo: string | null;
   atualizado_em: string | null;
-}
-
-export interface LinkUtil {
-  id: string;
-  status: Situacao;
-  nome: string;
-  url: string;
-  descricao: string | null;
-  grupo: string | null;
-  ordem: number | null;
 }
 
 export interface Selo {

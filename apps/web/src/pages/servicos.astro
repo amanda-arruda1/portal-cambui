@@ -17,9 +17,28 @@ import LinhaTarefa from '../componentes/LinhaTarefa.astro';
 import Coleta from '../componentes/Coleta.astro';
 import { servicos } from '../lib/conteudo';
 import { NECESSIDADES } from '../dados/cidade';
+import { fonteCms } from '../lib/payload';
+import { ehExterno, linksExternos, resolverDestino } from '../lib/globais';
 
 const { dados: doCms, indisponivel } = await servicos();
 const foco = Astro.url.searchParams.get('necessidade');
+
+/* Atalhos por necessidade: com Serviços no Payload e a consulta respondendo, valem SÓ os cadastrados (grupo sem serviço some; o
+   administrador manda). Payload fora do ar ou ainda desligado: cai no catálogo que continua no código (dados/cidade.ts). */
+const links = await linksExternos();
+const doPayload = fonteCms('servicos') === 'payload' && !indisponivel;
+const grupos = NECESSIDADES.map((n) => {
+  if (!doPayload) return n;
+  const tarefas = doCms
+    .filter((s) => s.necessidade === n.chave)
+    .sort((a, b) => (a.ordem ?? 999) - (b.ordem ?? 999) || a.nome.localeCompare(b.nome, 'pt-BR'))
+    .flatMap((s) => {
+      const destino = resolverDestino(s.destino ?? s.url_externa ?? undefined, links);
+      return destino ? [{ rotulo: s.nome, detalhe: s.detalhe ?? s.descricao ?? '', destino, externo: ehExterno(destino) || undefined }] : [];
+    });
+  return { ...n, tarefas };
+}).filter((n) => n.tarefas.length > 0 || n.chave === 'casa');
+const inventario = doPayload ? doCms.filter((s) => !s.necessidade) : doCms;
 ---
 
 <Base
@@ -39,7 +58,7 @@ const foco = Astro.url.searchParams.get('necessidade');
       <span aria-hidden="true"></span>
       <nav aria-label="Categorias de serviço" class="corpo">
         <ul>
-          {NECESSIDADES.map((n) => (
+          {grupos.map((n) => (
             <li><a href={`#${n.chave}`} class:list={['atalho', foco === n.chave && 'ativo']}>{n.titulo}</a></li>
           ))}
         </ul>
@@ -48,7 +67,7 @@ const foco = Astro.url.searchParams.get('necessidade');
   </div>
 
   {
-    NECESSIDADES.map((n, i) => (
+    grupos.map((n, i) => (
       <Carreira
         numero={String(i + 1).padStart(2, '0')}
         rotulo={n.titulo}
@@ -75,14 +94,14 @@ const foco = Astro.url.searchParams.get('necessidade');
   <!-- Inventário completo, alimentado pelas secretarias. -->
   <Carreira numero="07" rotulo="Todos os serviços cadastrados" fundo="papel">
     {
-      indisponivel || doCms.length === 0 ? (
+      indisponivel || inventario.length === 0 ? (
         <p class="vazio">
           As secretarias ainda estão cadastrando o inventário completo. Os caminhos acima já levam
           aos serviços que hoje funcionam.
         </p>
       ) : (
         <ul class="lista entra">
-          {doCms.map((s) => (
+          {inventario.map((s) => (
             <li>
               <LinhaTarefa
                 tarefa={{

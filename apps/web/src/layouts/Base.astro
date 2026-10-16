@@ -11,7 +11,7 @@ import Cabecalho from '../componentes/Cabecalho.astro';
 import Rodape from '../componentes/Rodape.astro';
 import AvisoCookies from '../componentes/AvisoCookies.astro';
 import AssistenteContatos from '../componentes/AssistenteContatos.astro';
-import { SITE } from '../dados/instituicional';
+import { configuracoes } from '../lib/globais';
 import { emDemonstracao } from '../lib/demonstracao';
 
 interface Props {
@@ -23,6 +23,7 @@ interface Props {
   colado?: boolean;
 }
 
+const { site: SITE } = await configuracoes();
 const { titulo, descricao = SITE.descricao, semIndexacao = false, imagem = null, colado = false } = Astro.props;
 
 const tituloCompleto = titulo === SITE.titulo ? titulo : `${titulo} — ${SITE.titulo}`;

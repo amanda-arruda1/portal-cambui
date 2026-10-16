@@ -19,7 +19,7 @@
  *     (nunca sozinho — nem no hover do desktop, nem preso aberto no
  *     celular), e por isso depende do script no fim do arquivo.
  */
-import { MUNICIPIO } from '../dados/instituicional';
+import { configuracoes, navegacao } from '../lib/globais';
 import { indicadoresEconomicos, valorFormatado } from '../lib/indicadores';
 import { previsaoTempo, categoriaTempo, condicaoTexto, temperaturaFormatada } from '../lib/tempo';
 import IconeTempo from './IconeTempo.astro';
@@ -33,53 +33,13 @@ import IconeTempo from './IconeTempo.astro';
 const [indicadores, tempo] = await Promise.all([indicadoresEconomicos(), previsaoTempo()]);
 const rotuloCompacto = (chave: string, rotulo: string) => (chave === 'dolar' ? 'Dólar' : rotulo);
 
-type Secao = {
-  rotulo: string;
-  destino?: string;
-  subitens?: { rotulo: string; destino: string }[];
-};
-
-const SECOES: Secao[] = [
-  {
-    rotulo: 'Serviços',
-    destino: '/servicos',
-    /* Submenu DESLIGADO em 2026-08-31 a pedido do usuário — ficou com um
-       comportamento errado que ele reportou por imagem e ainda não
-       consegui ver (caminho local do Windows dele, sem acesso daqui).
-       NECESSIDADES e a estrutura de subitens continuam prontas logo abaixo,
-       só não são passadas pra este item — é reativar esta linha quando o
-       problema estiver identificado e corrigido.
-       subitens: NECESSIDADES.map((n) => ({ rotulo: n.titulo, destino: `/servicos#${n.chave}` })), */
-  },
-  { rotulo: 'A cidade', destino: '/a-cidade' },
-  { rotulo: 'A Prefeitura', destino: '/secretarias' },
-  { rotulo: 'Telefones Úteis', destino: '/telefones' },
-  { rotulo: 'Coleta de Lixo', destino: '/coleta-de-lixo' },
-  { rotulo: 'Patrimônio Cultural', destino: '/patrimonio-cultural' },
-  /* O Diário Oficial entra no menu principal, e não num canto: é onde os atos
-     do município produzem efeito, e quem procura um ato precisa achá-lo em um
-     passo. Entra antes de Transparência porque é destino mais específico. */
-  { rotulo: 'Diário Oficial', destino: '/diario-oficial' },
-  { rotulo: 'Transparência', destino: '/transparencia' },
-  { rotulo: 'Notícias', destino: '/noticias' },
-  {
-    rotulo: 'Área do Servidor',
-    /* Sem destino próprio: é só um agrupador de sistemas externos (ponto,
-       SIP e webmail), todos em outro domínio — abrem em nova aba. */
-    subitens: [
-      { rotulo: 'Ponto eletrônico', destino: 'http://sistemas14.sisponto.com.br/Sispontoweb/open.do?sys=SPW' },
-      { rotulo: 'Holerite eletrônico', destino: 'https://cce.sgpcloud.net:9155/sipweb/trabalhador/login/login.xhtml' },
-      /* URL de webmail enviada pelo usuário era de LOGOUT com um token de
-         sessão embutido (?_task=logout&_token=...) — publicar isso no código
-         (repositório público) vazaria o token de outra pessoa e, de todo
-         modo, não é um link de acesso. Trocado pela URL base, a pedido do
-         usuário em 2026-09-02. */
-      { rotulo: 'Webmail', destino: 'https://webmail.cambui.mg.gov.br/' },
-    ],
-  },
-];
+/* Menu vem do Global "Navegação" do Payload (reserva em dados/instituicional.ts: MENU_PRINCIPAL). Sem destino próprio = só agrupa
+   subitens (hoje, "Área do Servidor": sistemas de terceiros, abrem em nova aba). O submenu de "Serviços" segue desligado desde
+   2026-08-31 a pedido do usuário. */
+const [{ menu: SECOES }, { municipio }] = await Promise.all([navegacao(), configuracoes()]);
 
 const atual = Astro.url.pathname;
+const ehExterno = (destino: string) => destino.startsWith('http://') || destino.startsWith('https://');
 const ehAtual = (destino: string) => atual === destino || (destino !== '/' && atual.startsWith(destino + '/'));
 ---
 
@@ -104,7 +64,7 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
                de sobra pro tamanho maior. -->
           <img src="/brasao-simbolo.png" alt="" width="56" height="56" decoding="async" />
           <span class="nomes">
-            <strong>Prefeitura de {MUNICIPIO.nome}</strong>
+            <strong>Prefeitura de {municipio.nome}</strong>
             <span class="t-rotulo uf">Minas Gerais</span>
           </span>
           <span class="sr-only">— ir para a página inicial</span>
@@ -176,8 +136,14 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
                       </button>
                     </div>
                   ) : (
-                    <a href={s.destino} aria-current={ehAtual(s.destino!) ? 'page' : undefined}>
+                    <a
+                      href={s.destino}
+                      aria-current={ehAtual(s.destino!) ? 'page' : undefined}
+                      target={ehExterno(s.destino!) ? '_blank' : undefined}
+                      rel={ehExterno(s.destino!) ? 'noopener noreferrer' : undefined}
+                    >
                       <span class="fio-foco">{s.rotulo}</span>
+                      {ehExterno(s.destino!) && <span class="sr-only"> — abre em uma nova aba</span>}
                     </a>
                   )}
                   {s.subitens && (

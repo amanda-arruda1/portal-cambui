@@ -15,12 +15,22 @@ import Base from '../layouts/Base.astro';
 import TituloPagina from '../componentes/TituloPagina.astro';
 import Carreira from '../componentes/Carreira.astro';
 import LinhaTarefa from '../componentes/LinhaTarefa.astro';
-import { SISTEMAS_EXTERNOS } from '../dados/instituicional';
+import { linksExternos } from '../lib/globais';
+import { paginaPorSlug } from '../lib/conteudo';
+import { limpar } from '../lib/sanitizar';
 import { NECESSIDADES } from '../dados/cidade';
 import { selos as selosDoCms } from '../lib/conteudo';
 import { arquivo } from '../lib/directus';
 import { data as formatarData } from '../lib/formato';
 
+const links = await linksExternos();
+/* Textos de apoio vêm da coleção Páginas; o parágrafo original fica como reserva. */
+const [esic, porQueLinks] = (await Promise.all(['transparencia-esic', 'transparencia-por-que-links'].map(paginaPorSlug))).map((r) => r.dado?.conteudo ?? null);
+/* O Diário Oficial externo (AMM-MG) saiu daqui a pedido da usuária (2026-10-16): o botão é controlado no Global "Links externos". */
+const SISTEMAS_EXTERNOS = ['transparencia', 'legislacao', 'pncp', 'tce']
+  .map((k) => links[k])
+  .filter((l): l is NonNullable<typeof l> => !!l)
+  .map((l) => ({ nome: l.rotulo ?? '', url: l.url, descricao: l.descricao ?? '' }));
 const lai = NECESSIDADES.find((n) => n.chave === 'transparencia')!;
 const { dados: selos } = await selosDoCms();
 ---
@@ -37,16 +47,20 @@ const { dados: selos } = await selosDoCms();
   />
 
   <Carreira numero="01" rotulo="Pedir uma informação" fundo="papel" titulo="e-SIC — a Prefeitura tem prazo para responder">
+    {esic ? <div class="texto conteudo-rico" set:html={limpar(esic)} /> : (
     <p class="texto">
       Qualquer pessoa pode pedir informação a um órgão público, sem justificar o motivo, e receber
       resposta em até <strong>20 dias</strong>, prorrogáveis por mais 10 — é o que diz a Lei
       12.527/2011. O pedido é registrado no sistema de ouvidoria do município, que gera um número
       de protocolo para você acompanhar.
     </p>
+    )}
     <p class="acoes">
-      <a href="http://cambui.eouve.com.br/" target="_blank" rel="noopener noreferrer" class="botao">
-        Registrar pedido no e-SIC<span class="sr-only"> — abre em uma nova aba</span>
-      </a>
+      {links.ouvidoria && (
+        <a href={links.ouvidoria.url} target="_blank" rel="noopener noreferrer" class="botao">
+          Registrar pedido no e-SIC<span class="sr-only"> — abre em uma nova aba</span>
+        </a>
+      )}
     </p>
   </Carreira>
 
@@ -68,12 +82,14 @@ const { dados: selos } = await selosDoCms();
   </Carreira>
 
   <Carreira numero="04" rotulo="Por que os links saem do portal">
+    {porQueLinks ? <div class="texto conteudo-rico" set:html={limpar(porQueLinks)} /> : (
     <p class="texto">
       A Transparência do município é mantida em sistema contábil homologado, com dado que sai
       direto da execução orçamentária. Republicar esses números aqui criaria uma segunda versão da
       verdade, sujeita a ficar desatualizada — e um portal de prefeitura com dois valores
       diferentes para a mesma despesa é pior do que um portal sem a informação.
     </p>
+    )}
   </Carreira>
 
   {selos.length > 0 && (

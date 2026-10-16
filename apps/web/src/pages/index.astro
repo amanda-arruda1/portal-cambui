@@ -16,11 +16,17 @@ import { noticiasRecentes } from '../lib/conteudo';
 import { arquivo } from '../lib/directus';
 import { data, iso, recorte } from '../lib/formato';
 import { semHtml } from '../lib/formato';
-import { A_CIDADE, TAREFAS } from '../dados/cidade';
-import { SISTEMAS_EXTERNOS } from '../dados/instituicional';
+import { linksExternos, paginaInicial } from '../lib/globais';
 
 const { dados: noticias, indisponivel } = await noticiasRecentes(5);
 const [lider, ...demais] = noticias;
+const [{ heroi, tarefas: TAREFAS, cidade: A_CIDADE }, links] = await Promise.all([paginaInicial(), linksExternos()]);
+const linhasHeroi = heroi.titulo.split('\n');
+/* Transparência na home: o Diário Oficial externo (AMM-MG) NÃO entra aqui — tem botão próprio, controlado no Global "Links externos". */
+const SISTEMAS_EXTERNOS = ['transparencia', 'legislacao', 'pncp']
+  .map((k) => links[k])
+  .filter((l): l is NonNullable<typeof l> => !!l)
+  .map((l) => ({ nome: l.rotulo ?? '', url: l.url, descricao: l.descricao ?? '' }));
 ---
 
 <Base titulo="Prefeitura de Cambuí" colado>
@@ -34,13 +40,13 @@ const [lider, ...demais] = noticias;
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" />
             </svg>
-            Serra da Mantiqueira
+            {heroi.selo}
           </p>
           <h1 class="t-display frase">
-            Cambuí<br />resolve o seu dia.
+            {linhasHeroi.map((l, i) => (<>{i > 0 && <br />}{l}</>))}
           </h1>
           <p class="t-lead sub">
-            Trate com a Prefeitura sem fila e sem adivinhar em qual secretaria bater.
+            {heroi.subtitulo}
           </p>
         </div>
       </div>
@@ -150,7 +156,7 @@ const [lider, ...demais] = noticias;
     acao={{ rotulo: 'Tudo sobre transparência', destino: '/transparencia' }}
   >
     <ul class="lista entra">
-      {SISTEMAS_EXTERNOS.slice(0, 3).map((s) => (
+      {SISTEMAS_EXTERNOS.map((s) => (
         <li>
           <LinhaTarefa tarefa={{ rotulo: s.nome, detalhe: s.descricao, destino: s.url, externo: true }} />
         </li>

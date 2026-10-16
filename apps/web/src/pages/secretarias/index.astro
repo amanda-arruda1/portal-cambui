@@ -10,9 +10,10 @@ import TituloPagina from '../../componentes/TituloPagina.astro';
 import Carreira from '../../componentes/Carreira.astro';
 import LinhaTarefa from '../../componentes/LinhaTarefa.astro';
 import { secretarias } from '../../lib/conteudo';
-import { AUTARQUIAS } from '../../dados/instituicional';
+import { configuracoes } from '../../lib/globais';
 
 const { dados, indisponivel } = await secretarias();
+const { autarquias: AUTARQUIAS } = await configuracoes();
 ---
 
 <Base

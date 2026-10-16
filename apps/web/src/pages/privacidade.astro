@@ -10,7 +10,14 @@
 import Base from '../layouts/Base.astro';
 import Carreira from '../componentes/Carreira.astro';
 import TituloPagina from '../componentes/TituloPagina.astro';
-import { MUNICIPIO, ENDERECO, TELEFONES } from '../dados/instituicional';
+import { configuracoes, linksExternos } from '../lib/globais';
+import { paginaPorSlug } from '../lib/conteudo';
+import { limpar } from '../lib/sanitizar';
+const { municipio: MUNICIPIO, endereco: ENDERECO, telefones: TELEFONES } = await configuracoes();
+const links = await linksExternos();
+
+/* Os três blocos de texto vêm da coleção Páginas; o markup original de cada um fica como reserva (CMS fora do ar / página ainda não criada). */
+const [essencial, registros, direitos] = (await Promise.all(['privacidade-essencial', 'privacidade-registros', 'privacidade-direitos'].map(paginaPorSlug))).map((r) => r.dado?.conteudo ?? null);
 ---
 
 <Base
@@ -25,6 +32,7 @@ import { MUNICIPIO, ENDERECO, TELEFONES } from '../dados/instituicional';
   />
 
   <Carreira numero="01" rotulo="O essencial, em três frases" fundo="papel">
+{essencial ? <div class="conteudo-rico texto entra" set:html={limpar(essencial)} /> : (
     <div class="conteudo-rico texto entra">
       <p>
         Este portal <strong>não pede cadastro</strong> para nada que o cidadão vá fazer nele, e
@@ -41,9 +49,11 @@ import { MUNICIPIO, ENDERECO, TELEFONES } from '../dados/instituicional';
         a política daquele sistema — e nós avisamos, em texto, sempre que um link leva para fora.
       </p>
     </div>
+)}
   </Carreira>
 
   <Carreira numero="02" rotulo="O que é registrado">
+{registros ? <div class="conteudo-rico texto entra" set:html={limpar(registros)} /> : (
     <div class="conteudo-rico texto entra">
       <h2>Registros de acesso</h2>
       <p>
@@ -74,9 +84,25 @@ import { MUNICIPIO, ENDERECO, TELEFONES } from '../dados/instituicional';
         essas escolhas.
       </p>
     </div>
+)}
   </Carreira>
 
   <Carreira numero="03" rotulo="Seus direitos" fundo="papel">
+    {direitos ? (
+      <div class="conteudo-rico texto entra">
+        <Fragment set:html={limpar(direitos)} />
+      <h2>Controlador</h2>
+      <p>
+        {MUNICIPIO.nomeCompleto}
+        {ENDERECO && (
+          <>
+            <br />{ENDERECO.logradouro}, {ENDERECO.numero} — {ENDERECO.bairro} — {ENDERECO.cidade}/{ENDERECO.uf} — CEP {ENDERECO.cep}
+          </>
+        )}
+        {TELEFONES.length > 0 && <><br />{TELEFONES[0].numero}</>}
+      </p>
+      </div>
+    ) : (
     <div class="conteudo-rico texto entra">
       <p>A Lei Geral de Proteção de Dados garante a você, entre outros direitos:</p>
       <ul>
@@ -88,7 +114,7 @@ import { MUNICIPIO, ENDERECO, TELEFONES } from '../dados/instituicional';
       </ul>
       <p>
         Para exercer qualquer um deles, procure a Prefeitura pelos canais abaixo ou registre um
-        pedido na <a href="http://cambui.eouve.com.br/" target="_blank" rel="noopener noreferrer">Ouvidoria / e-SIC</a>,
+        pedido na {links.ouvidoria ? <a href={links.ouvidoria.url} target="_blank" rel="noopener noreferrer">Ouvidoria / e-SIC</a> : 'Ouvidoria / e-SIC'},
         que tem prazo legal de resposta.
       </p>
 
@@ -109,6 +135,7 @@ import { MUNICIPIO, ENDERECO, TELEFONES } from '../dados/instituicional';
         {TELEFONES.length > 0 && <><br />{TELEFONES[0].numero}</>}
       </p>
     </div>
+    )}
   </Carreira>
 
   <Carreira numero="04" rotulo="Rever sua escolha de cookies">

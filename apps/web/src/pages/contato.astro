@@ -5,16 +5,11 @@ import LinhaTarefa from '../componentes/LinhaTarefa.astro';
 import TituloPagina from '../componentes/TituloPagina.astro';
 import { secretarias } from '../lib/conteudo';
 import { linkMapa, linkTelefone, linkWhatsapp } from '../lib/formato';
-import {
-  EMAIL_CONTATO,
-  ENDERECO,
-  HORARIO_ATENDIMENTO,
-  MUNICIPIO,
-  TELEFONES,
-  TEM_CONTATO,
-} from '../dados/instituicional';
+import { configuracoes } from '../lib/globais';
 
 const { dados } = await secretarias();
+const { email: EMAIL_CONTATO, endereco: ENDERECO, horario: HORARIO_ATENDIMENTO, municipio: MUNICIPIO, telefones: TELEFONES } = await configuracoes();
+const TEM_CONTATO = ENDERECO !== null || TELEFONES.length > 0 || EMAIL_CONTATO !== null || HORARIO_ATENDIMENTO !== null;
 const comContato = dados.filter((s) => s.telefone || s.email || s.endereco);
 const mapaSede = ENDERECO ? linkMapa(`${ENDERECO.logradouro}, ${ENDERECO.numero} – ${ENDERECO.bairro} – ${ENDERECO.cidade}/${ENDERECO.uf}`) : null;
 ---

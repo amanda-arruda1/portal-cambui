@@ -1,6 +1,11 @@
 ---
 import Base from '../layouts/Base.astro';
 import TituloPagina from '../componentes/TituloPagina.astro';
+import { paginaPorSlug } from '../lib/conteudo';
+import { limpar } from '../lib/sanitizar';
+
+/* O texto vem da coleção Páginas (slug `acessibilidade`); o markup abaixo é a reserva se o CMS não responder ou a página não existir. */
+const { dado: pagina } = await paginaPorSlug('acessibilidade');
 ---
 
 <Base
@@ -10,6 +15,9 @@ import TituloPagina from '../componentes/TituloPagina.astro';
   <TituloPagina titulo="Acessibilidade" />
 
   <div class="mx-auto max-w-6xl px-4 py-10">
+    {pagina?.conteudo ? (
+      <div class="conteudo-rico" set:html={limpar(pagina.conteudo)} />
+    ) : (
     <div class="conteudo-rico">
       <p>
         Este portal é desenvolvido seguindo as diretrizes de acessibilidade da WCAG 2.1
@@ -43,5 +51,6 @@ import TituloPagina from '../componentes/TituloPagina.astro';
         e a correção é tratada como manutenção do portal.
       </p>
     </div>
+    )}
   </div>
 </Base>

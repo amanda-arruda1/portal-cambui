@@ -45,6 +45,9 @@ export const Licitacoes: CollectionConfig = {
     { name: 'sistemaSessaoUrl', label: 'URL do sistema da sessão', type: 'text' },
     { name: 'demonstracao', label: 'Registro de demonstração', type: 'checkbox', defaultValue: false },
     { name: 'justificativaPrazo', label: 'Justificativa do prazo', type: 'textarea', virtual: true, admin: { description: 'Só ao publicar com prazo menor que o do art. 55 (ou sem data de sessão). Não é gravada: vira observação no evento de publicação.' } },
+    { name: 'anexosDaLicitacao', label: 'Anexos (editais, atas, contratos)', type: 'join', collection: 'licitacao-anexos', on: 'licitacao', defaultLimit: 50, admin: { defaultColumns: ['titulo', 'tipo', 'dataPublicacao'], allowCreate: true } },
+    { name: 'lotesDaLicitacao', label: 'Lotes', type: 'join', collection: 'licitacao-lotes', on: 'licitacao', defaultLimit: 50, admin: { defaultColumns: ['numero', 'descricao'], allowCreate: true } },
+    { name: 'eventosDaLicitacao', label: 'Eventos (histórico)', type: 'join', collection: 'licitacao-eventos', on: 'licitacao', defaultLimit: 50, admin: { defaultColumns: ['data', 'tipo'], allowCreate: true } },
     ...camposComuns,
   ],
 }

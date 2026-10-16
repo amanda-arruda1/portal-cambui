@@ -73,7 +73,6 @@ export interface Config {
     servicos: Servico;
     documentos: Documento;
     paginas: Pagina;
-    'links-uteis': LinksUtei;
     selos: Selo;
     'perguntas-frequentes': PerguntasFrequente;
     'patrimonio-cultural': PatrimonioCultural;
@@ -101,6 +100,15 @@ export interface Config {
     'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {
+    licitacoes: {
+      anexosDaLicitacao: 'licitacao-anexos';
+      lotesDaLicitacao: 'licitacao-lotes';
+      eventosDaLicitacao: 'licitacao-eventos';
+    };
+    obras: {
+      anexosDaObra: 'obra-anexos';
+      medicoesDaObra: 'obra-medicoes';
+    };
     pastas: {
       subpastas: 'pastas';
       arquivos: 'media';
@@ -112,7 +120,6 @@ export interface Config {
     servicos: ServicosSelect<false> | ServicosSelect<true>;
     documentos: DocumentosSelect<false> | DocumentosSelect<true>;
     paginas: PaginasSelect<false> | PaginasSelect<true>;
-    'links-uteis': LinksUteisSelect<false> | LinksUteisSelect<true>;
     selos: SelosSelect<false> | SelosSelect<true>;
     'perguntas-frequentes': PerguntasFrequentesSelect<false> | PerguntasFrequentesSelect<true>;
     'patrimonio-cultural': PatrimonioCulturalSelect<false> | PatrimonioCulturalSelect<true>;
@@ -143,8 +150,18 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'configuracoes-portal': ConfiguracoesPortal;
+    navegacao: Navegacao;
+    'links-externos': LinksExterno;
+    'pagina-inicial': PaginaInicial;
+  };
+  globalsSelect: {
+    'configuracoes-portal': ConfiguracoesPortalSelect<false> | ConfiguracoesPortalSelect<true>;
+    navegacao: NavegacaoSelect<false> | NavegacaoSelect<true>;
+    'links-externos': LinksExternosSelect<false> | LinksExternosSelect<true>;
+    'pagina-inicial': PaginaInicialSelect<false> | PaginaInicialSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -398,6 +415,23 @@ export interface Servico {
     };
     [k: string]: unknown;
   } | null;
+  comoSolicitarHtml?: string | null;
+  /**
+   * Em qual bloco da página Serviços o atalho aparece. Em branco = só na lista "Todos os serviços cadastrados".
+   */
+  necessidade?: ('casa' | 'saude' | 'educacao' | 'trabalho' | 'documentos' | 'transparencia') | null;
+  /**
+   * Uma linha dizendo o que a pessoa encontra do outro lado.
+   */
+  detalhe?: string | null;
+  /**
+   * Caminho interno (/documentos), endereço completo ou @link (ex.: @ouvidoria, de Links externos). Em branco usa a URL externa.
+   */
+  destino?: string | null;
+  /**
+   * Menor aparece primeiro dentro do grupo.
+   */
+  ordem?: number | null;
   /**
    * Serviço que vive em sistema de terceiro.
    */
@@ -507,37 +541,6 @@ export interface Pagina {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "links-uteis".
- */
-export interface LinksUtei {
-  id: number;
-  nome: string;
-  url: string;
-  descricao?: string | null;
-  grupo?: string | null;
-  ordem?: number | null;
-  /**
-   * Fluxo: rascunho → aguardando aprovação → publicado. Autor envia para aprovação; só revisor ou administrador publica ou arquiva. Só "Publicado" aparece para o cidadão.
-   */
-  status: 'rascunho' | 'em_revisao' | 'publicado' | 'arquivado';
-  /**
-   * UUID do Directus. Não editar.
-   */
-  idLegado?: string | null;
-  autoriaLegado?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "selos".
  */
 export interface Selo {
@@ -591,6 +594,7 @@ export interface PerguntasFrequente {
     };
     [k: string]: unknown;
   };
+  respostaHtml?: string | null;
   categoria?: string | null;
   secretaria?: (number | null) | Secretaria;
   ordem?: number | null;
@@ -857,6 +861,21 @@ export interface Licitacoe {
    * Só ao publicar com prazo menor que o do art. 55 (ou sem data de sessão). Não é gravada: vira observação no evento de publicação.
    */
   justificativaPrazo?: string | null;
+  anexosDaLicitacao?: {
+    docs?: (number | LicitacaoAnexo)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  lotesDaLicitacao?: {
+    docs?: (number | LicitacaoLote)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  eventosDaLicitacao?: {
+    docs?: (number | LicitacaoEvento)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   /**
    * Fluxo: rascunho → aguardando aprovação → publicado. Autor envia para aprovação; só revisor ou administrador publica ou arquiva. Só "Publicado" aparece para o cidadão.
    */
@@ -1136,6 +1155,16 @@ export interface Obra {
   observacoes?: string | null;
   dataPublicacao: string;
   demonstracao?: boolean | null;
+  anexosDaObra?: {
+    docs?: (number | ObraAnexo)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  medicoesDaObra?: {
+    docs?: (number | ObraMedicoe)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   /**
    * Fluxo: rascunho → aguardando aprovação → publicado. Autor envia para aprovação; só revisor ou administrador publica ou arquiva. Só "Publicado" aparece para o cidadão.
    */
@@ -1294,7 +1323,6 @@ export interface User {
         | 'servicos'
         | 'documentos'
         | 'paginas'
-        | 'links-uteis'
         | 'selos'
         | 'perguntas-frequentes'
         | 'patrimonio-cultural'
@@ -1426,10 +1454,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'paginas';
         value: number | Pagina;
-      } | null)
-    | ({
-        relationTo: 'links-uteis';
-        value: number | LinksUtei;
       } | null)
     | ({
         relationTo: 'selos';
@@ -1627,6 +1651,11 @@ export interface ServicosSelect<T extends boolean = true> {
   categoria?: T;
   publicoAlvo?: T;
   comoSolicitar?: T;
+  comoSolicitarHtml?: T;
+  necessidade?: T;
+  detalhe?: T;
+  destino?: T;
+  ordem?: T;
   urlExterna?: T;
   secretaria?: T;
   status?: T;
@@ -1672,22 +1701,6 @@ export interface PaginasSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "links-uteis_select".
- */
-export interface LinksUteisSelect<T extends boolean = true> {
-  nome?: T;
-  url?: T;
-  descricao?: T;
-  grupo?: T;
-  ordem?: T;
-  status?: T;
-  idLegado?: T;
-  autoriaLegado?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "selos_select".
  */
 export interface SelosSelect<T extends boolean = true> {
@@ -1711,6 +1724,7 @@ export interface SelosSelect<T extends boolean = true> {
 export interface PerguntasFrequentesSelect<T extends boolean = true> {
   pergunta?: T;
   resposta?: T;
+  respostaHtml?: T;
   categoria?: T;
   secretaria?: T;
   ordem?: T;
@@ -1819,6 +1833,9 @@ export interface LicitacoesSelect<T extends boolean = true> {
   sistemaSessaoUrl?: T;
   demonstracao?: T;
   justificativaPrazo?: T;
+  anexosDaLicitacao?: T;
+  lotesDaLicitacao?: T;
+  eventosDaLicitacao?: T;
   status?: T;
   idLegado?: T;
   autoriaLegado?: T;
@@ -1954,6 +1971,8 @@ export interface ObrasSelect<T extends boolean = true> {
   observacoes?: T;
   dataPublicacao?: T;
   demonstracao?: T;
+  anexosDaObra?: T;
+  medicoesDaObra?: T;
   status?: T;
   idLegado?: T;
   autoriaLegado?: T;
@@ -2164,6 +2183,496 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "configuracoes-portal".
+ */
+export interface ConfiguracoesPortal {
+  id: number;
+  tituloSite: string;
+  descricaoSite: string;
+  nomeMunicipio: string;
+  uf: string;
+  nomeCompleto: string;
+  gentilico?: string | null;
+  cnpj?: string | null;
+  endereco?: {
+    logradouro?: string | null;
+    numero?: string | null;
+    bairro?: string | null;
+    cidade?: string | null;
+    uf?: string | null;
+    cep?: string | null;
+  };
+  telefones?:
+    | {
+        rotulo: string;
+        numero: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Em branco = não aparece no site.
+   */
+  emailContato?: string | null;
+  /**
+   * Em branco = não aparece no site.
+   */
+  horarioAtendimento?: string | null;
+  redesSociais?:
+    | {
+        nome: string;
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  autarquias?:
+    | {
+        nome: string;
+        sigla: string;
+        url: string;
+        descricao?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navegacao".
+ */
+export interface Navegacao {
+  id: number;
+  menuPrincipal?:
+    | {
+        rotulo: string;
+        /**
+         * Caminho interno (/noticias) ou endereço completo. Sem destino = só agrupa os subitens.
+         */
+        destino?: string | null;
+        subitens?:
+          | {
+              rotulo: string;
+              destino: string;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  colunasRodape?:
+    | {
+        titulo: string;
+        itens?:
+          | {
+              rotulo: string;
+              destino: string;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "links-externos".
+ */
+export interface LinksExterno {
+  id: number;
+  ouvidoria?: {
+    /**
+     * Em branco = o link não aparece em lugar nenhum do site.
+     */
+    url?: string | null;
+    rotulo?: string | null;
+    descricao?: string | null;
+  };
+  transparencia?: {
+    /**
+     * Em branco = o link não aparece em lugar nenhum do site.
+     */
+    url?: string | null;
+    rotulo?: string | null;
+    descricao?: string | null;
+  };
+  /**
+   * Botão do Diário Oficial externo. Aparece em Serviços; não fica mais dentro de Transparência.
+   */
+  diarioAmm?: {
+    /**
+     * Em branco = o link não aparece em lugar nenhum do site.
+     */
+    url?: string | null;
+    rotulo?: string | null;
+    descricao?: string | null;
+  };
+  legislacao?: {
+    /**
+     * Em branco = o link não aparece em lugar nenhum do site.
+     */
+    url?: string | null;
+    rotulo?: string | null;
+    descricao?: string | null;
+  };
+  pncp?: {
+    /**
+     * Em branco = o link não aparece em lugar nenhum do site.
+     */
+    url?: string | null;
+    rotulo?: string | null;
+    descricao?: string | null;
+  };
+  tce?: {
+    /**
+     * Em branco = o link não aparece em lugar nenhum do site.
+     */
+    url?: string | null;
+    rotulo?: string | null;
+    descricao?: string | null;
+  };
+  iptu?: {
+    /**
+     * Em branco = o link não aparece em lugar nenhum do site.
+     */
+    url?: string | null;
+    rotulo?: string | null;
+    descricao?: string | null;
+  };
+  licenciamento?: {
+    /**
+     * Em branco = o link não aparece em lugar nenhum do site.
+     */
+    url?: string | null;
+    rotulo?: string | null;
+    descricao?: string | null;
+  };
+  atendeCidadao?: {
+    /**
+     * Em branco = o link não aparece em lugar nenhum do site.
+     */
+    url?: string | null;
+    rotulo?: string | null;
+    descricao?: string | null;
+  };
+  nfse?: {
+    /**
+     * Em branco = o link não aparece em lugar nenhum do site.
+     */
+    url?: string | null;
+    rotulo?: string | null;
+    descricao?: string | null;
+  };
+  protocolo?: {
+    /**
+     * Em branco = o link não aparece em lugar nenhum do site.
+     */
+    url?: string | null;
+    rotulo?: string | null;
+    descricao?: string | null;
+  };
+  portalTuristico?: {
+    /**
+     * Em branco = o link não aparece em lugar nenhum do site.
+     */
+    url?: string | null;
+    rotulo?: string | null;
+    descricao?: string | null;
+  };
+  ponto?: {
+    /**
+     * Em branco = o link não aparece em lugar nenhum do site.
+     */
+    url?: string | null;
+    rotulo?: string | null;
+    descricao?: string | null;
+  };
+  holerite?: {
+    /**
+     * Em branco = o link não aparece em lugar nenhum do site.
+     */
+    url?: string | null;
+    rotulo?: string | null;
+    descricao?: string | null;
+  };
+  webmail?: {
+    /**
+     * Em branco = o link não aparece em lugar nenhum do site.
+     */
+    url?: string | null;
+    rotulo?: string | null;
+    descricao?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pagina-inicial".
+ */
+export interface PaginaInicial {
+  id: number;
+  heroi?: {
+    selo?: string | null;
+    /**
+     * Cada linha do campo vira uma linha no título.
+     */
+    titulo?: string | null;
+    subtitulo?: string | null;
+  };
+  tarefas?:
+    | {
+        rotulo: string;
+        detalhe: string;
+        destino: string;
+        externo?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  cidade?: {
+    chamada?: string | null;
+    texto?: string | null;
+    portalTuristico?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "configuracoes-portal_select".
+ */
+export interface ConfiguracoesPortalSelect<T extends boolean = true> {
+  tituloSite?: T;
+  descricaoSite?: T;
+  nomeMunicipio?: T;
+  uf?: T;
+  nomeCompleto?: T;
+  gentilico?: T;
+  cnpj?: T;
+  endereco?:
+    | T
+    | {
+        logradouro?: T;
+        numero?: T;
+        bairro?: T;
+        cidade?: T;
+        uf?: T;
+        cep?: T;
+      };
+  telefones?:
+    | T
+    | {
+        rotulo?: T;
+        numero?: T;
+        id?: T;
+      };
+  emailContato?: T;
+  horarioAtendimento?: T;
+  redesSociais?:
+    | T
+    | {
+        nome?: T;
+        url?: T;
+        id?: T;
+      };
+  autarquias?:
+    | T
+    | {
+        nome?: T;
+        sigla?: T;
+        url?: T;
+        descricao?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navegacao_select".
+ */
+export interface NavegacaoSelect<T extends boolean = true> {
+  menuPrincipal?:
+    | T
+    | {
+        rotulo?: T;
+        destino?: T;
+        subitens?:
+          | T
+          | {
+              rotulo?: T;
+              destino?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  colunasRodape?:
+    | T
+    | {
+        titulo?: T;
+        itens?:
+          | T
+          | {
+              rotulo?: T;
+              destino?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "links-externos_select".
+ */
+export interface LinksExternosSelect<T extends boolean = true> {
+  ouvidoria?:
+    | T
+    | {
+        url?: T;
+        rotulo?: T;
+        descricao?: T;
+      };
+  transparencia?:
+    | T
+    | {
+        url?: T;
+        rotulo?: T;
+        descricao?: T;
+      };
+  diarioAmm?:
+    | T
+    | {
+        url?: T;
+        rotulo?: T;
+        descricao?: T;
+      };
+  legislacao?:
+    | T
+    | {
+        url?: T;
+        rotulo?: T;
+        descricao?: T;
+      };
+  pncp?:
+    | T
+    | {
+        url?: T;
+        rotulo?: T;
+        descricao?: T;
+      };
+  tce?:
+    | T
+    | {
+        url?: T;
+        rotulo?: T;
+        descricao?: T;
+      };
+  iptu?:
+    | T
+    | {
+        url?: T;
+        rotulo?: T;
+        descricao?: T;
+      };
+  licenciamento?:
+    | T
+    | {
+        url?: T;
+        rotulo?: T;
+        descricao?: T;
+      };
+  atendeCidadao?:
+    | T
+    | {
+        url?: T;
+        rotulo?: T;
+        descricao?: T;
+      };
+  nfse?:
+    | T
+    | {
+        url?: T;
+        rotulo?: T;
+        descricao?: T;
+      };
+  protocolo?:
+    | T
+    | {
+        url?: T;
+        rotulo?: T;
+        descricao?: T;
+      };
+  portalTuristico?:
+    | T
+    | {
+        url?: T;
+        rotulo?: T;
+        descricao?: T;
+      };
+  ponto?:
+    | T
+    | {
+        url?: T;
+        rotulo?: T;
+        descricao?: T;
+      };
+  holerite?:
+    | T
+    | {
+        url?: T;
+        rotulo?: T;
+        descricao?: T;
+      };
+  webmail?:
+    | T
+    | {
+        url?: T;
+        rotulo?: T;
+        descricao?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pagina-inicial_select".
+ */
+export interface PaginaInicialSelect<T extends boolean = true> {
+  heroi?:
+    | T
+    | {
+        selo?: T;
+        titulo?: T;
+        subtitulo?: T;
+      };
+  tarefas?:
+    | T
+    | {
+        rotulo?: T;
+        detalhe?: T;
+        destino?: T;
+        externo?: T;
+        id?: T;
+      };
+  cidade?:
+    | T
+    | {
+        chamada?: T;
+        texto?: T;
+        portalTuristico?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

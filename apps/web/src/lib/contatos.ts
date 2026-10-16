@@ -12,7 +12,7 @@
 import { secretarias, telefonesUteis } from './conteudo';
 import type { RegistroContato } from './contatos-busca';
 import type { CategoriaTelefoneUtil } from './tipos';
-import { EMAIL_CONTATO, ENDERECO, HORARIO_ATENDIMENTO, MUNICIPIO, TELEFONES } from '../dados/instituicional';
+import { configuracoes } from './globais';
 
 const ROTULO_CATEGORIA_TELEFONE: Record<CategoriaTelefoneUtil, string> = {
   emergencias: 'Emergências',
@@ -26,7 +26,8 @@ const ROTULO_CATEGORIA_TELEFONE: Record<CategoriaTelefoneUtil, string> = {
 const VALIDADE_MS = 60_000;
 let cache: { em: number; dados: RegistroContato[] } | null = null;
 
-function contatoGeral(): RegistroContato[] {
+async function contatoGeral(): Promise<RegistroContato[]> {
+  const { email: EMAIL_CONTATO, endereco: ENDERECO, horario: HORARIO_ATENDIMENTO, municipio: MUNICIPIO, telefones: TELEFONES } = await configuracoes();
   if (TELEFONES.length === 0 && !EMAIL_CONTATO) return [];
   return [
     {
@@ -46,7 +47,7 @@ function contatoGeral(): RegistroContato[] {
 export async function registrosDeContato(): Promise<{ dados: RegistroContato[]; indisponivel: boolean }> {
   if (cache && Date.now() - cache.em < VALIDADE_MS) return { dados: cache.dados, indisponivel: false };
 
-  const geral = contatoGeral();
+  const geral = await contatoGeral();
   const [r, t] = await Promise.all([secretarias(), telefonesUteis()]);
   if (r.indisponivel) {
     // Falha silenciosa: o assistente perde as secretarias, mas o contato

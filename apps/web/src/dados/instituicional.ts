@@ -108,3 +108,64 @@ export const AUTARQUIAS: Array<{ nome: string; sigla: string; url: string; descr
 /** Há dados de atendimento suficientes para montar o bloco de contato? */
 export const TEM_CONTATO =
   ENDERECO !== null || TELEFONES.length > 0 || EMAIL_CONTATO !== null || HORARIO_ATENDIMENTO !== null;
+
+/**
+ * Links externos nomeados — valores de RESERVA dos Globals do Payload ("Links externos"). O site usa o que estiver no CMS e,
+ * se o CMS estiver fora do ar ou o campo em branco, cai aqui. Destinos de menu/atalho podem citar um deles como `@chave`
+ * (ex.: `@ouvidoria`), para a URL existir num lugar só.
+ */
+export interface LinkExterno { url: string; rotulo?: string; descricao?: string }
+export const LINKS_EXTERNOS: Record<string, LinkExterno> = {
+  ouvidoria: { url: 'http://cambui.eouve.com.br/', rotulo: 'Ouvidoria e e-SIC' },
+  transparencia: { url: 'https://portal.sgpcloud.net:9121/transparencia/', rotulo: 'Portal da Transparência', descricao: 'Receitas, despesas, contratos, servidores e diárias.' },
+  diarioAmm: { url: 'https://www.diariomunicipal.com.br/amm-mg/', rotulo: 'Diário Oficial do Município', descricao: 'Publicações oficiais, na plataforma da AMM-MG.' },
+  legislacao: { url: 'https://leismunicipais.com.br/prefeitura/mg/cambui', rotulo: 'Legislação municipal', descricao: 'Leis, decretos e códigos do município.' },
+  pncp: { url: 'https://pncp.gov.br/app/editais?q=objeto&pagina=1&municipios=2359&status=todos', rotulo: 'Contratações públicas (PNCP)', descricao: 'Editais e contratos no portal nacional.' },
+  tce: { url: 'https://fiscalizandocomtce.tce.mg.gov.br/#/public/dashboard', rotulo: 'Fiscalizando com o TCE', descricao: 'Painel do Tribunal de Contas de Minas Gerais.' },
+  iptu: { url: 'https://nfe.sgpcloud.net:9070/servicosweb' },
+  licenciamento: { url: 'https://cambui.aprova.com.br/' },
+  atendeCidadao: { url: 'https://atendecidadao.cambui.mg.gov.br/' },
+  nfse: { url: 'https://nfe.sgpcloud.net:9070/issweb/paginas/login' },
+  protocolo: { url: 'https://protocolo.sgpcloud.net:9056/sseweb/sseweb.dll' },
+  portalTuristico: { url: 'https://cambuitur.com.br/' },
+  ponto: { url: 'http://sistemas14.sisponto.com.br/Sispontoweb/open.do?sys=SPW' },
+  holerite: { url: 'https://cce.sgpcloud.net:9155/sipweb/trabalhador/login/login.xhtml' },
+  webmail: { url: 'https://webmail.cambui.mg.gov.br/' },
+};
+
+export interface ItemMenu { rotulo: string; destino?: string; subitens?: Array<{ rotulo: string; destino: string }> }
+
+/** Menu principal — reserva do Global "Navegação". "Diário Oficial" vai para a AMM-MG (link `diarioAmm`); Notícias (já na home) e Coleta de Lixo (dentro de Serviços) saíram do menu em 2026-10-16. */
+export const MENU_PRINCIPAL: ItemMenu[] = [
+  { rotulo: 'Serviços', destino: '/servicos' },
+  { rotulo: 'A cidade', destino: '/a-cidade' },
+  { rotulo: 'A Prefeitura', destino: '/secretarias' },
+  { rotulo: 'Telefones Úteis', destino: '/telefones' },
+  { rotulo: 'Patrimônio Cultural', destino: '/patrimonio-cultural' },
+  { rotulo: 'Diário Oficial', destino: '@diarioAmm' },
+  { rotulo: 'Transparência', destino: '/transparencia' },
+  {
+    rotulo: 'Área do Servidor',
+    subitens: [
+      { rotulo: 'Ponto eletrônico', destino: '@ponto' },
+      { rotulo: 'Holerite eletrônico', destino: '@holerite' },
+      { rotulo: 'Webmail', destino: '@webmail' },
+    ],
+  },
+];
+
+/** Coluna de links do rodapé — reserva do Global "Navegação". */
+export const COLUNAS_RODAPE: Array<{ titulo: string; itens: Array<{ rotulo: string; destino: string }> }> = [
+  {
+    titulo: 'Acesso à informação',
+    itens: [
+      { rotulo: 'Diário Oficial', destino: '@diarioAmm' },
+      { rotulo: 'Portal da Transparência', destino: '/transparencia' },
+      { rotulo: 'Ouvidoria e e-SIC', destino: '@ouvidoria' },
+      { rotulo: 'Editais e licitações', destino: '/documentos' },
+      { rotulo: 'Perguntas frequentes', destino: '/perguntas-frequentes' },
+      { rotulo: 'Telefones úteis', destino: '/telefones' },
+      { rotulo: 'Coleta de lixo', destino: '/coleta-de-lixo' },
+    ],
+  },
+];

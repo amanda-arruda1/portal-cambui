@@ -7,12 +7,15 @@
  * onde fica, em que horário atende, como se fala com ele. Isso é obrigação
  * legal e é o que o cidadão procura aqui. Navegação já existe no cabeçalho.
  */
-import { CNPJ, ENDERECO, EMAIL_CONTATO, HORARIO_ATENDIMENTO, MUNICIPIO, TELEFONES, AUTARQUIAS } from '../dados/instituicional';
+import { configuracoes, navegacao } from '../lib/globais';
 import { selos as selosDoCms } from '../lib/conteudo';
 import { arquivo } from '../lib/directus';
 import { linkMapa, linkTelefone, linkWhatsapp } from '../lib/formato';
 
 const ano = new Date().getFullYear();
+const [cfg, { colunas }] = await Promise.all([configuracoes(), navegacao()]);
+const { cnpj: CNPJ, endereco: ENDERECO, email: EMAIL_CONTATO, horario: HORARIO_ATENDIMENTO, municipio: MUNICIPIO, telefones: TELEFONES, autarquias: AUTARQUIAS } = cfg;
+const externo = (d: string) => /^https?:\/\//i.test(d);
 const mapaSede = ENDERECO ? linkMapa(`${ENDERECO.logradouro}, ${ENDERECO.numero} – ${ENDERECO.bairro} – ${ENDERECO.cidade}/${ENDERECO.uf}`) : null;
 
 /* Faixa de confiança: some inteira sem selo cadastrado, nunca aparece com um
@@ -68,19 +71,22 @@ const { dados: selos } = await selosDoCms();
           </div>
 
           <div class="colunas">
-            <div>
-              <h2 class="t-rotulo">Acesso à informação</h2>
-              <ul>
-                <li><a href="/diario-oficial"><span class="fio-foco">Diário Oficial Eletrônico</span></a></li>
-                <li><a href="/diario-oficial/autenticidade"><span class="fio-foco">Conferir autenticidade de documento</span></a></li>
-                <li><a href="/transparencia"><span class="fio-foco">Portal da Transparência</span></a></li>
-                <li><a href="http://cambui.eouve.com.br/" target="_blank" rel="noopener noreferrer"><span class="fio-foco">Ouvidoria e e-SIC</span></a></li>
-                <li><a href="/documentos"><span class="fio-foco">Editais e licitações</span></a></li>
-                <li><a href="/perguntas-frequentes"><span class="fio-foco">Perguntas frequentes</span></a></li>
-                <li><a href="/telefones"><span class="fio-foco">Telefones úteis</span></a></li>
-                <li><a href="/coleta-de-lixo"><span class="fio-foco">Coleta de lixo</span></a></li>
-              </ul>
-            </div>
+            {colunas.map((c) => (
+              <div>
+                <h2 class="t-rotulo">{c.titulo}</h2>
+                <ul>
+                  {c.itens.map((i) => (
+                    <li>
+                      {externo(i.destino) ? (
+                        <a href={i.destino} target="_blank" rel="noopener noreferrer"><span class="fio-foco">{i.rotulo}</span></a>
+                      ) : (
+                        <a href={i.destino}><span class="fio-foco">{i.rotulo}</span></a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
 
             <div>
               <h2 class="t-rotulo">Autarquias</h2>

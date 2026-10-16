@@ -42,7 +42,6 @@ export const MODULOS = [
   { value: 'servicos', label: 'Serviços' },
   { value: 'documentos', label: 'Documentos e editais' },
   { value: 'paginas', label: 'Páginas' },
-  { value: 'links-uteis', label: 'Links úteis' },
   { value: 'selos', label: 'Selos e certificações' },
   { value: 'perguntas-frequentes', label: 'Perguntas frequentes' },
   { value: 'patrimonio-cultural', label: 'Patrimônio Cultural' },

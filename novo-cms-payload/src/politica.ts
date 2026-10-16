@@ -8,7 +8,7 @@ import { acessoConteudo, acessoFilho, ehAdmin, ehAutor, ehRevisor, STATUS_DO_AUT
  * publicado), não aberta.
  */
 const TOPO = new Set([
-  'secretarias', 'noticias', 'servicos', 'documentos', 'paginas', 'links-uteis', 'selos', 'perguntas-frequentes',
+  'secretarias', 'noticias', 'servicos', 'documentos', 'paginas', 'selos', 'perguntas-frequentes',
   'patrimonio-cultural', 'telefones-uteis', 'coleta-lixo', 'conselhos-municipais', 'licitacoes', 'obras',
 ])
 const FILHOS: Record<string, { modulo: string; campoPai: string; colecaoPai: string }> = {
@@ -47,7 +47,20 @@ const campoStatusDoFilho = (f: Field): Field =>
       } as Field)
     : f
 
-export const comPolitica = (c: CollectionConfig): CollectionConfig => {
+/** Grupo de cada coleção no menu lateral do painel (o admin vê 6 grupos; revisor/autor só os módulos liberados). */
+const GRUPOS: Record<string, string> = {
+  noticias: 'Conteúdo', paginas: 'Conteúdo', secretarias: 'Conteúdo', documentos: 'Conteúdo', 'patrimonio-cultural': 'Conteúdo', 'conselhos-municipais': 'Conteúdo',
+  servicos: 'Serviços ao cidadão', 'perguntas-frequentes': 'Serviços ao cidadão', 'telefones-uteis': 'Serviços ao cidadão', 'coleta-lixo': 'Serviços ao cidadão',
+  licitacoes: 'Transparência', obras: 'Transparência', selos: 'Transparência',
+  pastas: 'Arquivos', media: 'Arquivos',
+  users: 'Sistema', 'contas-servico': 'Sistema', 'audit-logs': 'Sistema', 'licitacao-assinantes': 'Sistema', 'licitacao-envios': 'Sistema', 'fotos-perfil': 'Sistema',
+}
+
+/**
+ * Anexos, lotes, eventos e medições NÃO aparecem no menu: são editados dentro do item principal (campo `join` em Licitações e Obras,
+ * com "Criar novo"). Continuam existindo na API e com as mesmas regras de acesso.
+ */
+const politica = (c: CollectionConfig): CollectionConfig => {
   const ocultar = (modulo: string) => ({ ...c.admin, hidden: ({ user }: { user?: unknown }) => !temModulo(user, modulo) })
   if (TOPO.has(c.slug)) {
     return { ...c, access: acessoConteudo(c.slug), admin: ocultar(c.slug), hooks: { ...c.hooks, beforeChange: [guardaDoAutor, ...(c.hooks?.beforeChange ?? [])] } }
@@ -64,4 +77,11 @@ export const comPolitica = (c: CollectionConfig): CollectionConfig => {
   }
   if (SO_ADMIN_NO_MENU.has(c.slug) && c.slug !== 'users') return { ...c, admin: { ...c.admin, hidden: ({ user }: { user?: unknown }) => !ehAdmin(user) } }
   return c
+}
+
+export const comPolitica = (c: CollectionConfig): CollectionConfig => {
+  const r = politica(c)
+  const group = GRUPOS[c.slug]
+  const admin = FILHOS[c.slug] ? { ...r.admin, group: group ?? r.admin?.group, hidden: true } : group ? { ...r.admin, group } : r.admin
+  return { ...r, admin }
 }
