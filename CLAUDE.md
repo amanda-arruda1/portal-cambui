@@ -20,9 +20,8 @@ do zero.
   `novo-cms-payload/docker-compose.yml`)
 - Produção: `/opt/portal-cambui`, rodando como root no servidor Rocky Linux,
   branch de trabalho atual `melhoria/dobra-no-celular`
-- Depois de qualquer mudança em `esquema.json` ou `apps/web/src/lib/painel/campos.ts`:
-  rodar `apps/web/scripts/verificar-campos.mjs` para confirmar que o painel e
-  o schema continuam sincronizados
+- O `/painel` antigo foi DESLIGADO em 2026-10-16 (código removido; `middleware.ts` só redireciona `/painel*` para `/cms/admin`).
+  `verificar-campos.mjs` e `testar-upload.mjs` saíram junto. Toda edição é no painel do Payload.
 
 ## Armadilhas conhecidas (aprendidas em produção)
 
@@ -100,9 +99,13 @@ Ainda no Directus: só o que sobrou do `/painel` antigo. **O módulo Diário Ofi
 "Links externos" (`diarioAmm`) e usado pelo menu, rodapé e `/servicos`. O código antigo está no histórico do git (commits `1e59e34` e
 `6e0aa4a`). Em 2026-10-16 (após backup) foram apagados: tabelas `diario_*` e seus metadados no Directus, os 4 papéis/políticas "Diário —" e as 4 contas
 de demonstração, o serviço `portal-diario`, `infra/diario/`, `infra/directus/diario/`, os scripts 11/12, os docs do Diário e o trecho de avisos
-do Diário em `enviar-avisos.mjs`. Sobram no servidor (sem uso): `.env.diario`, `data/diario/`, usuário `portal-diario`.
-`links_uteis` foi removida do Payload (migration `servicos_catalogo_sem_links_uteis`); o painel antigo ainda a lista por causa do
-`verificar-campos`. **Não apagar o Directus**: o `/painel` de contribuição e as permissões dos redatores ainda dependem dele.
+do Diário em `enviar-avisos.mjs`. `.env.diario`, `data/diario/` e o usuário `portal-diario` também foram apagados.
+`links_uteis` foi removida do Payload (migration `servicos_catalogo_sem_links_uteis`).
+**Aposentadoria do Directus (andamento, 2026-10-16):** etapa 1 feita (indicadores e tempo no Payload, Globals `indicadores-economicos` e
+`previsao-tempo`, flag `CMS_DADOS_EXTERNOS`, conta de serviço `dados_externos`; os serviços ainda gravam também no Directus); Instagram e
+antivírus não dependiam dele; `/painel` desligado. **Ainda não apagar o Directus**: faltam remover os ramos de reserva `CMS_*` do código do site,
+o helper `arquivo()` de `lib/directus.ts` (12 páginas), auditar Directus × Payload (contagens e arquivos), parar o contêiner por algumas
+semanas e só então apagar contêiner, banco e `data/directus`.
 
 **Globals do Payload (2026-10-16).** Textos e links que estavam fixos no código: `configuracoes-portal` (título, CNPJ, endereço, telefones,
 e-mail, horário, autarquias), `navegacao` (menu principal e colunas do rodapé), `links-externos` (um grupo por sistema de terceiro; em branco =

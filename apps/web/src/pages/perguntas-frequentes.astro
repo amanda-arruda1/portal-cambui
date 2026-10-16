@@ -2,7 +2,7 @@
 /**
  * Perguntas frequentes.
  *
- * Cada secretaria cadastra as suas pelo painel (/painel/perguntas_frequentes)
+ * Cada secretaria cadastra as suas pelo painel (/cms/admin, coleção Perguntas frequentes)
  * — o mesmo fluxo editorial de notícias e serviços (rascunho → revisão →
  * aprovado → publicado). Esta página só lê o que está publicado, agrupado por
  * categoria, e nunca inventa pergunta nenhuma: sem cadastro, aparece o mesmo
@@ -26,7 +26,7 @@ const { dados, indisponivel } = await perguntasFrequentes();
 /** Só para os ids de âncora das categorias — não precisa ser igual ao slug do
  *  painel. Filtra os sinais combinantes que o NFD separa dos acentos por
  *  ponto de código (0x300–0x36f), sem depender de escrever esse intervalo
- *  como texto de regex — ver lib/painel/campos.ts para a versão "de banco". */
+ *  como texto de regex — o painel não valida mais isso; vale a regra do CMS. */
 function slugificar(texto: string): string {
   const semAcento = Array.from(texto.normalize('NFD'))
     .filter((c) => {
