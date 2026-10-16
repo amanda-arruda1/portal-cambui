@@ -24,6 +24,11 @@ const BASE_CMS = (process.env.DIRECTUS_INTERNAL_URL || 'http://127.0.0.1:8055').
  * processo web só escreve na fila; este lê e atualiza. Ver
  * infra/directus/licitacoes/aplicar-avisos.mjs. */
 const TOKEN = process.env.AVISOS_TOKEN_ENTREGA;
+/* Migração Directus → Payload: CMS_AVISOS=payload leva assinantes e fila de LICITAÇÕES para o Payload (conta de serviço
+ * `servico_avisos_entrega`, chave em PAYLOAD_TOKEN_ENTREGA). O Diário Oficial segue no Directus. */
+const USA_PAYLOAD = process.env.CMS_AVISOS === 'payload';
+const BASE_PAYLOAD = (process.env.PAYLOAD_INTERNAL_URL || 'http://127.0.0.1:3000/cms').replace(/\/+$/, '');
+const TOKEN_PAYLOAD = process.env.PAYLOAD_TOKEN_ENTREGA;
 const SITE = (process.env.PUBLIC_SITE_URL || 'https://www.prefeituradecambui.mg.gov.br').replace(/\/+$/, '');
 /* Diretório próprio, do usuário do serviço. O restante de data/ pertence ao
  * root (volumes do Docker), e o serviço roda como portal-web — escrever
@@ -41,6 +46,7 @@ const PAUSA_ENTRE_ENVIOS_MS = 1200;
 const MAX_POR_EXECUCAO = 200;
 
 if (!TOKEN) { console.error('ERRO: defina AVISOS_TOKEN_ENTREGA (está em /opt/portal-cambui/.env).'); process.exit(1); }
+if (USA_PAYLOAD && !TOKEN_PAYLOAD) { console.error('ERRO: CMS_AVISOS=payload exige PAYLOAD_TOKEN_ENTREGA em /opt/portal-cambui/.env.'); process.exit(1); }
 
 const cfgSmtp = {
   host: process.env.SMTP_HOST,
@@ -58,6 +64,17 @@ async function api(caminho, opcoes = {}) {
   });
   if (!r.ok) throw new Error(`${opcoes.method ?? 'GET'} ${caminho} → ${r.status} ${(await r.text()).slice(0, 200)}`);
   return r.status === 204 ? null : (await r.json()).data;
+}
+
+/** Payload: devolve o JSON cru (`docs`, `doc`...). */
+async function apiPayload(caminho, opcoes = {}) {
+  const r = await fetch(`${BASE_PAYLOAD}${caminho}`, {
+    ...opcoes,
+    headers: { 'Content-Type': 'application/json', Authorization: `contas-servico API-Key ${TOKEN_PAYLOAD}`, ...(opcoes.headers ?? {}) },
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!r.ok) throw new Error(`${opcoes.method ?? 'GET'} ${caminho.split('?')[0]} → ${r.status} ${(await r.text()).slice(0, 200)}`);
+  return r.status === 204 ? null : await r.json();
 }
 
 const semAcento = (t) => (t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -145,10 +162,29 @@ async function enfileirarNovidades() {
     'filter[status][_eq]': 'publicado',
     'filter[data_publicacao][_gt]': desde,
   });
-  const novas = await api(`/items/licitacoes?${p}`);
+  let novas;
+  if (USA_PAYLOAD) {
+    // O gatilho é o EVENTO `publicacao` (criado pelo hook no instante em que a licitação vai ao ar), não `dataPublicacao`:
+    // essa é a data do edital e quase sempre é anterior ao dia em que o setor publica no portal — filtrar por ela perderia o aviso.
+    const q = new URLSearchParams({ limit: '100', depth: '1', sort: 'createdAt', 'where[tipo][equals]': 'publicacao', 'where[createdAt][greater_than]': desde });
+    const vistos = new Set();
+    novas = (await apiPayload(`/api/licitacao-eventos?${q}`)).docs
+      .map((e) => e.licitacao)
+      .filter((d) => d && typeof d === 'object' && d.status === 'publicado' && !vistos.has(d.id) && vistos.add(d.id))
+      .map((d) => ({
+        id: d.id, numero: d.numero, ano: d.ano, slug: d.slug, modalidade: d.modalidade, objeto_resumo: d.objetoResumo,
+        numero_processo: d.numeroProcesso, data_sessao: d.dataSessao, data_publicacao: d.dataPublicacao,
+      }));
+  } else {
+    novas = await api(`/items/licitacoes?${p}`);
+  }
   if (!novas.length) { await writeFile(MARCA_ULTIMA, JSON.stringify({ em: agora }, null, 2) + '\n'); return 0; }
 
-  const assinantes = await api('/items/licitacao_assinantes?limit=-1&fields=id,email,token,confirmado,modalidades,palavras_chave&filter[confirmado][_eq]=true');
+  const assinantes = USA_PAYLOAD
+    ? (await apiPayload('/api/licitacao-assinantes?limit=0&pagination=false&depth=0&where[confirmado][equals]=true')).docs.map((a) => ({
+        id: a.id, email: a.email, token: a.token, confirmado: a.confirmado, modalidades: a.modalidades, palavras_chave: a.palavrasChave,
+      }))
+    : await api('/items/licitacao_assinantes?limit=-1&fields=id,email,token,confirmado,modalidades,palavras_chave&filter[confirmado][_eq]=true');
   const { MODALIDADES } = await import('../directus/licitacoes/enums.mjs');
   const rotulo = (v) => MODALIDADES.find((m) => m.valor === v)?.rotulo ?? v;
 
@@ -159,11 +195,18 @@ async function enfileirarNovidades() {
       if (!interessa(a, l)) continue;
       const c = corpoAviso(l, a);
       if (SIMULAR) { console.log(`  [simulação] aviso de ${l.numero}/${l.ano} → ${a.email}`); enfileirados++; continue; }
-      await api('/items/licitacao_envios', { method: 'POST', body: JSON.stringify({
-        destinatario: a.email, assunto: c.assunto, corpo_texto: c.texto, corpo_html: c.html,
-        tipo: 'aviso', estado: 'pendente', tentativas: 0,
-        criado_em: new Date().toISOString(), assinante: a.id, licitacao: l.id,
-      }) });
+      if (USA_PAYLOAD) {
+        await apiPayload('/api/licitacao-envios', { method: 'POST', body: JSON.stringify({
+          destinatario: a.email, assunto: c.assunto, corpoTexto: c.texto, corpoHtml: c.html,
+          tipo: 'aviso', estado: 'pendente', tentativas: 0, criadoEm: new Date().toISOString(), assinante: a.id, licitacao: l.id,
+        }) });
+      } else {
+        await api('/items/licitacao_envios', { method: 'POST', body: JSON.stringify({
+          destinatario: a.email, assunto: c.assunto, corpo_texto: c.texto, corpo_html: c.html,
+          tipo: 'aviso', estado: 'pendente', tentativas: 0,
+          criado_em: new Date().toISOString(), assinante: a.id, licitacao: l.id,
+        }) });
+      }
       enfileirados++;
     }
   }
@@ -175,6 +218,43 @@ async function enfileirarNovidades() {
 
 /* ───────────────────────  2. entregar a fila  ─────────────────── */
 
+/* Acesso às filas. `licitacao_envios` vai ao Payload quando CMS_AVISOS=payload; `diario_envios` é sempre do Directus.
+ * Todas devolvem/aceitam o formato do Directus (snake_case) para o resto do script não saber de onde veio. */
+const noPayload = (colecao) => USA_PAYLOAD && colecao === 'licitacao_envios';
+
+async function listarPendentes(colecao) {
+  if (noPayload(colecao)) {
+    const q = new URLSearchParams({ limit: String(MAX_POR_EXECUCAO), depth: '1', sort: 'criadoEm', 'where[estado][equals]': 'pendente' });
+    return (await apiPayload(`/api/licitacao-envios?${q}`)).docs.map((d) => ({
+      id: d.id, destinatario: d.destinatario, assunto: d.assunto, corpo_texto: d.corpoTexto, corpo_html: d.corpoHtml,
+      tipo: d.tipo, tentativas: d.tentativas, assinante: d.assinante && typeof d.assinante === 'object' ? { token: d.assinante.token } : null,
+    }));
+  }
+  const p = new URLSearchParams({
+    limit: String(MAX_POR_EXECUCAO), sort: 'criado_em',
+    fields: 'id,destinatario,assunto,corpo_texto,corpo_html,tipo,tentativas,assinante.token',
+    'filter[estado][_eq]': 'pendente',
+  });
+  return api(`/items/${colecao}?${p}`);
+}
+
+async function listarFalhas(colecao) {
+  if (noPayload(colecao)) {
+    const q = new URLSearchParams({ limit: '100', depth: '0', 'where[estado][equals]': 'falhou' });
+    return (await apiPayload(`/api/licitacao-envios?${q}`)).docs.map((d) => ({ id: d.id, tentativas: d.tentativas, date_created: d.createdAt }));
+  }
+  return api(`/items/${colecao}?limit=100&fields=id,tentativas,date_created&filter[estado][_eq]=falhou`);
+}
+
+async function atualizarEnvio(colecao, id, campos) {
+  if (noPayload(colecao)) {
+    const mapa = { enviado_em: 'enviadoEm', ultimo_erro: 'ultimoErro' };
+    const corpo = Object.fromEntries(Object.entries(campos).map(([k, v]) => [mapa[k] ?? k, v]));
+    return apiPayload(`/api/licitacao-envios/${id}`, { method: 'PATCH', body: JSON.stringify(corpo) });
+  }
+  return api(`/items/${colecao}/${id}`, { method: 'PATCH', body: JSON.stringify(campos) });
+}
+
 /**
  * Drena UMA fila. Parametrizada porque agora existem duas — licitações e
  * Diário Oficial — e duplicar esta função seria garantir que, no dia em que
@@ -185,12 +265,7 @@ async function enfileirarNovidades() {
  * @param {string} rotulo        o que aparece no log
  */
 async function entregarFila(colecao, caminhoSaida, rotulo) {
-  const p = new URLSearchParams({
-    limit: String(MAX_POR_EXECUCAO), sort: 'criado_em',
-    fields: 'id,destinatario,assunto,corpo_texto,corpo_html,tipo,tentativas,assinante.token',
-    'filter[estado][_eq]': 'pendente',
-  });
-  const fila = await api(`/items/${colecao}?${p}`);
+  const fila = await listarPendentes(colecao);
   if (!fila.length) { console.log(`  fila de ${rotulo}: vazia`); return { enviados: 0, falhas: 0 }; }
 
   if (!cfgSmtp.host) {
@@ -213,9 +288,7 @@ async function entregarFila(colecao, caminhoSaida, rotulo) {
         responderPara: process.env.AVISOS_RESPONDER_PARA || undefined,
         listaDescadastro: m.assinante?.token ? `${SITE}${caminhoSaida}?t=${m.assinante.token}` : undefined,
       });
-      await api(`/items/${colecao}/${m.id}`, { method: 'PATCH', body: JSON.stringify({
-        estado: 'enviado', enviado_em: new Date().toISOString(), tentativas: (m.tentativas ?? 0) + 1,
-      }) });
+      await atualizarEnvio(colecao, m.id, { estado: 'enviado', enviado_em: new Date().toISOString(), tentativas: (m.tentativas ?? 0) + 1 });
       enviados++;
       // Nunca registrar o endereço no journal: base de assinante é dado
       // pessoal, e log de servidor não é lugar para ela. O identificador do
@@ -224,9 +297,7 @@ async function entregarFila(colecao, caminhoSaida, rotulo) {
     } catch (erro) {
       const tentativas = (m.tentativas ?? 0) + 1;
       const desistiu = tentativas >= MAX_TENTATIVAS;
-      await api(`/items/${colecao}/${m.id}`, { method: 'PATCH', body: JSON.stringify({
-        estado: desistiu ? 'desistiu' : 'falhou', tentativas, ultimo_erro: String(erro.message).slice(0, 400),
-      }) });
+      await atualizarEnvio(colecao, m.id, { estado: desistiu ? 'desistiu' : 'falhou', tentativas, ultimo_erro: String(erro.message).slice(0, 400) });
       falhas++;
       console.warn(`  FALHA (${m.tipo}, tentativa ${tentativas}${desistiu ? ' — desistindo' : ''}): ${erro.message}`);
     }
@@ -237,12 +308,12 @@ async function entregarFila(colecao, caminhoSaida, rotulo) {
 
 /** Devolve à fila o que falhou e ainda tem tentativa — espera crescente. */
 async function reagendarFalhas(colecao) {
-  const fila = await api(`/items/${colecao}?limit=100&fields=id,tentativas,date_created&filter[estado][_eq]=falhou`);
+  const fila = await listarFalhas(colecao);
   let voltaram = 0;
   for (const m of fila) {
     const espera = Math.min(2 ** (m.tentativas ?? 1), 60) * 60_000; // 2, 4, 8… até 60 min
     if (Date.now() - new Date(m.date_created).getTime() < espera) continue;
-    if (!SIMULAR) await api(`/items/${colecao}/${m.id}`, { method: 'PATCH', body: JSON.stringify({ estado: 'pendente' }) });
+    if (!SIMULAR) await atualizarEnvio(colecao, m.id, { estado: 'pendente' });
     voltaram++;
   }
   if (voltaram) console.log(`  ${voltaram} mensagem(ns) reagendada(s) para nova tentativa`);

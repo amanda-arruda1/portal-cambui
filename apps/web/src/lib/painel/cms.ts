@@ -10,6 +10,7 @@
  * Como em lib/directus.ts, nada aqui lança: o painel precisa dizer "o sistema
  * de conteúdo está fora" em português, não despejar exceção.
  */
+import { COLECOES_MIGRAVEIS, fonteCms, type ColecaoMigravel } from '../payload';
 
 import type { Acao, Sessao } from './sessao.ts';
 import { conflitoDeInteresse } from './sessao.ts';
@@ -22,8 +23,14 @@ export type Saida<T> = { ok: true; dados: T } | { ok: false; motivo: string; sta
 
 /** Coleções que o painel edita. Lista fechada: caminho de coleção não vem da
  *  URL sem passar por aqui, senão vira leitura arbitrária do CMS. */
-export const COLECOES_EDITAVEIS = ['noticias', 'documentos', 'servicos', 'paginas', 'links_uteis', 'secretarias'] as const;
-export type ColecaoEditavel = (typeof COLECOES_EDITAVEIS)[number];
+const TODAS_EDITAVEIS = ['noticias', 'documentos', 'servicos', 'paginas', 'links_uteis', 'secretarias', 'selos', 'perguntas_frequentes', 'patrimonio_documentos', 'telefones_uteis', 'coleta_lixo', 'conselhos_municipais'] as const;
+export type ColecaoEditavel = (typeof TODAS_EDITAVEIS)[number];
+
+/** Coleção já lida do Payload não é mais editada aqui: o painel gravaria no Directus e a mudança
+ *  nunca apareceria no site. Nesse caso a edição passa a ser feita no painel do Payload. */
+export const COLECOES_EDITAVEIS: typeof TODAS_EDITAVEIS = TODAS_EDITAVEIS.filter(
+  (c) => !((COLECOES_MIGRAVEIS as string[]).includes(c) && fonteCms(c as ColecaoMigravel) === 'payload'),
+) as unknown as typeof TODAS_EDITAVEIS;
 
 export function colecaoValida(nome: string): nome is ColecaoEditavel {
   return (COLECOES_EDITAVEIS as readonly string[]).includes(nome);
@@ -43,6 +50,12 @@ export const ROTULO: Record<ColecaoEditavel, string> = {
   paginas: 'Páginas',
   links_uteis: 'Links úteis',
   secretarias: 'Secretarias',
+  selos: 'Selos e certificações',
+  perguntas_frequentes: 'Perguntas frequentes',
+  patrimonio_documentos: 'Patrimônio Cultural',
+  telefones_uteis: 'Telefones úteis',
+  coleta_lixo: 'Coleta de lixo',
+  conselhos_municipais: 'Conselhos municipais',
 };
 
 async function chamar<T>(sessao: Sessao, caminho: string, opcoes: RequestInit = {}): Promise<Saida<T>> {
@@ -96,29 +109,44 @@ export interface ItemDaFila {
   user_updated: string | null;
 }
 
-/** Coleções cujo campo de identificação é 'nome' e não 'titulo'. */
-const CAMPO_ROTULO: Record<ColecaoEditavel, 'titulo' | 'nome'> = {
+/** Campo de identificação de cada coleção — 'titulo' e 'nome' na maioria,
+ *  'pergunta' nas perguntas frequentes (não têm nem um nem outro). */
+const CAMPO_ROTULO: Record<ColecaoEditavel, 'titulo' | 'nome' | 'pergunta'> = {
   noticias: 'titulo',
   documentos: 'titulo',
   paginas: 'titulo',
   servicos: 'nome',
   links_uteis: 'nome',
   secretarias: 'nome',
+  selos: 'nome',
+  perguntas_frequentes: 'pergunta',
+  patrimonio_documentos: 'titulo',
+  telefones_uteis: 'nome',
+  coleta_lixo: 'nome',
+  conselhos_municipais: 'nome',
 };
 
 export async function listarFila(
   sessao: Sessao,
   colecao: ColecaoEditavel,
   situacoes: Situacao[],
-  limite = 50,
+  busca = '',
+  limite = 1000,
 ): Promise<Saida<ItemDaFila[]>> {
   const rotulo = CAMPO_ROTULO[colecao];
   const parametros = new URLSearchParams({
     fields: `id,status,${rotulo},date_updated,user_created,user_updated`,
-    sort: '-date_updated',
+    // Ordem alfabética pelo rótulo, não por 'date_updated': a maioria dos
+    // itens foi importada de uma vez e nunca mais editada, então o campo vem
+    // nulo — e nulo ordenado decrescente aparece PRIMEIRO no Postgres. Isso
+    // empurrava pra fora da tela (que só busca um lote fixo) justamente os
+    // itens editados de verdade. Ordem alfabética é previsível e não depende
+    // de metadado que boa parte do acervo nunca teve.
+    sort: rotulo,
     limit: String(limite),
     'filter[status][_in]': situacoes.join(','),
   });
+  if (busca.trim()) parametros.set(`filter[${rotulo}][_icontains]`, busca.trim());
 
   const r = await chamar<Array<Record<string, any>>>(sessao, `/items/${colecao}?${parametros}`);
   if (!r.ok) return r;
@@ -273,11 +301,17 @@ async function idDaPastaPublica(sessao: Sessao, nome: string): Promise<string | 
   const r = await chamar<Array<{ id: string }>>(sessao, `/folders?${parametros}`);
 
   if (!r.ok || !r.dados[0]) {
-    console.error(`[upload] pasta "${nome}" não encontrada no CMS — envios de arquivo estão bloqueados.`);
-    pastaPublicaId = null;
-  } else {
-    pastaPublicaId = r.dados[0].id;
+    // NÃO grava `pastaPublicaId = null` aqui: essa variável é de módulo, ou
+    // seja, compartilhada por TODAS as sessões do processo. Uma falha
+    // isolada (ex.: a primeira pessoa a subir arquivo depois de um reinício
+    // é uma conta sem permissão em `directus_folders`, achado real em
+    // 2026-09-01) travaria upload para todo mundo até o próximo reinício.
+    // Deixando `undefined`, a PRÓXIMA chamada tenta de novo — sucesso de
+    // uma conta com permissão correta destrava o processo inteiro sozinho.
+    console.error(`[upload] pasta "${nome}" não encontrada (ou sem permissão de leitura) — tentando de novo na próxima chamada.`);
+    return null;
   }
+  pastaPublicaId = r.dados[0].id;
   return pastaPublicaId;
 }
 

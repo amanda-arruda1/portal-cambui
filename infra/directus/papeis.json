@@ -166,11 +166,96 @@
           "situacoes_visiveis": [
             "publicado"
           ]
+        },
+        "selos": {
+          "acoes": [
+            "read"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "publicado"
+          ]
+        },
+        "telefones_uteis": {
+          "acoes": [
+            "read"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "publicado"
+          ]
+        },
+        "coleta_lixo": {
+          "acoes": [
+            "read"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "publicado"
+          ]
+        },
+        "conselhos_municipais": {
+          "acoes": [
+            "read"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "publicado"
+          ]
+        },
+        "patrimonio_documentos": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "secretaria",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao"
+          ]
+        },
+        "perguntas_frequentes": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "secretaria",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao"
+          ]
         }
       },
       "_comentario_paginas": [
-        "'paginas' e 'links_uteis' são conteúdo institucional do município, não",
-        "de uma pasta: quem escreve são revisor e publicador. Redator só lê."
+        "'paginas', 'links_uteis', 'telefones_uteis' e 'coleta_lixo' são conteúdo",
+        "institucional do município, não de uma pasta: quem escreve são revisor e",
+        "publicador. Redator só lê."
       ]
     },
     {
@@ -318,6 +403,162 @@
           ]
         },
         "links_uteis": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ]
+        },
+        "selos": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ]
+        },
+        "telefones_uteis": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ]
+        },
+        "coleta_lixo": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ]
+        },
+        "conselhos_municipais": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ]
+        },
+        "patrimonio_documentos": {
+          "acoes": [
+            "create",
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacao_ao_criar": "rascunho",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ],
+          "situacoes_destino": [
+            "rascunho",
+            "em_revisao",
+            "aprovado"
+          ]
+        },
+        "perguntas_frequentes": {
           "acoes": [
             "create",
             "read",
@@ -505,6 +746,150 @@
             "publicado",
             "arquivado"
           ]
+        },
+        "selos": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_destino": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ]
+        },
+        "telefones_uteis": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_destino": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ]
+        },
+        "coleta_lixo": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_destino": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ]
+        },
+        "conselhos_municipais": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_destino": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ]
+        },
+        "patrimonio_documentos": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_destino": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ]
+        },
+        "perguntas_frequentes": {
+          "acoes": [
+            "read",
+            "update"
+          ],
+          "escopo": "tudo",
+          "situacoes_visiveis": [
+            "rascunho",
+            "em_revisao",
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_editaveis": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ],
+          "situacoes_destino": [
+            "aprovado",
+            "publicado",
+            "arquivado"
+          ]
         }
       }
     }
@@ -570,6 +955,7 @@
         "descricao",
         "responsavel",
         "cargo_responsavel",
+        "biografia_responsavel",
         "endereco",
         "telefone",
         "email",
@@ -585,6 +971,7 @@
         "conteudo",
         "imagem",
         "imagem_descricao",
+        "arquivo",
         "data_publicacao",
         "destaque",
         "secretaria"
@@ -628,6 +1015,63 @@
         "url",
         "descricao",
         "grupo",
+        "ordem"
+      ],
+      "selos": [
+        "id",
+        "status",
+        "nome",
+        "orgao_emissor",
+        "descricao",
+        "imagem",
+        "data_concessao",
+        "url_comprovacao",
+        "ordem"
+      ],
+      "patrimonio_documentos": [
+        "id",
+        "status",
+        "titulo",
+        "categoria",
+        "periodo",
+        "descricao",
+        "arquivo",
+        "url_externa",
+        "secretaria",
+        "ordem"
+      ],
+      "perguntas_frequentes": [
+        "id",
+        "status",
+        "pergunta",
+        "resposta",
+        "categoria",
+        "secretaria",
+        "ordem"
+      ],
+      "telefones_uteis": [
+        "id",
+        "status",
+        "nome",
+        "categoria",
+        "endereco",
+        "telefone",
+        "email",
+        "ordem"
+      ],
+      "coleta_lixo": [
+        "id",
+        "status",
+        "nome",
+        "dias",
+        "horario"
+      ],
+      "conselhos_municipais": [
+        "id",
+        "status",
+        "nome",
+        "categoria",
+        "conteudo",
         "ordem"
       ]
     },

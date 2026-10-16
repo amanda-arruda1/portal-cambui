@@ -9,6 +9,7 @@
 import Painel from '../../layouts/Painel.astro';
 import { ativar, desativar, gerarSegredo, qrEmSvg, segredoLegivel } from '../../lib/painel/doisfatores.ts';
 import type { SegredoPendente } from '../../lib/painel/doisfatores.ts';
+import { trocarSenha } from '../../lib/painel/senha.ts';
 
 const sessao = Astro.locals.sessao!;
 const armazem = Astro.session as any;
@@ -66,6 +67,22 @@ if (Astro.request.method === 'POST') {
   } else if (acao === 'cancelar') {
     armazem.set(CHAVE_PENDENTE, null);
     pendente = null;
+  } else if (acao === 'trocar_senha') {
+    const senhaAtual = pega('senha_atual');
+    const senhaNova = pega('senha_nova');
+    const confirmacao = pega('confirmar_senha');
+
+    if (senhaNova !== confirmacao) {
+      aviso = { tipo: 'erro', texto: 'A confirmação não confere com a nova senha.' };
+    } else {
+      const r = await trocarSenha(sessao, senhaAtual, senhaNova);
+      if (r.ok) {
+        aviso = { tipo: 'ok', texto: 'Senha alterada.' };
+        console.info(`[conta] ${sessao.usuario.email} trocou a própria senha`);
+      } else {
+        aviso = { tipo: 'erro', texto: r.motivo };
+      }
+    }
   }
 }
 
@@ -218,12 +235,52 @@ const ehPublicador = sessao.usuario.papel === 'Publicador';
   </section>
 
   <section class="mt-6 rounded-lg border border-prata bg-papel p-6">
-    <h2 class="text-lg font-bold text-azul-escuro">Precisa trocar a senha?</h2>
+    <h2 class="text-lg font-bold text-azul-escuro">Trocar senha</h2>
     <p class="mt-2 text-grafite">
-      A troca de senha ainda não é feita por esta tela. Peça a quem administra o portal para gerar
-      uma nova em <span class="font-mono">Pessoas</span> — ela aparece uma única vez e você a usa no
-      acesso seguinte.
+      Informe a senha atual e a nova senha. A troca vale a partir do próximo acesso — nesta sessão
+      você continua entrado.
     </p>
+
+    <form method="post" class="mt-5 max-w-sm">
+      <input type="hidden" name="acao" value="trocar_senha" />
+
+      <label for="senha_atual" class="block font-semibold text-azul-escuro">Senha atual</label>
+      <input
+        id="senha_atual"
+        name="senha_atual"
+        type="password"
+        autocomplete="current-password"
+        required
+        class={campo}
+      />
+
+      <label for="senha_nova" class="mt-4 block font-semibold text-azul-escuro">Nova senha</label>
+      <input
+        id="senha_nova"
+        name="senha_nova"
+        type="password"
+        autocomplete="new-password"
+        minlength="8"
+        required
+        class={campo}
+      />
+      <p class="mt-1 text-sm text-grafite">Pelo menos 8 caracteres.</p>
+
+      <label for="confirmar_senha" class="mt-4 block font-semibold text-azul-escuro">Confirme a nova senha</label>
+      <input
+        id="confirmar_senha"
+        name="confirmar_senha"
+        type="password"
+        autocomplete="new-password"
+        minlength="8"
+        required
+        class={campo}
+      />
+
+      <button type="submit" class="mt-4 rounded-md bg-azul px-5 py-2 font-semibold text-papel hover:bg-azul-escuro">
+        Trocar senha
+      </button>
+    </form>
   </section>
 </Painel>
 

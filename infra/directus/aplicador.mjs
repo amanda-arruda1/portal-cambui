@@ -35,6 +35,17 @@ export function camposPadrao({ comStatus = true } = {}) {
   ];
 }
 
+/* PEGADINHA já paga em 2026-09-02 (indicadores_economicos): o tipo 'json' do
+ * Directus cria coluna Postgres `json`, não `jsonb`. `json` puro não tem
+ * operador de ordenação — e o Directus, com uma política restrita (não
+ * admin), monta um ORDER BY implícito na primeira consulta e o Postgres
+ * recusa com "could not identify an ordering operator for type json"
+ * (erro 42883), 500 sem mensagem clara pro chamador. Corrigido A POSTERIORI
+ * com `ALTER TABLE ... ALTER COLUMN ... TYPE jsonb USING ...::jsonb`, direto
+ * no banco — a API de criação de campo do Directus não expõe como pedir
+ * jsonb na hora de criar. Campo 'json' NOVO com política não-admin: alterar
+ * a coluna pra jsonb depois de aplicar o esquema, antes de testar com o
+ * token de serviço. */
 export function traduzir(c) {
   if (c.tipo === 'relacao') {
     return { field: c.campo, type: 'uuid',

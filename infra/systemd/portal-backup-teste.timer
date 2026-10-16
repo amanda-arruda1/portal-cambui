@@ -1,0 +1,12 @@
+# Portal Cambuí — ensaio de restauração, domingo de madrugada (depois do backup das 02:30).
+
+[Unit]
+Description=Portal Cambui - ensaio de restauracao (agenda semanal)
+
+[Timer]
+OnCalendar=Sun *-*-* 05:00:00
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

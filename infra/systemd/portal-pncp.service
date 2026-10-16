@@ -1,0 +1,52 @@
+# Portal Cambuí — consulta ao PNCP para o painel do Payload.
+#
+# Serviço SEPARADO, residente, só em loopback (127.0.0.1:3100). O Payload não alcança a internet
+# (IPAddressDeny=any) e fica exposto em /cms; este processo é o único com saída, e só sabe buscar
+# uma contratação em pncp.gov.br. Ver cabeçalho de infra/scripts/pncp-servico.mjs.
+
+[Unit]
+Description=Portal Cambui - consulta ao PNCP (painel do Payload)
+Documentation=file:///opt/portal-cambui/ARQUITETURA.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=portal-web
+Group=portal-web
+WorkingDirectory=/opt/portal-cambui
+Environment=NODE_ENV=production
+Environment=PNCP_PORTA=3100
+ExecStart=/usr/bin/node /opt/portal-cambui/infra/scripts/pncp-servico.mjs
+Restart=on-failure
+RestartSec=5
+
+# --- Confinamento ---
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+# O V8 compila em tempo de execução — mesma exceção dos demais serviços Node.
+MemoryDenyWriteExecute=false
+RemoveIPC=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+# Não grava nada em disco.
+
+[Install]
+WantedBy=multi-user.target

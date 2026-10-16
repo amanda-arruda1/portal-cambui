@@ -1,0 +1,30 @@
+---
+/**
+ * Etiqueta de situação da obra. Mesma regra de licitacoes/Etiqueta.astro: a
+ * situação nunca é só cor. PARALISADA — o estado que mais interessa ao
+ * controle — ganha ícone de atenção além da cor "alerta".
+ */
+import { situacaoDe } from '../../lib/obras';
+interface Props { situacao: string; grande?: boolean }
+const { situacao, grande = false } = Astro.props;
+const s = situacaoDe(situacao);
+---
+<span class:list={['etiqueta', `t-${s.tom}`, grande && 'grande']}>
+  {s.tom === 'alerta' && <span aria-hidden="true" class="sinal">⚠</span>}
+  {s.rotulo}
+</span>
+
+<style>
+  .etiqueta {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    border: 1.5px solid currentColor; border-radius: 999px;
+    padding: 0.15rem 0.7rem; font-size: 0.8125rem; font-weight: 600;
+    letter-spacing: 0.02em; white-space: nowrap;
+  }
+  .grande { font-size: 0.9375rem; padding: 0.3rem 0.9rem; }
+  .t-ok { color: var(--color-serra); background: color-mix(in srgb, var(--color-serra) 8%, transparent); }
+  .t-aviso { color: var(--color-musgo); background: color-mix(in srgb, var(--color-musgo) 8%, transparent); }
+  .t-neutro { color: var(--color-musgo); }
+  .t-alerta { color: var(--color-papel); background: var(--color-carmim); border-color: var(--color-carmim); }
+  .sinal { font-size: 0.9em; }
+</style>

@@ -1,0 +1,21 @@
+---
+/**
+ * /obras — a listagem completa de obras públicas, sem recorte prévio.
+ */
+import Base from '../../layouts/Base.astro';
+import TituloPagina from '../../componentes/TituloPagina.astro';
+import Listagem from '../../componentes/obras/Listagem.astro';
+---
+
+<Base
+  titulo="Obras públicas"
+  descricao="Acompanhe as obras públicas da Prefeitura Municipal de Cambuí: contratos, valores, prazos, situação e execução financeira."
+>
+  <TituloPagina
+    rotulo="Obras públicas"
+    titulo="Para onde vai o dinheiro das obras"
+    chamada="Contrato, empresa responsável, valores, prazos e o andamento de cada obra — inclusive as que estão paradas."
+    trilha={[{ rotulo: 'Obras públicas' }]}
+  />
+  <Listagem />
+</Base>

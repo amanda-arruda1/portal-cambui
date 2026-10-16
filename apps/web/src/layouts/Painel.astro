@@ -7,7 +7,7 @@
  * dois produtos diferentes que só compartilham a folha de estilo.
  */
 import '../estilos/global.css';
-import type { Sessao } from '../lib/painel/sessao.ts';
+import { PAPEIS_LICITACOES, PAPEIS_OBRAS, type Sessao } from '../lib/painel/sessao.ts';
 import { emDemonstracao } from '../lib/demonstracao.ts';
 
 interface Props {
@@ -52,15 +52,14 @@ const { titulo, sessao } = Astro.props;
         {
           sessao && (
             <div class="flex items-center gap-4 text-sm">
-              {['Administrator', 'Diário — Redator setorial', 'Diário — Editor',
-                'Diário — Autoridade signatária', 'Diário — Administrador'].includes(sessao.usuario.papel ?? '') && (
-                <a href="/painel/diario" class="underline underline-offset-4 hover:text-azul-claro">
-                  Diário Oficial
+              {PAPEIS_LICITACOES.includes(sessao.usuario.papel ?? '') && (
+                <a href="/cms/admin/collections/licitacoes" class="underline underline-offset-4 hover:text-azul-claro">
+                  Licitações
                 </a>
               )}
-              {['Administrator', 'Setor de licitações', 'Leitor de licitações', 'Publicador', 'Revisor'].includes(sessao.usuario.papel ?? '') && (
-                <a href="/painel/licitacoes" class="underline underline-offset-4 hover:text-azul-claro">
-                  Licitações
+              {PAPEIS_OBRAS.includes(sessao.usuario.papel ?? '') && (
+                <a href="/cms/admin/collections/obras" class="underline underline-offset-4 hover:text-azul-claro">
+                  Obras públicas
                 </a>
               )}
               {sessao.usuario.papel === 'Administrator' && (

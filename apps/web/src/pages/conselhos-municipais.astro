@@ -1,0 +1,94 @@
+---
+/**
+ * Conselhos municipais.
+ *
+ * Migrado do site antigo em 2026-09-11, dado real. Cada conselho lista sua
+ * base legal (leis, portarias, atas) como links de documento — mesmo padrão
+ * de /telefones: agrupado por categoria, sem JavaScript além do filtro.
+ *
+ * Corrigido na migração: uma lei sobre direitos da criança e do adolescente
+ * aparecia idêntica (mesmo link) em 8 dos 9 conselhos no site antigo —
+ * claramente um erro de copiar-e-colar na origem. Mantida só onde é
+ * pertinente (Conselho Municipal dos Direitos da Criança e do Adolescente).
+ */
+import Base from '../layouts/Base.astro';
+import Carreira from '../componentes/Carreira.astro';
+import EstadoVazio from '../componentes/EstadoVazio.astro';
+import TituloPagina from '../componentes/TituloPagina.astro';
+import { conselhosMunicipais } from '../lib/conteudo';
+import { limpar } from '../lib/sanitizar';
+import type { CategoriaConselho, ConselhoMunicipal } from '../lib/tipos';
+
+const { dados, indisponivel } = await conselhosMunicipais();
+
+const ROTULO_CATEGORIA: Record<CategoriaConselho, string> = {
+  assistencia_social: 'Assistência Social',
+  educacao: 'Educação',
+  saude: 'Saúde',
+};
+const ORDEM_CATEGORIA: CategoriaConselho[] = ['assistencia_social', 'educacao', 'saude'];
+
+interface Grupo { categoria: CategoriaConselho; rotulo: string; itens: ConselhoMunicipal[] }
+
+const grupos = ORDEM_CATEGORIA
+  .map((categoria) => ({ categoria, rotulo: ROTULO_CATEGORIA[categoria], itens: dados.filter((c) => c.categoria === categoria) }))
+  .filter((g) => g.itens.length > 0);
+---
+
+<Base
+  titulo="Conselhos municipais"
+  descricao="Conselhos municipais de Cambuí e a base legal de cada um — leis, portarias e atas, por área: Assistência Social, Educação e Saúde."
+>
+  <TituloPagina
+    rotulo="A Prefeitura"
+    titulo="Conselhos municipais"
+    chamada="Os conselhos municipais e a base legal de cada um — lei de criação, portaria de nomeação de membros e atas, quando publicadas."
+    trilha={[{ rotulo: 'A Prefeitura', destino: '/secretarias' }, { rotulo: 'Conselhos municipais' }]}
+  />
+
+  {
+    dados.length === 0 ? (
+      <Carreira numero="01" rotulo="Conselhos" fundo="papel">
+        <EstadoVazio indisponivel={indisponivel} assunto="conselhos municipais" />
+      </Carreira>
+    ) : (
+      grupos.map((grupo, i) => (
+        <Carreira numero={`0${i + 1}`} rotulo={grupo.rotulo} fundo={i % 2 === 0 ? 'papel' : 'neblina'}>
+          <ul class="lista entra">
+            {grupo.itens.map((c) => (
+              <li class="item">
+                <p class="t-sub nome">{c.nome}</p>
+                {c.conteudo ? (
+                  <div class="documentos" set:html={limpar(c.conteudo)} />
+                ) : (
+                  <p class="sem-documento">Base legal em publicação.</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Carreira>
+      ))
+    )
+  }
+</Base>
+
+<style>
+  .lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.25rem; }
+  .item {
+    border: 1px solid var(--color-prata);
+    border-radius: 12px;
+    background: var(--color-papel);
+    padding: 1.25rem 1.5rem;
+  }
+  .nome { font-family: var(--font-display); letter-spacing: -0.01em; }
+  .sem-documento { margin-top: 0.4rem; color: var(--color-musgo); font-size: 0.9375rem; }
+
+  .documentos :global(p) { margin: 0.5rem 0 0; }
+  .documentos :global(a) {
+    color: var(--color-serra);
+    text-decoration: none;
+    font-size: 0.9375rem;
+    word-break: break-word;
+  }
+  .documentos :global(a:hover) { color: var(--color-carmim); text-decoration: underline; }
+</style>

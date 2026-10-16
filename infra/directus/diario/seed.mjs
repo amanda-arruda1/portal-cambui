@@ -229,7 +229,7 @@ if (!veiculo?.nome_veiculo) {
     ],
     endereco: 'Praça Coronel Justiniano, s/nº, Centro, Cambuí/MG, CEP 37600-000',
     telefone: '(35) 3431-0000',
-    email_contato: 'diariooficial@prefeituradecambui.mg.gov.br',
+    email_contato: 'diariooficial@cambui.mg.gov.br',
     ano_volume_inicial: 1,
     nota_legal: 'Este é o órgão oficial de publicidade dos atos do Município de Cambuí/MG. Não substitui o Portal Nacional de Contratações Públicas (PNCP) nem o Diário Oficial do Estado nas hipóteses em que a lei os exigir. Em caso de divergência, prevalece o arquivo assinado digitalmente.',
   }) });

@@ -101,6 +101,37 @@ function ligarEditorDeTexto(): void {
       barra.appendChild(botao);
     }
 
+    const link = document.createElement('button');
+    link.type = 'button';
+    link.textContent = 'Link';
+    link.title = 'Transforma o texto selecionado num link — cole o endereço completo (https://...) ou o /assets/... de um arquivo já publicado em Documentos';
+    link.className =
+      'rounded border border-prata px-2 py-1 text-sm font-semibold text-grafite hover:border-azul hover:text-azul';
+    link.addEventListener('click', () => {
+      area_edicao.focus();
+      // window.prompt é feio, mas é a única forma de pedir uma URL sem trazer
+      // um editor inteiro como dependência — mesmo raciocínio do resto desta
+      // barra. Cancelar (string vazia/null) não faz nada.
+      const endereco = window.prompt('Endereço do link (ex.: https://... ou /assets/... de um arquivo já publicado em Documentos):', 'https://');
+      if (!endereco) return;
+      document.execCommand('createLink', false, endereco);
+      sincronizar();
+    });
+    barra.appendChild(link);
+
+    const semLink = document.createElement('button');
+    semLink.type = 'button';
+    semLink.textContent = 'Remover link';
+    semLink.title = 'Remove o link do trecho selecionado — o texto continua';
+    semLink.className =
+      'rounded border border-prata px-2 py-1 text-sm font-semibold text-grafite hover:border-azul hover:text-azul';
+    semLink.addEventListener('click', () => {
+      area_edicao.focus();
+      document.execCommand('unlink');
+      sincronizar();
+    });
+    barra.appendChild(semLink);
+
     const limpar = document.createElement('button');
     limpar.type = 'button';
     limpar.textContent = 'Limpar formatação';

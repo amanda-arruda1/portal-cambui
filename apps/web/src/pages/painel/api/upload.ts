@@ -79,9 +79,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
   }
 
   const enviado = await enviarArquivo(sessao, dados, veredito.nome, arquivo.type || 'application/octet-stream', PASTA_PUBLICA);
-  if (!enviado.ok) {
-    console.error(`[upload] falha ao gravar no CMS — ${quem} — "${veredito.nome}": ${enviado.motivo}`);
-    return json({ erro: enviado.motivo }, enviado.status);
+  // `enviado.ok` sozinho não garante `enviado.dados`: o Directus devolve 204
+  // sem corpo quando falta permissão de LEITURA em directus_files (a conta
+  // consegue criar mas não consegue ver o que criou) — ver aplicar-papeis.mjs.
+  if (!enviado.ok || !enviado.dados) {
+    const motivo = enviado.ok
+      ? 'O arquivo foi enviado, mas o sistema não confirmou o registro. Sua função pode estar sem permissão de leitura em arquivos — avise a TI.'
+      : enviado.motivo;
+    console.error(`[upload] falha ao gravar no CMS — ${quem} — "${veredito.nome}": ${motivo}`);
+    return json({ erro: motivo }, enviado.ok ? 500 : enviado.status);
   }
 
   console.info(

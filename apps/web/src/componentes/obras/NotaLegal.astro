@@ -1,0 +1,32 @@
+---
+/**
+ * Nota de publicidade legal — mesma função de licitacoes/NotaLegal.astro:
+ * protege o Município deixando claro que este portal é complementar ao
+ * Portal da Transparência (obrigação legal atendida por sistema homologado,
+ * ver dados/instituicional.ts) e ao Diário Oficial.
+ */
+---
+<aside class="nota" aria-label="Aviso sobre a publicidade oficial">
+  <p>
+    <strong>Este portal é complementar.</strong> Os dados financeiros e contratuais completos
+    desta obra também constam do <a href="/transparencia">Portal da Transparência</a> do município,
+    conforme a Lei de Acesso à Informação (Lei nº 12.527/2011) e a Lei nº 14.133/2021.
+  </p>
+  <p>
+    Em caso de divergência entre a informação exibida aqui e o processo administrativo,
+    <strong>prevalece o processo oficial</strong>.
+  </p>
+</aside>
+
+<style>
+  .nota {
+    margin-top: 3rem; padding: 1.25rem 1.4rem;
+    border-left: 4px solid var(--color-musgo);
+    background: color-mix(in srgb, var(--color-musgo) 7%, transparent);
+    border-radius: 0 4px 4px 0;
+    max-width: var(--container-leitura);
+    font-size: 0.9375rem; color: var(--color-musgo);
+  }
+  .nota p + p { margin-top: 0.6rem; }
+  .nota a { color: var(--color-serra); font-weight: 600; }
+</style>

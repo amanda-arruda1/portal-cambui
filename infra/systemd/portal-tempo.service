@@ -1,0 +1,60 @@
+# Portal Cambuí — atualização da previsão do tempo (Cambuí/MG, via Open-Meteo).
+#
+# Serviço SEPARADO do portal-web, mesmo raciocínio de portal-indicadores.service:
+# o processo web roda com IPAddressDeny=any e não alcança a internet. Este
+# serviço fala com a Open-Meteo e grava o resultado no Directus; o portal-web
+# só lê o Directus, como sempre.
+#
+# Disparado pelo timer portal-tempo.timer. Não fica residente.
+
+[Unit]
+Description=Portal Cambui - atualizacao da previsao do tempo
+Documentation=file:///opt/portal-cambui/ARQUITETURA.md
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=portal-web
+Group=portal-web
+WorkingDirectory=/opt/portal-cambui
+
+# Só TEMPO_TOKEN e DIRECTUS_INTERNAL_URL vêm do .env geral.
+EnvironmentFile=/opt/portal-cambui/.env
+Environment=NODE_ENV=production
+Environment=DIRECTUS_INTERNAL_URL=http://127.0.0.1:8055
+
+ExecStart=/usr/bin/node /opt/portal-cambui/infra/scripts/atualizar-tempo.mjs
+
+# --- Confinamento (idêntico a portal-indicadores.service) ---
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+RemoveIPC=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+
+# ESTE serviço PODE sair para a internet — é a diferença deliberada em relação
+# ao portal-web. Sem restrição de IP: a Open-Meteo pode estar atrás de CDN
+# com IP rotativo (mesmo problema já enfrentado com BCB/AwesomeAPI em
+# portal-indicadores.service).
+
+[Install]
+WantedBy=multi-user.target

@@ -41,6 +41,11 @@
           "tipo": "string"
         },
         {
+          "campo": "palavras_chave",
+          "tipo": "string",
+          "nota": "Termos que o cidadão pode digitar na busca e que o nome oficial não cobre — sinônimos, siglas informais, nome popular do setor. Ex.: 'RH, recursos humanos, pessoal' na Secretaria de Administração. Usado pelo assistente de contatos; não aparece em página nenhuma."
+        },
+        {
           "campo": "descricao",
           "tipo": "text",
           "interface": "input-rich-text-html"
@@ -52,6 +57,12 @@
         {
           "campo": "cargo_responsavel",
           "tipo": "string"
+        },
+        {
+          "campo": "biografia_responsavel",
+          "tipo": "text",
+          "interface": "input-rich-text-html",
+          "nota": "Breve biografia do responsável — formação, trajetória. Opcional."
         },
         {
           "campo": "endereco",
@@ -116,6 +127,13 @@
           "campo": "imagem_descricao",
           "tipo": "string",
           "nota": "Texto alternativo da imagem. Vazio = imagem decorativa."
+        },
+        {
+          "campo": "arquivo",
+          "tipo": "uuid",
+          "interface": "file",
+          "arquivo": true,
+          "nota": "Documento anexo — edital, ata, comunicado em PDF. Opcional."
         },
         {
           "campo": "data_publicacao",
@@ -306,6 +324,255 @@
         {
           "campo": "ordem",
           "tipo": "integer"
+        }
+      ]
+    },
+    {
+      "nome": "selos",
+      "rotulo": {
+        "singular": "Selo",
+        "plural": "Selos e certificações"
+      },
+      "icone": "verified",
+      "nota": "Certificações e selos recebidos pela Prefeitura (Transparência Pública, Educação etc.), exibidos no rodapé de todo o site e detalhados em Transparência.",
+      "campos": [
+        {
+          "campo": "nome",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "orgao_emissor",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "descricao",
+          "tipo": "text"
+        },
+        {
+          "campo": "imagem",
+          "tipo": "uuid",
+          "interface": "file-image",
+          "arquivo": true,
+          "obrigatorio": true
+        },
+        {
+          "campo": "data_concessao",
+          "tipo": "date"
+        },
+        {
+          "campo": "url_comprovacao",
+          "tipo": "string"
+        },
+        {
+          "campo": "ordem",
+          "tipo": "integer"
+        }
+      ]
+    },
+    {
+      "nome": "perguntas_frequentes",
+      "rotulo": {
+        "singular": "Pergunta frequente",
+        "plural": "Perguntas frequentes"
+      },
+      "icone": "quiz",
+      "nota": "Dúvidas mais comuns dos cidadãos, com resposta oficial. Cada secretaria mantém as suas.",
+      "campos": [
+        {
+          "campo": "pergunta",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "resposta",
+          "tipo": "text",
+          "obrigatorio": true,
+          "interface": "input-rich-text-html"
+        },
+        {
+          "campo": "categoria",
+          "tipo": "string",
+          "nota": "Agrupa a listagem. Ex.: Tributos, Saúde, Documentos."
+        },
+        {
+          "campo": "secretaria",
+          "tipo": "relacao",
+          "para": "secretarias",
+          "nota": "Secretaria responsável pela resposta. Define quem pode editar no painel."
+        },
+        {
+          "campo": "ordem",
+          "tipo": "integer",
+          "nota": "Ordem de exibição dentro da categoria."
+        }
+      ]
+    },
+    {
+      "nome": "patrimonio_documentos",
+      "rotulo": {
+        "singular": "Documento do patrimônio",
+        "plural": "Patrimônio Cultural"
+      },
+      "icone": "account_balance",
+      "nota": "Livros do Patrimônio, Dossiês de Tombamento, Inventários, Legislação e outros arquivos do patrimônio cultural de Cambuí.",
+      "campos": [
+        {
+          "campo": "titulo",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "categoria",
+          "tipo": "string",
+          "obrigatorio": true,
+          "opcoes": [
+            "livro",
+            "dossie",
+            "inventario",
+            "legislacao",
+            "outro"
+          ]
+        },
+        {
+          "campo": "periodo",
+          "tipo": "string",
+          "nota": "Ano ou período do documento, como aparece na fonte. Ex.: \"2012–2013\" ou \"2025\"."
+        },
+        {
+          "campo": "descricao",
+          "tipo": "text"
+        },
+        {
+          "campo": "arquivo",
+          "tipo": "uuid",
+          "interface": "file",
+          "arquivo": true
+        },
+        {
+          "campo": "url_externa",
+          "tipo": "string",
+          "nota": "Quando o documento vive em outro sistema e não será anexado aqui."
+        },
+        {
+          "campo": "secretaria",
+          "tipo": "relacao",
+          "para": "secretarias",
+          "nota": "Secretaria responsável pelo documento. Define quem pode editá-lo no painel de contribuição."
+        },
+        {
+          "campo": "ordem",
+          "tipo": "integer",
+          "nota": "Ordem de exibição dentro da categoria. Menor aparece primeiro."
+        }
+      ]
+    },
+    {
+      "nome": "telefones_uteis",
+      "rotulo": {
+        "singular": "Telefone útil",
+        "plural": "Telefones úteis"
+      },
+      "icone": "call",
+      "nota": "Lista telefônica municipal além das secretarias (que já têm telefone/email próprios): emergências, escolas, unidades de saúde, assistência social, departamentos e diversos.",
+      "campos": [
+        {
+          "campo": "nome",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "categoria",
+          "tipo": "string",
+          "obrigatorio": true,
+          "opcoes": [
+            "emergencias",
+            "escolas_creches",
+            "unidades_saude",
+            "assistencia_social",
+            "departamentos",
+            "diversos"
+          ]
+        },
+        {
+          "campo": "endereco",
+          "tipo": "string"
+        },
+        {
+          "campo": "telefone",
+          "tipo": "string"
+        },
+        {
+          "campo": "email",
+          "tipo": "string"
+        },
+        {
+          "campo": "ordem",
+          "tipo": "integer",
+          "nota": "Ordem de exibição dentro da categoria."
+        }
+      ]
+    },
+    {
+      "nome": "coleta_lixo",
+      "rotulo": {
+        "singular": "Coleta de lixo",
+        "plural": "Coleta de lixo"
+      },
+      "icone": "delete",
+      "nota": "Dias e horário da coleta de lixo por bairro/região. Migrado do site antigo em 2026-09-11.",
+      "campos": [
+        {
+          "campo": "nome",
+          "tipo": "string",
+          "obrigatorio": true,
+          "nota": "Nome do bairro ou região."
+        },
+        {
+          "campo": "dias",
+          "tipo": "string",
+          "obrigatorio": true,
+          "nota": "Dias da semana da coleta, como aparecem na página. Ex.: \"Segunda-feira, Quarta-feira, Sexta-feira\"."
+        },
+        {
+          "campo": "horario",
+          "tipo": "string",
+          "obrigatorio": true,
+          "nota": "Ex.: \"A partir das 06:00 horas - Diurno\"."
+        }
+      ]
+    },
+    {
+      "nome": "conselhos_municipais",
+      "rotulo": {
+        "singular": "Conselho municipal",
+        "plural": "Conselhos municipais"
+      },
+      "icone": "groups",
+      "nota": "Conselhos municipais e a base legal de cada um (leis, portarias, atas). Migrado do site antigo em 2026-09-11.",
+      "campos": [
+        {
+          "campo": "nome",
+          "tipo": "string",
+          "obrigatorio": true
+        },
+        {
+          "campo": "categoria",
+          "tipo": "string",
+          "obrigatorio": true,
+          "opcoes": ["assistencia_social", "educacao", "saude"]
+        },
+        {
+          "campo": "conteudo",
+          "tipo": "text",
+          "interface": "input-rich-text-html",
+          "nota": "Leis, portarias e atas do conselho — cada uma como um link de documento."
+        },
+        {
+          "campo": "ordem",
+          "tipo": "integer",
+          "nota": "Ordem de exibição dentro da categoria."
         }
       ]
     }

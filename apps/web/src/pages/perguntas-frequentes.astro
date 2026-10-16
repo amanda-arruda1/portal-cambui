@@ -1,0 +1,252 @@
+---
+/**
+ * Perguntas frequentes.
+ *
+ * Cada secretaria cadastra as suas pelo painel (/painel/perguntas_frequentes)
+ * — o mesmo fluxo editorial de notícias e serviços (rascunho → revisão →
+ * aprovado → publicado). Esta página só lê o que está publicado, agrupado por
+ * categoria, e nunca inventa pergunta nenhuma: sem cadastro, aparece o mesmo
+ * estado vazio honesto que 'selos' e 'documentos' já usam.
+ *
+ * Acordeão em <details>/<summary> — funciona sem JavaScript, igual à sanfona
+ * do menu no cabeçalho. O filtro de texto É JavaScript, mas é conveniência
+ * pura: sem ele, a lista inteira continua visível e navegável.
+ */
+import Base from '../layouts/Base.astro';
+import Carreira from '../componentes/Carreira.astro';
+import EstadoVazio from '../componentes/EstadoVazio.astro';
+import TituloPagina from '../componentes/TituloPagina.astro';
+import { perguntasFrequentes } from '../lib/conteudo';
+import { limpar } from '../lib/sanitizar';
+import { semHtml } from '../lib/formato';
+import type { PerguntaFrequente } from '../lib/tipos';
+
+const { dados, indisponivel } = await perguntasFrequentes();
+
+/** Só para os ids de âncora das categorias — não precisa ser igual ao slug do
+ *  painel. Filtra os sinais combinantes que o NFD separa dos acentos por
+ *  ponto de código (0x300–0x36f), sem depender de escrever esse intervalo
+ *  como texto de regex — ver lib/painel/campos.ts para a versão "de banco". */
+function slugificar(texto: string): string {
+  const semAcento = Array.from(texto.normalize('NFD'))
+    .filter((c) => {
+      const ponto = c.codePointAt(0) ?? 0;
+      return ponto < 0x300 || ponto > 0x36f;
+    })
+    .join('');
+  return semAcento
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+interface Grupo { nome: string; slug: string; itens: PerguntaFrequente[] }
+
+const grupos = dados.reduce<Grupo[]>((acc, p) => {
+  const nome = p.categoria?.trim() || 'Geral';
+  let grupo = acc.find((g) => g.nome === nome);
+  if (!grupo) {
+    grupo = { nome, slug: slugificar(nome) || 'geral', itens: [] };
+    acc.push(grupo);
+  }
+  grupo.itens.push(p);
+  return acc;
+}, []);
+
+// Dados estruturados para o Google mostrar a pergunta direto no resultado de
+// busca — só vale a pena com conteúdo de verdade, nunca com a lista vazia.
+const jsonLd = dados.length > 0 ? {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: dados.map((p) => ({
+    '@type': 'Question',
+    name: p.pergunta,
+    acceptedAnswer: { '@type': 'Answer', text: semHtml(p.resposta) },
+  })),
+} : null;
+// `</script` dentro de uma resposta do CMS quebraria a tag se fosse embutido
+// cru — mesma cautela já usada em AssistenteContatos.astro.
+const jsonLdSeguro = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : null;
+---
+
+<Base
+  titulo="Perguntas frequentes"
+  descricao="Dúvidas comuns sobre serviços, documentos e atendimento na Prefeitura de Cambuí, respondidas pelas secretarias."
+>
+  {jsonLdSeguro && <script type="application/ld+json" set:html={jsonLdSeguro} />}
+
+  <TituloPagina
+    rotulo="Ajuda"
+    titulo="Perguntas frequentes"
+    chamada="As dúvidas mais comuns sobre os serviços da Prefeitura, respondidas por quem cuida de cada assunto."
+    trilha={[{ rotulo: 'Perguntas frequentes' }]}
+  />
+
+  {
+    dados.length === 0 ? (
+      <Carreira numero="01" rotulo="Perguntas" fundo="papel">
+        <EstadoVazio indisponivel={indisponivel} assunto="perguntas frequentes" feminino />
+      </Carreira>
+    ) : (
+      <Carreira numero="01" rotulo={`${dados.length} pergunta${dados.length === 1 ? '' : 's'}`} fundo="papel">
+        <div class="busca sem-impressao">
+          <label for="filtro-faq" class="t-rotulo etiqueta">Filtrar perguntas</label>
+          <input
+            type="search"
+            id="filtro-faq"
+            autocomplete="off"
+            placeholder="Digite uma palavra, ex.: IPTU, matrícula, alvará…"
+          />
+        </div>
+
+        {
+          grupos.length > 1 && (
+            <nav aria-label="Categorias" class="sem-impressao">
+              <ul class="filtros">
+                {grupos.map((g) => (
+                  <li><a href={`#${g.slug}`} class="atalho">{g.nome}</a></li>
+                ))}
+              </ul>
+            </nav>
+          )
+        }
+
+        <div id="faq-sem-resultado" class="vazio-filtro" hidden>
+          <p class="t-sub">Nenhuma pergunta encontrada.</p>
+          <p class="t-lead">Tente outra palavra ou limpe o filtro.</p>
+        </div>
+
+        {
+          grupos.map((grupo) => (
+            <section id={grupo.slug} class="grupo entra" data-grupo-faq>
+              {grupos.length > 1 && <h2 class="t-secao titulo-grupo">{grupo.nome}</h2>}
+              <div class="acordeao">
+                {grupo.itens.map((p) => (
+                  <details class="item-faq" data-pergunta={p.pergunta.toLowerCase()} data-resposta={semHtml(p.resposta).toLowerCase()}>
+                    <summary>
+                      <span class="t-sub pergunta"><span class="fio-foco">{p.pergunta}</span></span>
+                      <svg class="seta" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <path d="M5 7.5 10 12.5 15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    </summary>
+                    <div class="resposta">
+                      <div class="conteudo-rico" set:html={limpar(p.resposta)} />
+                      {p.secretaria && <p class="t-micro fonte">Resposta da {p.secretaria.nome}</p>}
+                    </div>
+                  </details>
+                ))}
+              </div>
+            </section>
+          ))
+        }
+      </Carreira>
+    )
+  }
+</Base>
+
+<script>
+  const campo = document.getElementById('filtro-faq') as HTMLInputElement | null;
+  const itens = Array.from(document.querySelectorAll<HTMLDetailsElement>('.item-faq'));
+  const grupos = Array.from(document.querySelectorAll<HTMLElement>('[data-grupo-faq]'));
+  const semResultado = document.getElementById('faq-sem-resultado');
+
+  campo?.addEventListener('input', () => {
+    const termo = campo.value.trim().toLowerCase();
+
+    itens.forEach((item) => {
+      const acha = !termo || (item.dataset.pergunta ?? '').includes(termo) || (item.dataset.resposta ?? '').includes(termo);
+      item.hidden = !acha;
+      // Digitar um termo específico já abre a resposta — poupa um clique.
+      if (termo && acha) item.open = true;
+    });
+
+    let algumVisivel = false;
+    grupos.forEach((grupo) => {
+      const visivel = Array.from(grupo.querySelectorAll<HTMLDetailsElement>('.item-faq')).some((i) => !i.hidden);
+      grupo.hidden = !visivel;
+      if (visivel) algumVisivel = true;
+    });
+
+    if (semResultado) semResultado.hidden = algumVisivel || !termo;
+  });
+</script>
+
+<style>
+  .busca { max-width: 28rem; margin-bottom: 1.75rem; }
+  .etiqueta { display: block; color: var(--color-musgo); margin-bottom: 0.4rem; }
+  .busca input {
+    width: 100%;
+    font: inherit;
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+    min-height: 2.75rem;
+    border: 2px solid var(--color-serra);
+    border-radius: 10px;
+    background: var(--color-papel);
+    color: var(--color-tinta);
+  }
+
+  .filtros { list-style: none; margin: 0 0 2rem; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .atalho {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: 0.4rem 0.9rem;
+    border: 2px solid color-mix(in srgb, var(--color-serra) 30%, transparent);
+    border-radius: 999px;
+    text-decoration: none;
+    color: var(--color-serra);
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+  .atalho:hover { background: var(--color-serra); color: var(--color-papel); border-color: var(--color-serra); }
+
+  .vazio-filtro { padding: 1.5rem 0; color: var(--color-musgo); }
+  .vazio-filtro .t-sub { color: var(--color-serra); }
+
+  .grupo + .grupo { margin-top: 2.75rem; }
+  .titulo-grupo { color: var(--color-serra); margin-bottom: 1rem; }
+
+  .acordeao { display: grid; gap: 0.75rem; }
+  .item-faq {
+    border: 1px solid var(--color-prata);
+    border-radius: 12px;
+    background: var(--color-papel);
+    overflow: hidden;
+  }
+  .item-faq[open] { border-color: var(--color-carmim); }
+
+  .item-faq summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    min-height: 3.25rem;
+  }
+  .item-faq summary::-webkit-details-marker { display: none; }
+  .item-faq summary:hover .pergunta { color: var(--color-carmim); }
+
+  .pergunta { font-family: var(--font-display); letter-spacing: -0.01em; }
+  .seta { color: var(--color-carmim); flex: none; transition: transform 200ms ease-out; }
+  .item-faq[open] .seta { transform: rotate(180deg); }
+
+  .resposta {
+    padding: 0 1.25rem 1.25rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-musgo) 18%, transparent);
+    padding-top: 1rem;
+  }
+  .fonte { margin-top: 1rem; color: var(--color-musgo); }
+
+  /* Abertura suave em vez do "pulo" padrão do <details> — some sozinho para
+     quem pediu menos movimento (regra global, prefers-reduced-motion). */
+  .item-faq[open] summary ~ * {
+    animation: abrir-resposta 200ms ease-out;
+  }
+  @keyframes abrir-resposta {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: none; }
+  }
+</style>

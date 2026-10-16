@@ -85,6 +85,13 @@ export const CAMPOS: Record<ColecaoEditavel, Campo[]> = {
       ajuda: 'Descreva a cena para quem não enxerga a imagem. Deixe vazio só se ela for puramente decorativa.',
       largura: 'inteira',
     },
+    {
+      nome: 'arquivo',
+      rotulo: 'Documento anexo',
+      tipo: 'arquivo',
+      largura: 'inteira',
+      ajuda: 'Edital, ata, comunicado em PDF — opcional. Aparece como botão de download no fim da notícia.',
+    },
     { nome: 'data_publicacao', rotulo: 'Data da notícia', tipo: 'datahora', obrigatorio: true, largura: 'metade' },
     SECRETARIA,
     { nome: 'destaque', rotulo: 'Destacar na página inicial', tipo: 'booleano', largura: 'inteira' },
@@ -163,10 +170,24 @@ export const CAMPOS: Record<ColecaoEditavel, Campo[]> = {
     { nome: 'nome', rotulo: 'Nome', tipo: 'texto', obrigatorio: true, largura: 'inteira' },
     { nome: 'slug', rotulo: 'Endereço da página', tipo: 'slug', obrigatorio: true, derivadoDe: 'nome', largura: 'inteira' },
     { nome: 'sigla', rotulo: 'Sigla', tipo: 'texto', maximo: 20, largura: 'metade' },
+    {
+      nome: 'palavras_chave',
+      rotulo: 'Palavras-chave para busca',
+      tipo: 'texto',
+      ajuda: 'Termos que o cidadão pode digitar e que o nome oficial não cobre. Ex.: "RH, recursos humanos, pessoal". Usado só pelo assistente de contatos do site — não aparece em nenhuma página.',
+      largura: 'inteira',
+    },
     { nome: 'ordem', rotulo: 'Ordem na listagem', tipo: 'numero', ajuda: 'Menor aparece primeiro. Vazio vai para o fim.', largura: 'metade' },
     { nome: 'descricao', rotulo: 'Descrição', tipo: 'rico', largura: 'inteira' },
     { nome: 'responsavel', rotulo: 'Responsável', tipo: 'texto', largura: 'metade' },
     { nome: 'cargo_responsavel', rotulo: 'Cargo do responsável', tipo: 'texto', largura: 'metade' },
+    {
+      nome: 'biografia_responsavel',
+      rotulo: 'Biografia do responsável',
+      tipo: 'rico',
+      largura: 'inteira',
+      ajuda: 'Breve trajetória — formação, experiência. Opcional.',
+    },
     { nome: 'endereco', rotulo: 'Endereço', tipo: 'texto', largura: 'inteira' },
     { nome: 'telefone', rotulo: 'Telefone', tipo: 'telefone', largura: 'metade' },
     { nome: 'email', rotulo: 'E-mail', tipo: 'email', largura: 'metade' },
@@ -193,6 +214,118 @@ export const CAMPOS: Record<ColecaoEditavel, Campo[]> = {
     { nome: 'grupo', rotulo: 'Grupo', tipo: 'texto', ajuda: 'Agrupa os links na página. Ex.: Transparência, Serviços online.', largura: 'metade' },
     { nome: 'ordem', rotulo: 'Ordem', tipo: 'numero', largura: 'metade' },
   ],
+  selos: [
+    { nome: 'nome', rotulo: 'Nome do selo', tipo: 'texto', obrigatorio: true, maximo: 80, largura: 'inteira', ajuda: 'Ex.: Selo Transparência Pública, Selo Educação.' },
+    { nome: 'orgao_emissor', rotulo: 'Órgão emissor', tipo: 'texto', obrigatorio: true, largura: 'metade', ajuda: 'Quem concedeu o selo. Ex.: Tribunal de Contas do Estado de Minas Gerais.' },
+    { nome: 'data_concessao', rotulo: 'Data da concessão', tipo: 'data', largura: 'metade' },
+    { nome: 'imagem', rotulo: 'Imagem do selo', tipo: 'imagem', obrigatorio: true, largura: 'inteira', ajuda: 'A logo/emblema do selo, em fundo transparente se possível.' },
+    { nome: 'descricao', rotulo: 'Descrição', tipo: 'texto_longo', largura: 'inteira', ajuda: 'O que o selo reconhece, em uma ou duas frases.' },
+    { nome: 'url_comprovacao', rotulo: 'Link de comprovação', tipo: 'url', largura: 'inteira', ajuda: 'Página oficial do órgão emissor ou PDF do certificado, se houver.' },
+    { nome: 'ordem', rotulo: 'Ordem', tipo: 'numero', largura: 'metade' },
+  ],
+
+  perguntas_frequentes: [
+    { nome: 'pergunta', rotulo: 'Pergunta', tipo: 'texto', obrigatorio: true, maximo: 200, largura: 'inteira', ajuda: 'Escreva como o cidadão perguntaria. Ex.: "Como tirar segunda via do IPTU?".' },
+    { nome: 'resposta', rotulo: 'Resposta', tipo: 'rico', obrigatorio: true, largura: 'inteira' },
+    {
+      nome: 'categoria',
+      rotulo: 'Categoria',
+      tipo: 'texto',
+      ajuda: 'Agrupa a listagem na página de perguntas frequentes. Ex.: Tributos, Saúde, Documentos.',
+      largura: 'metade',
+    },
+    SECRETARIA,
+    { nome: 'ordem', rotulo: 'Ordem dentro da categoria', tipo: 'numero', ajuda: 'Menor aparece primeiro. Vazio vai para o fim.', largura: 'metade' },
+  ],
+
+  patrimonio_documentos: [
+    { nome: 'titulo', rotulo: 'Título', tipo: 'texto', obrigatorio: true, maximo: 160, largura: 'inteira', ajuda: 'Ex.: "Dossiê de Tombamento – Praça Coronel Justiniano".' },
+    {
+      nome: 'categoria',
+      rotulo: 'Categoria',
+      tipo: 'selecao',
+      obrigatorio: true,
+      largura: 'metade',
+      opcoes: [
+        { valor: 'livro', rotulo: 'Livro do Patrimônio' },
+        { valor: 'dossie', rotulo: 'Dossiê de Tombamento' },
+        { valor: 'inventario', rotulo: 'Inventário' },
+        { valor: 'legislacao', rotulo: 'Legislação' },
+        { valor: 'outro', rotulo: 'Outros arquivos' },
+      ],
+    },
+    { nome: 'periodo', rotulo: 'Ano ou período', tipo: 'texto', maximo: 20, largura: 'metade', ajuda: 'Como aparece no documento. Ex.: "2012–2013" ou "2025" — não precisa ser uma data exata.' },
+    SECRETARIA,
+    { nome: 'descricao', rotulo: 'Descrição', tipo: 'texto_longo', largura: 'inteira' },
+    { nome: 'arquivo', rotulo: 'Arquivo', tipo: 'arquivo', largura: 'inteira' },
+    {
+      nome: 'url_externa',
+      rotulo: 'Endereço externo',
+      tipo: 'url',
+      ajuda: 'Preencha SÓ quando o documento vive em outro sistema e não será anexado aqui.',
+      largura: 'inteira',
+    },
+    { nome: 'ordem', rotulo: 'Ordem dentro da categoria', tipo: 'numero', ajuda: 'Menor aparece primeiro. Vazio vai para o fim.', largura: 'metade' },
+  ],
+
+  telefones_uteis: [
+    { nome: 'nome', rotulo: 'Nome', tipo: 'texto', obrigatorio: true, largura: 'inteira', ajuda: 'Ex.: "CRAS Centro", "Corpo de Bombeiros".' },
+    {
+      nome: 'categoria',
+      rotulo: 'Categoria',
+      tipo: 'selecao',
+      obrigatorio: true,
+      largura: 'metade',
+      opcoes: [
+        { valor: 'emergencias', rotulo: 'Emergências' },
+        { valor: 'escolas_creches', rotulo: 'Escolas e Creches' },
+        { valor: 'unidades_saude', rotulo: 'Unidades de Saúde' },
+        { valor: 'assistencia_social', rotulo: 'Assistência Social' },
+        { valor: 'departamentos', rotulo: 'Departamentos' },
+        { valor: 'diversos', rotulo: 'Diversos' },
+      ],
+    },
+    { nome: 'ordem', rotulo: 'Ordem dentro da categoria', tipo: 'numero', ajuda: 'Menor aparece primeiro. Vazio vai para o fim.', largura: 'metade' },
+    { nome: 'endereco', rotulo: 'Endereço', tipo: 'texto', largura: 'inteira' },
+    {
+      nome: 'telefone',
+      rotulo: 'Telefone',
+      tipo: 'telefone',
+      largura: 'metade',
+      ajuda: 'Mais de um número? Separe com " / ". Ex.: "(35) 3431-1234 / (35) 99733-6816". Número de celular vira link de WhatsApp automaticamente; para impedir isso em um número específico, anote "(somente ligação)" depois dele.',
+    },
+    { nome: 'email', rotulo: 'E-mail', tipo: 'email', largura: 'metade' },
+  ],
+
+  coleta_lixo: [
+    { nome: 'nome', rotulo: 'Bairro ou região', tipo: 'texto', obrigatorio: true, largura: 'inteira' },
+    { nome: 'dias', rotulo: 'Dias da coleta', tipo: 'texto', obrigatorio: true, largura: 'metade', ajuda: 'Ex.: "Segunda-feira, Quarta-feira, Sexta-feira".' },
+    { nome: 'horario', rotulo: 'Horário', tipo: 'texto', obrigatorio: true, largura: 'metade', ajuda: 'Ex.: "A partir das 06:00 horas - Diurno".' },
+  ],
+
+  conselhos_municipais: [
+    { nome: 'nome', rotulo: 'Nome do conselho', tipo: 'texto', obrigatorio: true, largura: 'inteira' },
+    {
+      nome: 'categoria',
+      rotulo: 'Categoria',
+      tipo: 'selecao',
+      obrigatorio: true,
+      largura: 'metade',
+      opcoes: [
+        { valor: 'assistencia_social', rotulo: 'Assistência Social' },
+        { valor: 'educacao', rotulo: 'Educação' },
+        { valor: 'saude', rotulo: 'Saúde' },
+      ],
+    },
+    { nome: 'ordem', rotulo: 'Ordem dentro da categoria', tipo: 'numero', ajuda: 'Menor aparece primeiro. Vazio vai para o fim.', largura: 'metade' },
+    {
+      nome: 'conteudo',
+      rotulo: 'Base legal',
+      tipo: 'rico',
+      largura: 'inteira',
+      ajuda: 'Lei de criação, portaria de nomeação de membros, atas — um link por linha. Publique o PDF em Documentos primeiro, depois use o botão "Link" da barra de formatação apontando para ele.',
+    },
+  ],
 };
 
 /** Campos que guardam HTML e precisam passar pelo sanitizador na gravação. */
@@ -202,7 +335,8 @@ export function camposRicos(colecao: ColecaoEditavel): string[] {
 
 /** Campo que dá nome ao item nas listagens e no título da tela. */
 export function campoRotulo(colecao: ColecaoEditavel): string {
-  return CAMPOS[colecao].some((c) => c.nome === 'titulo') ? 'titulo' : 'nome';
+  const nomes = CAMPOS[colecao].map((c) => c.nome);
+  return ['titulo', 'nome', 'pergunta'].find((c) => nomes.includes(c)) ?? 'nome';
 }
 
 /**

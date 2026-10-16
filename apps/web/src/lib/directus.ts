@@ -133,6 +133,9 @@ export function arquivo(id: string | null | undefined, parametros?: Record<strin
   const consulta = parametros
     ? '?' + new URLSearchParams(Object.entries(parametros).map(([c, v]) => [c, String(v)])).toString()
     : '';
+  // Arquivo do Payload: o dado traz "midia:<nome codificado>" no lugar do UUID do Directus (ver lib/payload.ts).
+  // Mesmos parâmetros (width, quality, fit, format): a rota /midia/ faz a transformação que o Directus fazia.
+  if (id.startsWith('midia:')) return `/midia/${id.slice(6)}${consulta}`;
   return `/assets/${id}${consulta}`;
 }
 

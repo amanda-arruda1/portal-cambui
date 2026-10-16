@@ -233,16 +233,17 @@ sob o serviço `portal-web` (ver a seção de scripts).
 ## Design
 
 A identidade visual tem plano escrito e autocrítica registrada em
-**[DESIGN.md](DESIGN.md)**. Em uma frase: *Cambuí é uma cidade feita de
-carreiras — as de ponto das malharias e as de montanha da Mantiqueira —, e o
-portal adota a carreira como unidade de composição.*
+**[DESIGN.md](DESIGN.md)**. Em uma frase: *Cambuí é uma cidade de serra — a
+Mantiqueira que fecha o horizonte e organiza o clima, a estrada e o
+calendário —, e o portal adota a carreira (a faixa horizontal) como unidade
+de composição.*
 
 - **Tokens** em `apps/web/src/estilos/global.css`, amostrados do brasão oficial.
   Nenhum valor de cor ou de tipo aparece solto fora desse arquivo.
 - **Contraste** conferido por `ferramentas/contraste.py`: nenhum par em uso
   abaixo de 5,6:1.
-- **Elemento-assinatura**: `apps/web/src/componentes/SerraTecida.astro` — a
-  silhueta da Mantiqueira preenchida com pontos de tricô.
+- **Elemento-assinatura**: `apps/web/src/componentes/SilhuetaSerra.astro` —
+  a silhueta da Mantiqueira vista de Cambuí, traçada à mão.
 - **Componentes do sistema**: `Carreira` (a faixa), `LinhaTarefa` (a linha de
   serviço, que substitui o cartão), `Coleta` (o módulo local),
   `BarraAcessibilidade`, `AvisoCookies`.

@@ -1,0 +1,136 @@
+---
+/**
+ * Filtros da listagem de obras — mesma base de licitacoes/Filtros.astro,
+ * reduzida a busca + categoria + situação + órgão (obra não tem "quando
+ * abre"; o recorte que interessa aqui é a situação da execução).
+ */
+import { CATEGORIAS, SITUACOES, paraQuery, type FiltrosObra } from '../../lib/obras';
+
+interface Props {
+  filtros: FiltrosObra;
+  contagens: { categoria: Map<string, number>; situacao: Map<string, number>; secretaria: Map<string, number> };
+  secretarias: Array<{ nome: string; slug: string }>;
+  total: number;
+}
+const { filtros, contagens, secretarias, total } = Astro.props;
+
+const ativos: Array<{ rotulo: string; remove: string }> = [];
+if (filtros.q) ativos.push({ rotulo: `busca: “${filtros.q}”`, remove: paraQuery({ q: '' }, filtros) });
+if (filtros.categoria) ativos.push({ rotulo: CATEGORIAS.find((c) => c.valor === filtros.categoria)?.rotulo ?? filtros.categoria, remove: paraQuery({ categoria: '' }, filtros) });
+if (filtros.situacao) ativos.push({ rotulo: SITUACOES.find((s) => s.valor === filtros.situacao)?.rotulo ?? filtros.situacao, remove: paraQuery({ situacao: '' }, filtros) });
+if (filtros.secretaria) ativos.push({ rotulo: secretarias.find((s) => s.slug === filtros.secretaria)?.nome ?? filtros.secretaria, remove: paraQuery({ secretaria: '' }, filtros) });
+---
+
+<form method="get" action="/obras" class="filtros" role="search" aria-label="Filtrar obras">
+  <div class="busca">
+    <label for="q" class="t-rotulo etiqueta">Buscar por objeto, bairro ou empresa</label>
+    <div class="campo">
+      <input id="q" name="q" type="search" value={filtros.q} enterkeyhint="search"
+        placeholder="pavimentação, creche, Bairro Centro…" autocomplete="off" />
+      <button type="submit">Buscar</button>
+    </div>
+  </div>
+
+  <div class="selecoes">
+    <div class="grupo">
+      <label for="categoria" class="t-rotulo">Categoria</label>
+      <select id="categoria" name="categoria">
+        <option value="">Todas ({total})</option>
+        {CATEGORIAS.map((c) => {
+          const n = contagens.categoria.get(c.valor) ?? 0;
+          return <option value={c.valor} selected={filtros.categoria === c.valor} disabled={n === 0 && filtros.categoria !== c.valor}>{c.rotulo} ({n})</option>;
+        })}
+      </select>
+    </div>
+
+    <div class="grupo">
+      <label for="situacao" class="t-rotulo">Situação</label>
+      <select id="situacao" name="situacao">
+        <option value="">Todas</option>
+        {SITUACOES.map((s) => {
+          const n = contagens.situacao.get(s.valor) ?? 0;
+          return <option value={s.valor} selected={filtros.situacao === s.valor} disabled={n === 0 && filtros.situacao !== s.valor}>{s.rotulo} ({n})</option>;
+        })}
+      </select>
+    </div>
+
+    <div class="grupo">
+      <label for="secretaria" class="t-rotulo">Secretaria responsável</label>
+      <select id="secretaria" name="secretaria">
+        <option value="">Todas</option>
+        {secretarias.map((s) => {
+          const n = contagens.secretaria.get(s.slug) ?? 0;
+          return <option value={s.slug} selected={filtros.secretaria === s.slug} disabled={n === 0 && filtros.secretaria !== s.slug}>{s.nome} ({n})</option>;
+        })}
+      </select>
+    </div>
+  </div>
+
+  <div class="acoes">
+    <button type="submit" class="aplicar">Aplicar filtros</button>
+    {ativos.length > 0 && <a href="/obras" class="limpar">Limpar tudo</a>}
+  </div>
+
+  {ativos.length > 0 && (
+    <div class="ativos" role="status">
+      <span class="t-rotulo">Filtrando por</span>
+      <ul>
+        {ativos.map((a) => (
+          <li>
+            <a href={`/obras${a.remove}`} class="chip">
+              {a.rotulo} <span aria-hidden="true">×</span>
+              <span class="sr-only"> — remover este filtro</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+</form>
+
+<style>
+  .filtros { margin-top: 1.5rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+  .filtros > * { min-width: 0; }
+  .etiqueta { color: var(--color-musgo); display: block; margin-bottom: 0.4rem; }
+
+  .campo { display: flex; gap: 0.5rem; }
+  .campo input {
+    flex: 1; min-width: 0; font: inherit; font-size: 1.0625rem;
+    padding: 0.8rem 1rem; min-height: 3.1rem;
+    border: 2px solid var(--color-serra); border-radius: 4px;
+    background: var(--color-papel); color: var(--color-tinta);
+  }
+  .campo button {
+    font: inherit; font-weight: 600; padding: 0 1.35rem; min-height: 3.1rem;
+    border: 2px solid var(--color-serra); border-radius: 4px;
+    background: var(--color-serra); color: var(--color-papel); cursor: pointer;
+  }
+  .campo button:hover { background: var(--color-serra-noite); border-color: var(--color-serra-noite); color: var(--color-sobre-escuro); }
+
+  .selecoes { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr)); }
+  .grupo label { display: block; }
+  .grupo select {
+    width: 100%; font: inherit; min-height: 2.9rem; padding: 0.55rem 0.75rem;
+    border: 1.5px solid color-mix(in srgb, var(--color-musgo) 45%, transparent);
+    border-radius: 4px; background: var(--color-papel); color: var(--color-tinta);
+  }
+  .grupo option:disabled { color: color-mix(in srgb, var(--color-musgo) 60%, transparent); }
+
+  .acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
+  .aplicar {
+    font: inherit; font-weight: 600; min-height: 2.9rem; padding: 0.7rem 1.4rem;
+    border: 2px solid var(--color-serra); border-radius: 4px;
+    background: var(--color-serra); color: var(--color-papel); cursor: pointer;
+  }
+  .limpar { color: var(--color-carmim); font-weight: 600; }
+
+  .ativos { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; }
+  .ativos ul { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; padding: 0; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 0.4rem; min-height: 2.25rem;
+    padding: 0.3rem 0.8rem; border-radius: 999px;
+    background: color-mix(in srgb, var(--color-carmim) 12%, transparent);
+    color: var(--color-carmim); text-decoration: none; font-weight: 600; font-size: 0.875rem;
+  }
+  .chip:hover { background: var(--color-carmim); color: var(--color-papel); }
+</style>

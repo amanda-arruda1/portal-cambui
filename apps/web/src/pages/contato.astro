@@ -1,92 +1,108 @@
 ---
 import Base from '../layouts/Base.astro';
+import Carreira from '../componentes/Carreira.astro';
+import LinhaTarefa from '../componentes/LinhaTarefa.astro';
 import TituloPagina from '../componentes/TituloPagina.astro';
 import { secretarias } from '../lib/conteudo';
-import {
-  EMAIL_CONTATO,
-  ENDERECO,
-  HORARIO_ATENDIMENTO,
-  MUNICIPIO,
-  TELEFONES,
-  TEM_CONTATO,
-} from '../dados/instituicional';
+import { linkMapa, linkTelefone, linkWhatsapp } from '../lib/formato';
+import { configuracoes } from '../lib/globais';
 
 const { dados } = await secretarias();
+const { email: EMAIL_CONTATO, endereco: ENDERECO, horario: HORARIO_ATENDIMENTO, municipio: MUNICIPIO, telefones: TELEFONES } = await configuracoes();
+const TEM_CONTATO = ENDERECO !== null || TELEFONES.length > 0 || EMAIL_CONTATO !== null || HORARIO_ATENDIMENTO !== null;
 const comContato = dados.filter((s) => s.telefone || s.email || s.endereco);
+const mapaSede = ENDERECO ? linkMapa(`${ENDERECO.logradouro}, ${ENDERECO.numero} – ${ENDERECO.bairro} – ${ENDERECO.cidade}/${ENDERECO.uf}`) : null;
 ---
 
 <Base
   titulo="Contato"
   descricao={`Canais de atendimento da ${MUNICIPIO.nomeCompleto}.`}
 >
-  <TituloPagina titulo="Contato" descricao="Como falar com a administração municipal." />
+  <TituloPagina
+    rotulo="Contato"
+    titulo="Como falar com a Prefeitura"
+    chamada="A sede do município e o contato direto de cada secretaria."
+    trilha={[{ rotulo: 'Contato' }]}
+  />
 
-  <div class="mx-auto max-w-6xl px-4 py-10">
+  <Carreira numero="01" rotulo="Sede da Prefeitura" fundo="papel">
     {
       TEM_CONTATO ? (
-        <section>
-          <h2 class="text-2xl font-bold text-azul-escuro">Sede da prefeitura</h2>
-          <address class="mt-4 space-y-2 not-italic text-grafite">
-            {ENDERECO && (
-              <p>
-                {ENDERECO.logradouro}, {ENDERECO.numero} — {ENDERECO.bairro}
-                <br />
-                {ENDERECO.cidade}/{ENDERECO.uf} — CEP {ENDERECO.cep}
-              </p>
-            )}
-            {TELEFONES.map((t) => (
-              <p>
-                {t.rotulo}:{' '}
-                <a href={`tel:${t.numero.replace(/\D/g, '')}`} class="text-azul underline">
-                  {t.numero}
-                </a>
-              </p>
-            ))}
-            {EMAIL_CONTATO && (
-              <p>
-                E-mail:{' '}
-                <a href={`mailto:${EMAIL_CONTATO}`} class="text-azul underline">
-                  {EMAIL_CONTATO}
-                </a>
-              </p>
-            )}
-            {HORARIO_ATENDIMENTO && <p>{HORARIO_ATENDIMENTO}</p>}
-          </address>
-        </section>
-      ) : (
-        /* Sem telefone de exemplo, sem endereço de exemplo. */
-        <div class="max-w-(--container-leitura) rounded-lg border border-prata bg-papel-suave p-8">
-          <p class="text-lg font-semibold text-azul-escuro">Dados de atendimento em publicação</p>
-          <p class="mt-2 text-grafite">
-            Os canais oficiais de atendimento da prefeitura estão sendo publicados neste portal.
-            O atendimento presencial na sede do município continua normalmente.
-          </p>
-        </div>
-      )
-    }
-
-    {
-      comContato.length > 0 && (
-        <section class="mt-12">
-          <h2 class="text-2xl font-bold text-azul-escuro">Secretarias</h2>
-          <ul class="mt-4 grid gap-4 sm:grid-cols-2">
-            {comContato.map((secretaria) => (
-              <li class="rounded-lg border border-prata p-5">
-                <h3 class="font-bold text-azul-escuro">
-                  <a href={`/secretarias/${secretaria.slug}`} class="hover:underline">
-                    {secretaria.nome}
+        <address class="sede entra">
+          {ENDERECO && (
+            <p class="endereco">
+              {ENDERECO.logradouro}, {ENDERECO.numero} — {ENDERECO.bairro}<br />
+              {ENDERECO.cidade}/{ENDERECO.uf} — CEP {ENDERECO.cep}
+              {mapaSede && (
+                <>
+                  <br />
+                  <a href={mapaSede} class="mapa" target="_blank" rel="noopener noreferrer">Ver no mapa</a>
+                </>
+              )}
+            </p>
+          )}
+          {TELEFONES.length > 0 && (
+            <p class="contatos">
+              {TELEFONES.map((t) => {
+                const rotuloTexto = t.rotulo ? `${t.rotulo}: ${t.numero}` : t.numero;
+                const whatsapp = linkWhatsapp(t.numero);
+                return whatsapp ? (
+                  <a href={whatsapp} target="_blank" rel="noopener noreferrer">
+                    <span class="fio-foco">{rotuloTexto}</span>
                   </a>
-                </h3>
-                <div class="mt-2 space-y-1 text-sm text-grafite">
-                  {secretaria.telefone && <p>{secretaria.telefone}</p>}
-                  {secretaria.email && <p>{secretaria.email}</p>}
-                  {secretaria.endereco && <p>{secretaria.endereco}</p>}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
+                ) : (
+                  <a href={linkTelefone(t.numero)}>
+                    <span class="fio-foco">{rotuloTexto}</span>
+                  </a>
+                );
+              })}
+            </p>
+          )}
+          {EMAIL_CONTATO && (
+            <p class="contatos">
+              <a href={`mailto:${EMAIL_CONTATO}`}><span class="fio-foco">{EMAIL_CONTATO}</span></a>
+            </p>
+          )}
+          {HORARIO_ATENDIMENTO && <p class="horario">{HORARIO_ATENDIMENTO}</p>}
+        </address>
+      ) : (
+        <p class="pendente">
+          Os canais oficiais de atendimento da Prefeitura estão sendo publicados neste portal.
+          O atendimento presencial na sede do município continua normalmente.
+        </p>
       )
     }
-  </div>
+  </Carreira>
+
+  {
+    comContato.length > 0 && (
+      <Carreira numero="02" rotulo="Secretarias">
+        <ul class="lista entra">
+          {comContato.map((s) => (
+            <li>
+              <LinhaTarefa
+                tarefa={{
+                  rotulo: s.nome,
+                  detalhe: [s.telefone, s.email, s.endereco].filter(Boolean).join(' · '),
+                  destino: `/secretarias/${s.slug}`,
+                }}
+              />
+            </li>
+          ))}
+        </ul>
+      </Carreira>
+    )
+  }
 </Base>
+
+<style>
+  .sede { max-width: var(--container-leitura); }
+  .endereco { line-height: 1.6; }
+  .mapa { color: var(--color-serra); font-weight: 600; text-decoration: none; font-size: 0.9375rem; }
+  .mapa:hover { text-decoration: underline; }
+  .contatos { margin-top: 0.75rem; font-weight: 600; }
+  .contatos a { color: var(--color-serra); text-decoration: none; }
+  .horario { margin-top: 0.75rem; color: var(--color-musgo); }
+  .pendente { max-width: var(--container-leitura); color: var(--color-musgo); }
+  .lista { list-style: none; margin: 1.25rem 0 0; padding: 0; }
+</style>

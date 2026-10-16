@@ -57,7 +57,7 @@ export const GET: APIRoute = async ({ params, url }) => {
     'BEGIN:VEVENT',
     // Dobrado como qualquer outra: o UID passa de 75 octetos com um UUID
     // dentro, e cliente rígido recusa o arquivo INTEIRO por causa de uma linha.
-    dobrar(`UID:licitacao-${l.id}@prefeituradecambui.mg.gov.br`),
+    dobrar(`UID:licitacao-${l.id}@cambui.mg.gov.br`),
     `DTSTAMP:${paraIcs(new Date())}`,
     `DTSTART:${paraIcs(inicio)}`,
     `DTEND:${paraIcs(fim)}`,

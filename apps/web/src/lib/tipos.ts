@@ -19,6 +19,8 @@ export interface Noticia {
   conteudo: string | null;
   imagem: string | null;
   imagem_descricao: string | null;
+  /** Documento anexo — edital, ata, comunicado em PDF. Opcional. */
+  arquivo: string | null;
   data_publicacao: string;
   secretaria: { nome: string; slug: string } | null;
   destaque: boolean;
@@ -30,9 +32,14 @@ export interface Secretaria {
   nome: string;
   slug: string;
   sigla: string | null;
+  /** Termos de busca adicionais (sinônimos, siglas informais) — usados só
+   *  pelo assistente de contatos, nunca exibidos numa página. */
+  palavras_chave: string | null;
   descricao: string | null;
   responsavel: string | null;
   cargo_responsavel: string | null;
+  /** Breve biografia do responsável — formação, trajetória. Opcional. */
+  biografia_responsavel: string | null;
   endereco: string | null;
   telefone: string | null;
   email: string | null;
@@ -52,6 +59,11 @@ export interface Servico {
   url_externa: string | null;
   como_solicitar: string | null;
   secretaria: { nome: string; slug: string } | null;
+  /** Só no Payload: grupo do atalho em /servicos, e o texto do atalho. Sem `necessidade` = só no inventário. */
+  necessidade?: string | null;
+  detalhe?: string | null;
+  destino?: string | null;
+  ordem?: number | null;
 }
 
 export type TipoDocumento = 'edital' | 'licitacao' | 'diario_oficial' | 'lei' | 'decreto' | 'portaria' | 'outro';
@@ -79,12 +91,80 @@ export interface Pagina {
   atualizado_em: string | null;
 }
 
-export interface LinkUtil {
+export interface Selo {
   id: string;
   status: Situacao;
   nome: string;
-  url: string;
+  orgao_emissor: string;
   descricao: string | null;
-  grupo: string | null;
+  imagem: string | null;
+  data_concessao: string | null;
+  url_comprovacao: string | null;
+  ordem: number | null;
+}
+
+export type CategoriaPatrimonio = 'livro' | 'dossie' | 'inventario' | 'legislacao' | 'outro';
+
+export interface DocumentoPatrimonio {
+  id: string;
+  status: Situacao;
+  titulo: string;
+  categoria: CategoriaPatrimonio;
+  /** Ano ou período como aparece na fonte — ex.: "2012–2013". Texto livre, não
+   *  data: metade do acervo é biênio, não um dia específico. */
+  periodo: string | null;
+  descricao: string | null;
+  arquivo: string | null;
+  /** Link pronto do arquivo quando o dado vem do Payload (no Directus vale `arquivo`, o UUID). */
+  arquivo_url?: string | null;
+  url_externa: string | null;
+  secretaria: { nome: string; slug: string } | null;
+  ordem: number | null;
+}
+
+export interface PerguntaFrequente {
+  id: string;
+  status: Situacao;
+  pergunta: string;
+  resposta: string;
+  categoria: string | null;
+  secretaria: { nome: string; slug: string } | null;
+  ordem: number | null;
+}
+
+export type CategoriaTelefoneUtil =
+  | 'emergencias' | 'escolas_creches' | 'unidades_saude' | 'assistencia_social' | 'departamentos' | 'diversos';
+
+export interface TelefoneUtil {
+  id: string;
+  status: Situacao;
+  nome: string;
+  categoria: CategoriaTelefoneUtil;
+  endereco: string | null;
+  telefone: string | null;
+  email: string | null;
+  ordem: number | null;
+}
+
+export interface ColetaLixo {
+  id: string;
+  status: Situacao;
+  /** Bairro ou região. */
+  nome: string;
+  /** Dias da semana, texto livre como aparece na fonte — ex.: "Segunda-feira, Quarta-feira, Sexta-feira". */
+  dias: string;
+  /** Ex.: "A partir das 06:00 horas - Diurno". */
+  horario: string;
+}
+
+export type CategoriaConselho = 'assistencia_social' | 'educacao' | 'saude';
+
+export interface ConselhoMunicipal {
+  id: string;
+  status: Situacao;
+  nome: string;
+  categoria: CategoriaConselho;
+  /** Leis, portarias e atas do conselho — cada uma como um link de documento. */
+  conteudo: string | null;
   ordem: number | null;
 }

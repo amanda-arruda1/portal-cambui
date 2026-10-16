@@ -9,6 +9,7 @@
  */
 import { TIPOS_ANEXO, formatoLegivel, tamanhoLegivel, type Anexo } from '../../lib/licitacoes';
 import { data as formatarData } from '../../lib/formato';
+import { arquivo as urlArquivo } from '../../lib/directus';
 
 interface Props { anexos: Anexo[] }
 const { anexos } = Astro.props;
@@ -39,7 +40,7 @@ const temSuperado = anexos.some((a) => a.superado);
             <h3 class="t-rotulo titulo">{g.rotulo}</h3>
             <ul>
               {g.itens.map((a) => {
-                const destino = a.arquivo ? `/assets/${a.arquivo.id}?download` : a.url_externa;
+                const destino = a.arquivo ? `${urlArquivo(a.arquivo.id)}?download` : a.url_externa;
                 const externo = !a.arquivo && !!a.url_externa;
                 return (
                   <li class:list={[a.superado && 'superado']}>

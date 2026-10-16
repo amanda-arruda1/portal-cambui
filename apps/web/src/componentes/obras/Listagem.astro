@@ -1,0 +1,100 @@
+---
+/**
+ * Miolo da listagem de obras — filtros, resultados agrupados por situação e
+ * nota legal. Mesmo papel de licitacoes/Listagem.astro.
+ *
+ * Agrupar por SITUAÇÃO, não por data: quem entra em /obras quer saber
+ * primeiro "o que está paralisado" e "o que está em execução agora", não a
+ * ordem de publicação.
+ */
+import Filtros from './Filtros.astro';
+import LinhaObra from './LinhaObra.astro';
+import NotaLegal from './NotaLegal.astro';
+import { aplicarFiltros, contar, lerFiltros, todas, type FiltrosObra as TipoFiltros } from '../../lib/obras';
+
+interface Props { fixos?: Partial<TipoFiltros> }
+const { fixos = {} } = Astro.props;
+
+const TETO = 300;
+const filtros = { ...lerFiltros(Astro.url), ...fixos };
+
+const { dados: tudo, indisponivel } = await todas();
+const resultado = aplicarFiltros(tudo, filtros);
+const contagens = contar(tudo, filtros);
+
+const secretarias = [...new Map(tudo.filter((o) => o.secretaria).map((o) => [o.secretaria!.slug, o.secretaria!])).values()]
+  .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+const GRUPOS = [
+  { chave: 'paralisada', titulo: 'Paralisadas', nota: 'O estado que mais precisa de atenção pública.' },
+  { chave: 'em_execucao', titulo: 'Em execução', nota: 'Obras contratadas e em andamento agora.' },
+  { chave: 'nao_iniciada', titulo: 'Contratadas — aguardando início', nota: '' },
+  { chave: 'em_licitacao', titulo: 'Em licitação', nota: '' },
+  { chave: 'planejada', titulo: 'Planejadas', nota: '' },
+  { chave: 'concluida', titulo: 'Concluídas', nota: '' },
+  { chave: 'cancelada', titulo: 'Canceladas', nota: '' },
+];
+const agrupado = filtros.situacao
+  ? [{ chave: '', titulo: '', nota: '', itens: resultado.slice(0, TETO) }]
+  : GRUPOS.map((g) => ({ ...g, itens: resultado.filter((o) => o.situacao === g.chave).slice(0, TETO) })).filter((g) => g.itens.length > 0);
+---
+
+<div class="carreira bloco">
+  <div class="ourela">
+    <span class="fio fio-ourela" aria-hidden="true"></span>
+    <div class="corpo">
+      <Filtros filtros={filtros} contagens={contagens} secretarias={secretarias} total={tudo.length} />
+
+      <div class="resumo" role="status" aria-live="polite">
+        <p class="t-sub">
+          {
+            indisponivel
+              ? 'Não foi possível consultar as obras agora.'
+              : resultado.length === 0
+                ? 'Nenhuma obra encontrada'
+                : `${resultado.length} ${resultado.length === 1 ? 'obra encontrada' : 'obras encontradas'}`
+          }
+        </p>
+      </div>
+
+      {
+        resultado.length === 0 && !indisponivel && (
+          <div class="vazio">
+            <p>Nenhuma obra corresponde a esses filtros. <a href="/obras">Veja todas as {tudo.length} obras</a>.</p>
+          </div>
+        )
+      }
+
+      {
+        agrupado.map((g) => (
+          <section class="grupo">
+            {g.titulo && (
+              <>
+                <h2 class="t-secao titulo-grupo">{g.titulo} <span class="quantos">({g.itens.length})</span></h2>
+                {g.nota && <p class="t-micro nota-grupo">{g.nota}</p>}
+              </>
+            )}
+            <ul class="lista">
+              {g.itens.map((o) => <li><LinhaObra obra={o} /></li>)}
+            </ul>
+          </section>
+        ))
+      }
+
+      <NotaLegal />
+    </div>
+  </div>
+</div>
+
+<style>
+  .bloco { padding-bottom: clamp(3rem, 7vw, 5rem); }
+  .fio { min-height: 6rem; }
+  .resumo { margin-top: 2rem; padding-top: 1.25rem; border-top: 2px solid color-mix(in srgb, var(--color-musgo) 30%, transparent); }
+  .vazio { margin-top: 1.5rem; max-width: var(--container-leitura); color: var(--color-musgo); }
+  .vazio a { color: var(--color-serra); font-weight: 600; }
+  .grupo { margin-top: 2.5rem; }
+  .titulo-grupo { color: var(--color-azul-escuro); }
+  .quantos { color: var(--color-musgo); font-weight: 400; }
+  .nota-grupo { color: var(--color-musgo); margin-top: 0.25rem; }
+  .lista { list-style: none; margin: 1rem 0 0; padding: 0; }
+</style>

@@ -15,10 +15,24 @@ import Base from '../layouts/Base.astro';
 import TituloPagina from '../componentes/TituloPagina.astro';
 import Carreira from '../componentes/Carreira.astro';
 import LinhaTarefa from '../componentes/LinhaTarefa.astro';
-import { SISTEMAS_EXTERNOS } from '../dados/instituicional';
+import { linksExternos } from '../lib/globais';
+import { paginaPorSlug } from '../lib/conteudo';
+import { limpar } from '../lib/sanitizar';
 import { NECESSIDADES } from '../dados/cidade';
+import { selos as selosDoCms } from '../lib/conteudo';
+import { arquivo } from '../lib/directus';
+import { data as formatarData } from '../lib/formato';
 
+const links = await linksExternos();
+/* Textos de apoio vêm da coleção Páginas; o parágrafo original fica como reserva. */
+const [esic, porQueLinks] = (await Promise.all(['transparencia-esic', 'transparencia-por-que-links'].map(paginaPorSlug))).map((r) => r.dado?.conteudo ?? null);
+/* O Diário Oficial externo (AMM-MG) saiu daqui a pedido da usuária (2026-10-16): o botão é controlado no Global "Links externos". */
+const SISTEMAS_EXTERNOS = ['transparencia', 'legislacao', 'pncp', 'tce']
+  .map((k) => links[k])
+  .filter((l): l is NonNullable<typeof l> => !!l)
+  .map((l) => ({ nome: l.rotulo ?? '', url: l.url, descricao: l.descricao ?? '' }));
 const lai = NECESSIDADES.find((n) => n.chave === 'transparencia')!;
+const { dados: selos } = await selosDoCms();
 ---
 
 <Base
@@ -33,16 +47,20 @@ const lai = NECESSIDADES.find((n) => n.chave === 'transparencia')!;
   />
 
   <Carreira numero="01" rotulo="Pedir uma informação" fundo="papel" titulo="e-SIC — a Prefeitura tem prazo para responder">
+    {esic ? <div class="texto conteudo-rico" set:html={limpar(esic)} /> : (
     <p class="texto">
       Qualquer pessoa pode pedir informação a um órgão público, sem justificar o motivo, e receber
       resposta em até <strong>20 dias</strong>, prorrogáveis por mais 10 — é o que diz a Lei
       12.527/2011. O pedido é registrado no sistema de ouvidoria do município, que gera um número
       de protocolo para você acompanhar.
     </p>
+    )}
     <p class="acoes">
-      <a href="http://cambui.eouve.com.br/" target="_blank" rel="noopener noreferrer" class="botao">
-        Registrar pedido no e-SIC<span class="sr-only"> — abre em uma nova aba</span>
-      </a>
+      {links.ouvidoria && (
+        <a href={links.ouvidoria.url} target="_blank" rel="noopener noreferrer" class="botao">
+          Registrar pedido no e-SIC<span class="sr-only"> — abre em uma nova aba</span>
+        </a>
+      )}
     </p>
   </Carreira>
 
@@ -64,13 +82,50 @@ const lai = NECESSIDADES.find((n) => n.chave === 'transparencia')!;
   </Carreira>
 
   <Carreira numero="04" rotulo="Por que os links saem do portal">
+    {porQueLinks ? <div class="texto conteudo-rico" set:html={limpar(porQueLinks)} /> : (
     <p class="texto">
       A Transparência do município é mantida em sistema contábil homologado, com dado que sai
       direto da execução orçamentária. Republicar esses números aqui criaria uma segunda versão da
       verdade, sujeita a ficar desatualizada — e um portal de prefeitura com dois valores
       diferentes para a mesma despesa é pior do que um portal sem a informação.
     </p>
+    )}
   </Carreira>
+
+  {selos.length > 0 && (
+    <Carreira numero="05" rotulo="Selos e certificações" fundo="papel" id="selos">
+      <ul class="selos entra">
+        {selos.map((s) => (
+          <li class="selo">
+            {s.imagem && (
+              <img
+                class="imagem"
+                src={arquivo(s.imagem, { width: 160, height: 160, fit: 'contain', format: 'webp' })!}
+                alt=""
+                width="80"
+                height="80"
+                loading="lazy"
+                decoding="async"
+              />
+            )}
+            <div class="texto-selo">
+              <p class="nome-selo">{s.nome}</p>
+              <p class="t-micro emissor">
+                {s.orgao_emissor}
+                {s.data_concessao && <> · concedido em {formatarData(s.data_concessao)}</>}
+              </p>
+              {s.descricao && <p class="descricao-selo">{s.descricao}</p>}
+              {s.url_comprovacao && (
+                <a href={s.url_comprovacao} target="_blank" rel="noopener noreferrer" class="comprovacao">
+                  <span class="fio-foco">Ver comprovação</span><span class="sr-only"> — abre em uma nova aba</span>
+                </a>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Carreira>
+  )}
 </Base>
 
 <style>
@@ -90,4 +145,13 @@ const lai = NECESSIDADES.find((n) => n.chave === 'transparencia')!;
     border: 2px solid var(--color-carmim);
   }
   .botao:hover { background: var(--color-serra); border-color: var(--color-serra); }
+
+  .selos { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: 1.75rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
+  .selo { display: flex; gap: 1rem; align-items: flex-start; }
+  .imagem { flex: none; width: 4rem; height: 4rem; object-fit: contain; }
+  .texto-selo { min-width: 0; }
+  .nome-selo { font-weight: 600; font-size: 1.0625rem; }
+  .emissor { color: var(--color-musgo); margin-top: 0.15rem; }
+  .descricao-selo { margin-top: 0.4rem; color: var(--color-musgo); }
+  .comprovacao { display: inline-block; margin-top: 0.5rem; color: var(--color-serra); font-weight: 600; text-decoration: none; }
 </style>

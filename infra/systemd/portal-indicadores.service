@@ -1,0 +1,65 @@
+# Portal Cambuí — atualização dos indicadores econômicos (IPCA, Selic, CDI, Dólar).
+#
+# Serviço SEPARADO do portal-web, mesmo raciocínio de portal-avisos.service: o
+# processo web roda com IPAddressDeny=any e não alcança a internet; dar saída
+# a ele só para consultar BCB/AwesomeAPI aumentaria a superfície de ataque do
+# único processo exposto ao cidadão. Este serviço fala com as duas fontes e
+# grava o resultado no Directus; o portal-web só lê o Directus, como sempre.
+#
+# Disparado pelo timer portal-indicadores.timer. Não fica residente.
+
+[Unit]
+Description=Portal Cambui - atualizacao dos indicadores economicos
+Documentation=file:///opt/portal-cambui/ARQUITETURA.md
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=portal-web
+Group=portal-web
+WorkingDirectory=/opt/portal-cambui
+
+# Só INDICADORES_TOKEN e DIRECTUS_INTERNAL_URL vêm do .env geral — nenhuma
+# outra credencial (banco, SMTP) precisa passar por este processo.
+EnvironmentFile=/opt/portal-cambui/.env
+Environment=NODE_ENV=production
+Environment=DIRECTUS_INTERNAL_URL=http://127.0.0.1:8055
+
+ExecStart=/usr/bin/node /opt/portal-cambui/infra/scripts/atualizar-indicadores.mjs
+
+# --- Confinamento ---
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+# O V8 compila em tempo de execução — mesma exceção do portal-web.
+MemoryDenyWriteExecute=false
+RemoveIPC=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+
+# ESTE serviço PODE sair para a internet — é a diferença deliberada em relação
+# ao portal-web. Sem restrição de IP: as duas fontes ficam atrás de CDN
+# (Azure Front Door, Cloudflare) com IP rotativo — uma lista fixa aqui
+# quebraria sozinha na primeira rotação (foi tentado no portal-web.service via
+# IPAddressAllow com hostname e falhou por este motivo exato — ver o histórico
+# de infra/directus/indicadores/aplicar.mjs).
+
+[Install]
+WantedBy=multi-user.target

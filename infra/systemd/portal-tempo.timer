@@ -1,0 +1,22 @@
+# /etc/systemd/system/portal-tempo.timer
+# A cada 30 minutos.
+#
+# Open-Meteo atualiza a estação/modelo mais ou menos a cada hora — 30 minutos
+# já garante que o cabeçalho nunca mostre um valor com mais de meia hora sem
+# bater na API a cada requisição de página.
+
+[Unit]
+Description=Atualizacao da previsao do tempo a cada 30 minutos
+Documentation=file:///opt/portal-cambui/ARQUITETURA.md
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=30min
+# Espalha o disparo para não coincidir com outros timers do sistema.
+RandomizedDelaySec=90
+AccuracySec=1min
+Persistent=true
+Unit=portal-tempo.service
+
+[Install]
+WantedBy=timers.target

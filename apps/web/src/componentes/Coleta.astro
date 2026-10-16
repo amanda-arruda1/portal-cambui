@@ -16,8 +16,14 @@
  * que está em atualização — não inventa dia de coleta. Errar o dia do lixo é
  * pior do que não informar.
  */
-import { BAIRROS } from '../dados/cidade';
+import { coletaLixo } from '../lib/conteudo';
+import { BAIRROS as BAIRROS_RESERVA } from '../dados/cidade';
 
+/* Os 57 bairros vêm do CMS (mesma fonte de /coleta-de-lixo). Se o CMS não responder, cai na lista reduzida que ficou no código. */
+const { dados: doCms, indisponivel } = await coletaLixo();
+const BAIRROS = !indisponivel && doCms.length > 0
+  ? doCms.map((c) => ({ nome: c.nome, dias: [c.dias, c.horario].filter(Boolean) as string[] }))
+  : BAIRROS_RESERVA;
 const temCalendario = BAIRROS.some((b) => b.dias.length > 0);
 ---
 

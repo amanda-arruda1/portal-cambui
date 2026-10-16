@@ -115,6 +115,49 @@ function permissoesDaPolitica(politica) {
     .flatMap(([nome, regra]) => permissoesDaColecao(nome, regra));
 }
 
+/**
+ * Permissão de upload — ler a pasta pública (para resolver o UUID a partir
+ * do nome) e criar arquivo já restrito a ela.
+ *
+ * ARMADILHA PAGA (2026-09-01, achada testando o painel de selos): nenhuma
+ * das três políticas editoriais tinha isto. `lib/painel/cms.ts` resolve a
+ * pasta pública fazendo `/folders` COM O TOKEN DE QUEM ESTÁ LOGADO — sem
+ * permissão de leitura em `directus_folders`, a resposta vem vazia e o
+ * upload é recusado com "a pasta não existe... avise a TI", mesmo a pasta
+ * existindo. Pior: o resultado fica em cache no processo (`pastaPublicaId`
+ * em memória) — se a PRIMEIRA pessoa a subir um arquivo depois de um
+ * reinício for uma conta sem esta permissão, o upload fica quebrado para
+ * TODO MUNDO até o próximo reinício, porque só Administrator (que ignora
+ * permissão) escapava disso sem ninguém perceber. Restrito à pasta pública:
+ * a conta não ganha criar arquivo em outro lugar.
+ *
+ * SEGUNDA CAMADA DA MESMA ARMADILHA: 'create' sozinho não basta. Sem 'read'
+ * em directus_files, o Directus aceita o arquivo mas devolve 204 SEM CORPO
+ * (não consegue mostrar o que acabou de criar para quem não pode lê-lo) —
+ * `lib/painel/cms.ts` trata 204 como sucesso válido com `dados: undefined`,
+ * e `lerFormulario()` (formulario.ts) quebra tentando ler `.id` de
+ * `undefined`. HTTP 500 na hora de salvar, sem nenhuma mensagem que aponte
+ * para permissão. Read fica restrito à mesma pasta pública. */
+function permissoesDeUpload(pastaPublicaId) {
+  const escopoPasta = pastaPublicaId ? { folder: { _eq: pastaPublicaId } } : {};
+  return [
+    { collection: 'directus_folders', action: 'read', permissions: {}, validation: null, presets: null, fields: 'id,name' },
+    { collection: 'directus_files', action: 'read', permissions: escopoPasta, validation: null, presets: null, fields: '*' },
+    {
+      collection: 'directus_files',
+      action: 'create',
+      permissions: {},
+      validation: pastaPublicaId ? { folder: { _eq: pastaPublicaId } } : null,
+      presets: pastaPublicaId ? { folder: pastaPublicaId } : null,
+      fields: '*',
+    },
+  ];
+}
+
+/** Políticas cujos formulários (campos.ts) têm campo do tipo 'imagem' ou
+ *  'arquivo' — são as que precisam de permissoesDeUpload(). */
+const POLITICAS_COM_UPLOAD = ['Portal — Redator de secretaria', 'Portal — Revisor', 'Portal — Publicador'];
+
 function permissoesPublicas(pastaPublicaId) {
   const pub = cfg.publico;
   const linhas = Object.entries(pub.colecoes).map(([colecao, campos]) => ({
@@ -354,7 +397,9 @@ async function aplicarPermissoes(idPolitica, rotulo, linhas) {
 
 console.log('\nPermissões:');
 for (const p of cfg.politicas) {
-  await aplicarPermissoes(idPorPolitica.get(p.nome), p.nome, permissoesDaPolitica(p));
+  const linhas = permissoesDaPolitica(p);
+  if (POLITICAS_COM_UPLOAD.includes(p.nome)) linhas.push(...permissoesDeUpload(pastaPublicaId));
+  await aplicarPermissoes(idPorPolitica.get(p.nome), p.nome, linhas);
 }
 if (idPublica) {
   await aplicarPermissoes(idPublica, 'acesso público', permissoesPublicas(pastaPublicaId));
