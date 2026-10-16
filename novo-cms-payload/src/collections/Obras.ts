@@ -18,7 +18,7 @@ export const Obras: CollectionConfig = {
     { name: 'objetoResumo', label: 'Objeto (resumo)', type: 'textarea', required: true },
     { name: 'objeto', label: 'Objeto (completo)', type: 'richText' },
     campoHtmlDe('objeto'),
-    { name: 'pendencias', label: 'Pendências (alertas)', type: 'textarea', virtual: true, access: { read: ({ req: { user } }) => Boolean(user), create: () => false, update: () => false }, hooks: { afterRead: [pendenciasDaObra] }, admin: { position: 'sidebar', readOnly: true, description: 'Alertas que não impedem a publicação, mas um órgão fiscalizador cobra.' } },
+    { name: 'pendencias', label: 'Pendências (alertas)', type: 'textarea', virtual: true, access: { read: ({ req: { user } }) => Boolean(user && (user as { collection?: string }).collection === 'users'), create: () => false, update: () => false }, hooks: { afterRead: [pendenciasDaObra] }, admin: { position: 'sidebar', readOnly: true, description: 'Alertas que não impedem a publicação, mas um órgão fiscalizador cobra.' } },
     { name: 'endereco', label: 'Endereço', type: 'text' },
     { name: 'empresaExecutora', label: 'Empresa executora', type: 'text' },
     { name: 'empresaCnpj', label: 'CNPJ da empresa', type: 'text' },

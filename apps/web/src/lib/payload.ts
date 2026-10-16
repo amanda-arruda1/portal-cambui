@@ -96,3 +96,25 @@ export async function listarPayload<T extends { id: unknown }>(
     return { dados: [], indisponivel: true };
   }
 }
+
+/**
+ * Global do Payload alimentado por serviço externo (indicadores econômicos, previsão do tempo). Só liga com
+ * `CMS_DADOS_EXTERNOS=payload`; senão devolve `undefined` e quem chama lê do Directus. `null` = Payload ligado mas
+ * fora do ar/sem dado. Resposta guardada por 30 s (o serviço grava a cada 30 min).
+ */
+const globaisCache = new Map<string, { em: number; valor: Record<string, any> | null }>();
+export async function globalDadosExternos(slug: string): Promise<Record<string, any> | null | undefined> {
+  if (process.env.CMS_DADOS_EXTERNOS !== 'payload') return undefined;
+  const guardado = globaisCache.get(slug);
+  if (guardado && Date.now() - guardado.em < 30_000) return guardado.valor;
+  let valor: Record<string, any> | null = null;
+  try {
+    const r = await fetch(`${BASE}/api/globals/${slug}?depth=0`, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(TEMPO_LIMITE_MS) });
+    if (r.ok) valor = (await r.json()) as Record<string, any>;
+    else avisarUmaVez(`global:${slug}`, `HTTP ${r.status}`);
+  } catch (erro) {
+    avisarUmaVez(`global:${slug}`, erro instanceof Error ? erro.name : 'erro');
+  }
+  globaisCache.set(slug, { em: Date.now(), valor });
+  return valor;
+}

@@ -6,7 +6,7 @@
  * internet, de propósito. Quem busca os quatro indicadores e grava aqui é o
  * portal-indicadores.service, separado, a cada 30 minutos (ver
  * infra/scripts/atualizar-indicadores.mjs). Esta função só LÊ o singleton
- * `indicadores_economicos` do Directus — mesma regra de leitura pública de
+ * `indicadores-economicos` (Global do Payload; Directus enquanto `CMS_DADOS_EXTERNOS` não for `payload`) — mesma regra de leitura pública de
  * qualquer outra coleção (lib/directus.ts): nunca lança, degrada em silêncio.
  *
  * A REVALIDAÇÃO, aqui, é a própria cadência do serviço externo: o portal
@@ -15,6 +15,7 @@
  * mais por carregamento de página.
  */
 import { unico } from './directus';
+import { globalDadosExternos } from './payload';
 
 export type ChaveIndicador = 'ipca' | 'selic' | 'cdi' | 'dolar';
 
@@ -39,7 +40,10 @@ interface Registro {
 const ORDEM: ChaveIndicador[] = ['ipca', 'selic', 'cdi', 'dolar'];
 
 export async function indicadoresEconomicos(): Promise<Indicador[]> {
-  const { dado, indisponivel } = await unico<Registro>('indicadores_economicos');
+  const doPayload = await globalDadosExternos('indicadores-economicos');
+  const { dado, indisponivel } = doPayload === undefined
+    ? await unico<Registro>('indicadores_economicos')
+    : { dado: doPayload ? ({ itens: doPayload.itens ?? [], atualizado_em: doPayload.atualizadoEm ?? null } as Registro) : null, indisponivel: doPayload === null };
   const porChave = new Map((dado?.itens ?? []).map((i) => [i.chave, i]));
 
   return ORDEM.map((chave) => {

@@ -2,7 +2,7 @@ import type { CollectionConfig } from 'payload'
 import { ehAdmin, soAdmin } from '../acesso'
 
 /**
- * Contas de SERVIÇO (não são pessoas): o processo web (`avisos_portal`) e o serviço `portal-avisos` (`avisos_entrega`).
+ * Contas de SERVIÇO (não são pessoas): o processo web (`avisos_portal`), o serviço `portal-avisos` (`avisos_entrega`) e os serviços que trazem dados de fora (`dados_externos`: indicadores e tempo).
  * Sem senha e sem tela de login: só chave de API (`Authorization: contas-servico API-Key <chave>`), gerada/girada por
  * `scripts/criar-usuarios-servico-avisos.ts`. Ficam fora de `users` para os papéis de pessoa serem exatamente três
  * (admin, revisor, autor). Permissões em acesso.ts (acessoAssinantes/acessoEnvios).
@@ -17,7 +17,9 @@ export const ContasServico: CollectionConfig = {
     { name: 'nome', label: 'Nome', type: 'text', required: true },
     {
       name: 'tipo', label: 'Tipo', type: 'select', required: true, unique: true,
-      options: [{ label: 'Avisos — portal (cadastro, confirmação, descadastro)', value: 'avisos_portal' }, { label: 'Avisos — entrega (fila e detecção de novas licitações)', value: 'avisos_entrega' }],
+      options: [{ label: 'Avisos — portal (cadastro, confirmação, descadastro)', value: 'avisos_portal' }, { label: 'Avisos — entrega (fila e detecção de novas licitações)', value: 'avisos_entrega' },
+        { label: 'Dados externos (indicadores econômicos e previsão do tempo)', value: 'dados_externos' },
+      ],
     },
   ],
 }

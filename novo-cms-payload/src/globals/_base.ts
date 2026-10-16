@@ -1,5 +1,5 @@
 import type { Access, GlobalAfterChangeHook, GlobalConfig } from 'payload'
-import { ehAdmin } from '../acesso'
+import { ehAdmin, ehServicoDados } from '../acesso'
 
 /**
  * Globals = textos e links que o site tinha FIXOS no código (configurações, navegação, links externos, página inicial).
@@ -12,6 +12,8 @@ const auditar =
   (slug: string): GlobalAfterChangeHook =>
   async ({ doc, previousDoc, req, context }) => {
     if (context?.semAuditoria) return doc
+    // Conta de serviço (indicadores/tempo) grava a cada 30 min: auditar encheria o log sem dizer nada.
+    if ((req.user as { collection?: string } | null)?.collection === 'contas-servico') return doc
     try {
       await req.payload.create({
         collection: 'audit-logs',
@@ -34,9 +36,10 @@ const auditar =
     return doc
   }
 
-export const global = (g: GlobalConfig): GlobalConfig => ({
+/** `servicoGrava`: Global alimentado por serviço externo (conta `dados_externos`), além do administrador. */
+export const global = (g: GlobalConfig, servicoGrava = false): GlobalConfig => ({
   ...g,
-  access: { read: () => true, update: soAdmin },
+  access: { read: () => true, update: servicoGrava ? ({ req: { user } }) => ehAdmin(user) || ehServicoDados(user) : soAdmin },
   admin: { ...g.admin, group: 'Configurações', hidden: ({ user }: { user?: unknown }) => !ehAdmin(user) },
   hooks: { ...g.hooks, afterChange: [...(g.hooks?.afterChange ?? []), auditar(g.slug)] },
 })

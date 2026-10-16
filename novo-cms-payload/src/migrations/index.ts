@@ -9,6 +9,7 @@ import * as migration_20261015_181927_perfil_usuario from './20261015_181927_per
 import * as migration_20261015_183255_termos_aceite from './20261015_183255_termos_aceite';
 import * as migration_20261016_113742_globais_portal from './20261016_113742_globais_portal';
 import * as migration_20261016_122821_servicos_catalogo_sem_links_uteis from './20261016_122821_servicos_catalogo_sem_links_uteis';
+import * as migration_20261016_155255_indicadores_tempo_globais from './20261016_155255_indicadores_tempo_globais';
 
 export const migrations = [
   {
@@ -64,6 +65,11 @@ export const migrations = [
   {
     up: migration_20261016_122821_servicos_catalogo_sem_links_uteis.up,
     down: migration_20261016_122821_servicos_catalogo_sem_links_uteis.down,
-    name: '20261016_122821_servicos_catalogo_sem_links_uteis'
+    name: '20261016_122821_servicos_catalogo_sem_links_uteis',
+  },
+  {
+    up: migration_20261016_155255_indicadores_tempo_globais.up,
+    down: migration_20261016_155255_indicadores_tempo_globais.down,
+    name: '20261016_155255_indicadores_tempo_globais'
   },
 ];

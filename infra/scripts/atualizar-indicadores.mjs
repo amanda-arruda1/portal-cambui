@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Atualiza os indicadores econômicos (IPCA, Selic, CDI, Dólar) no Directus.
+ * Atualiza os indicadores econômicos (IPCA, Selic, CDI, Dólar) no Payload (Global `indicadores-economicos`) e, enquanto existir, no Directus.
  *
  *   node atualizar-indicadores.mjs            busca e grava
  *   node atualizar-indicadores.mjs --simular  só imprime o que gravaria
@@ -27,10 +27,23 @@
 
 const BASE_CMS = (process.env.DIRECTUS_INTERNAL_URL || 'http://127.0.0.1:8055').replace(/\/+$/, '');
 const TOKEN = process.env.INDICADORES_TOKEN;
+// Destino novo: Global `indicadores-economicos` do Payload (conta de serviço `dados_externos`). Enquanto o Directus existir, grava nos dois.
+const BASE_PAYLOAD = (process.env.PAYLOAD_INTERNAL_URL || 'http://127.0.0.1:3000/cms').replace(/\/+$/, '');
+const TOKEN_PAYLOAD = process.env.PAYLOAD_TOKEN_DADOS;
 const SIMULAR = process.argv.includes('--simular');
 const TEMPO_LIMITE_MS = 8000;
 
-if (!TOKEN) { console.error('ERRO: defina INDICADORES_TOKEN (está em /opt/portal-cambui/.env).'); process.exit(1); }
+if (!TOKEN && !TOKEN_PAYLOAD) { console.error('ERRO: defina PAYLOAD_TOKEN_DADOS (ou INDICADORES_TOKEN) em /opt/portal-cambui/.env.'); process.exit(1); }
+
+async function apiPayload(caminho, opcoes = {}) {
+  const r = await fetch(`${BASE_PAYLOAD}${caminho}`, {
+    ...opcoes,
+    headers: { 'Content-Type': 'application/json', Authorization: `contas-servico API-Key ${TOKEN_PAYLOAD}`, ...(opcoes.headers ?? {}) },
+    signal: AbortSignal.timeout(TEMPO_LIMITE_MS),
+  });
+  if (!r.ok) throw new Error(`${opcoes.method ?? 'GET'} ${caminho} → ${r.status} ${(await r.text()).slice(0, 300)}`);
+  return r.json();
+}
 
 async function api(caminho, opcoes = {}) {
   const r = await fetch(`${BASE_CMS}${caminho}`, {
@@ -157,6 +170,10 @@ if (Object.keys(novosPorChave).length === 0) {
  * sobrescreve o item cuja busca desta rodada deu certo. */
 async function mesclarComExistente() {
   try {
+    if (TOKEN_PAYLOAD) {
+      const atual = await apiPayload('/api/globals/indicadores-economicos?depth=0');
+      return Array.isArray(atual?.itens) ? atual.itens : [];
+    }
     const atual = await api('/items/indicadores_economicos?fields=itens');
     return Array.isArray(atual?.itens) ? atual.itens : [];
   } catch {
@@ -173,12 +190,29 @@ if (SIMULAR) {
   process.exit(0);
 }
 
-const corpo = JSON.stringify({ itens, atualizado_em: new Date().toISOString() });
-try {
-  await api('/items/indicadores_economicos', { method: 'PATCH', body: corpo });
-} catch (erroPatch) {
-  // Singleton sem linha ainda (primeira execução deste serviço): cria.
-  await api('/items/indicadores_economicos', { method: 'POST', body: corpo });
+const agora = new Date().toISOString();
+let gravou = 0;
+if (TOKEN_PAYLOAD) {
+  // `id` dos itens antigos (quando vêm do próprio Payload) é descartado: o array é regravado inteiro.
+  const limpos = itens.map(({ id, ...resto }) => resto);
+  await apiPayload('/api/globals/indicadores-economicos', { method: 'POST', body: JSON.stringify({ itens: limpos, atualizadoEm: agora }) });
+  gravou++;
+}
+if (TOKEN) {
+  const corpo = JSON.stringify({ itens, atualizado_em: agora });
+  try {
+    try {
+      await api('/items/indicadores_economicos', { method: 'PATCH', body: corpo });
+    } catch {
+      // Singleton sem linha ainda (primeira execução deste serviço): cria.
+      await api('/items/indicadores_economicos', { method: 'POST', body: corpo });
+    }
+    gravou++;
+  } catch (erro) {
+    // Com o Payload gravado, o Directus (em aposentadoria) não pode derrubar a rodada.
+    if (!TOKEN_PAYLOAD) throw erro;
+    console.warn(`! Directus: ${erro.message}`);
+  }
 }
 
 console.log(`\n${Object.keys(novosPorChave).length}/${chaves.length} indicador(es) atualizado(s) nesta rodada, ${itens.length}/${chaves.length} publicados no total.`);

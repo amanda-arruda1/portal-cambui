@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Atualiza a previsão do tempo de Cambuí/MG no Directus.
+ * Atualiza a previsão do tempo de Cambuí/MG no Payload (Global `previsao-tempo`) e, enquanto existir, no Directus.
  *
  *   node atualizar-tempo.mjs            busca e grava
  *   node atualizar-tempo.mjs --simular  só imprime o que gravaria
@@ -20,10 +20,13 @@
 
 const BASE_CMS = (process.env.DIRECTUS_INTERNAL_URL || 'http://127.0.0.1:8055').replace(/\/+$/, '');
 const TOKEN = process.env.TEMPO_TOKEN;
+// Destino novo: Global `previsao-tempo` do Payload (conta de serviço `dados_externos`). Enquanto o Directus existir, grava nos dois.
+const BASE_PAYLOAD = (process.env.PAYLOAD_INTERNAL_URL || 'http://127.0.0.1:3000/cms').replace(/\/+$/, '');
+const TOKEN_PAYLOAD = process.env.PAYLOAD_TOKEN_DADOS;
 const SIMULAR = process.argv.includes('--simular');
 const TEMPO_LIMITE_MS = 8000;
 
-if (!TOKEN) { console.error('ERRO: defina TEMPO_TOKEN (está em /opt/portal-cambui/.env).'); process.exit(1); }
+if (!TOKEN && !TOKEN_PAYLOAD) { console.error('ERRO: defina PAYLOAD_TOKEN_DADOS (ou TEMPO_TOKEN) em /opt/portal-cambui/.env.'); process.exit(1); }
 
 // Cambuí/MG — mesmas coordenadas de apps/web/src/pages/a-cidade.astro (MAPA).
 const LATITUDE = -22.6122501;
@@ -72,12 +75,33 @@ if (SIMULAR) {
   process.exit(0);
 }
 
-const corpo = JSON.stringify({ ...dados, atualizado_em: new Date().toISOString() });
-try {
-  await api('/items/previsao_tempo', { method: 'PATCH', body: corpo });
-} catch (erroPatch) {
-  // Singleton sem linha ainda (primeira execução deste serviço): cria.
-  await api('/items/previsao_tempo', { method: 'POST', body: corpo });
+const agora = new Date().toISOString();
+if (TOKEN_PAYLOAD) {
+  const r = await fetch(`${BASE_PAYLOAD}/api/globals/previsao-tempo`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `contas-servico API-Key ${TOKEN_PAYLOAD}` },
+    body: JSON.stringify({
+      temperatura: dados.temperatura, sensacaoTermica: dados.sensacao_termica, codigoTempo: dados.codigo_tempo,
+      umidade: dados.umidade, ventoKmh: dados.vento_kmh, atualizadoEm: agora,
+    }),
+    signal: AbortSignal.timeout(TEMPO_LIMITE_MS),
+  });
+  if (!r.ok) throw new Error(`Payload: POST previsao-tempo → ${r.status} ${(await r.text()).slice(0, 300)}`);
+}
+if (TOKEN) {
+  const corpo = JSON.stringify({ ...dados, atualizado_em: agora });
+  try {
+    try {
+      await api('/items/previsao_tempo', { method: 'PATCH', body: corpo });
+    } catch {
+      // Singleton sem linha ainda (primeira execução deste serviço): cria.
+      await api('/items/previsao_tempo', { method: 'POST', body: corpo });
+    }
+  } catch (erro) {
+    // Com o Payload gravado, o Directus (em aposentadoria) não pode derrubar a rodada.
+    if (!TOKEN_PAYLOAD) throw erro;
+    console.warn(`! Directus: ${erro.message}`);
+  }
 }
 
 console.log('previsao_tempo atualizada.');

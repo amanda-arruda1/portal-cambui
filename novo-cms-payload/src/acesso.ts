@@ -115,9 +115,11 @@ export const acessoFilho = (modulo: string, campoPai: string, colecaoPai: string
 /* ───────────── avisos por e-mail: contas de serviço (coleção `contas-servico`) ───────────── */
 
 const ehServico = (user: unknown, tipo?: string) => u(user)?.collection === 'contas-servico' && (!tipo || u(user)?.tipo === tipo)
-export const ehServicoAvisos = (user: unknown) => ehServico(user)
+// Só as duas contas dos avisos: a conta `dados_externos` (indicadores/tempo) NÃO pode ler assinantes nem a fila.
 const ehPortal = (user: unknown) => ehServico(user, 'avisos_portal')
 const ehEntrega = (user: unknown) => ehServico(user, 'avisos_entrega')
+export const ehServicoAvisos = (user: unknown) => ehPortal(user) || ehEntrega(user)
+export const ehServicoDados = (user: unknown) => ehServico(user, 'dados_externos')
 
 /** Campos que são CREDENCIAL (token de confirmar/sair; corpo do e-mail, que embute esses links): só as contas de serviço leem. */
 export const soServicoAvisos: FieldAccess = ({ req: { user } }) => ehServicoAvisos(user)

@@ -155,12 +155,16 @@ export interface Config {
     navegacao: Navegacao;
     'links-externos': LinksExterno;
     'pagina-inicial': PaginaInicial;
+    'indicadores-economicos': IndicadoresEconomico;
+    'previsao-tempo': PrevisaoTempo;
   };
   globalsSelect: {
     'configuracoes-portal': ConfiguracoesPortalSelect<false> | ConfiguracoesPortalSelect<true>;
     navegacao: NavegacaoSelect<false> | NavegacaoSelect<true>;
     'links-externos': LinksExternosSelect<false> | LinksExternosSelect<true>;
     'pagina-inicial': PaginaInicialSelect<false> | PaginaInicialSelect<true>;
+    'indicadores-economicos': IndicadoresEconomicosSelect<false> | IndicadoresEconomicosSelect<true>;
+    'previsao-tempo': PrevisaoTempoSelect<false> | PrevisaoTempoSelect<true>;
   };
   locale: null;
   widgets: {
@@ -1369,7 +1373,7 @@ export interface User {
 export interface ContasServico {
   id: number;
   nome: string;
-  tipo: 'avisos_portal' | 'avisos_entrega';
+  tipo: 'avisos_portal' | 'avisos_entrega' | 'dados_externos';
   updatedAt: string;
   createdAt: string;
   enableAPIKey?: boolean | null;
@@ -2442,6 +2446,48 @@ export interface PaginaInicial {
   createdAt?: string | null;
 }
 /**
+ * Preenchido automaticamente (Banco Central e AwesomeAPI). Não precisa editar.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "indicadores-economicos".
+ */
+export interface IndicadoresEconomico {
+  id: number;
+  itens?:
+    | {
+        chave: 'ipca' | 'selic' | 'cdi' | 'dolar';
+        rotulo: string;
+        descricao?: string | null;
+        valor?: number | null;
+        unidade: 'percentual' | 'moeda';
+        variacao?: number | null;
+        referencia?: string | null;
+        fonte?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  atualizadoEm?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Preenchida automaticamente (Open-Meteo). Não precisa editar.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "previsao-tempo".
+ */
+export interface PrevisaoTempo {
+  id: number;
+  temperatura?: number | null;
+  sensacaoTermica?: number | null;
+  codigoTempo?: number | null;
+  umidade?: number | null;
+  ventoKmh?: number | null;
+  atualizadoEm?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "configuracoes-portal_select".
  */
@@ -2670,6 +2716,44 @@ export interface PaginaInicialSelect<T extends boolean = true> {
         texto?: T;
         portalTuristico?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "indicadores-economicos_select".
+ */
+export interface IndicadoresEconomicosSelect<T extends boolean = true> {
+  itens?:
+    | T
+    | {
+        chave?: T;
+        rotulo?: T;
+        descricao?: T;
+        valor?: T;
+        unidade?: T;
+        variacao?: T;
+        referencia?: T;
+        fonte?: T;
+        id?: T;
+      };
+  atualizadoEm?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "previsao-tempo_select".
+ */
+export interface PrevisaoTempoSelect<T extends boolean = true> {
+  temperatura?: T;
+  sensacaoTermica?: T;
+  codigoTempo?: T;
+  umidade?: T;
+  ventoKmh?: T;
+  atualizadoEm?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

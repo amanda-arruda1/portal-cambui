@@ -33,6 +33,8 @@ import { Pastas } from './collections/Pastas'
 import { FotosPerfil } from './collections/FotosPerfil'
 import { ContasServico } from './collections/ContasServico'
 import { ConfiguracoesPortal } from './globals/ConfiguracoesPortal'
+import { IndicadoresEconomicos } from './globals/IndicadoresEconomicos'
+import { PrevisaoTempo } from './globals/PrevisaoTempo'
 import { LinksExternos } from './globals/LinksExternos'
 import { Navegacao } from './globals/Navegacao'
 import { PaginaInicial } from './globals/PaginaInicial'
@@ -75,7 +77,7 @@ export default buildConfig({
     Obras, ObraAnexos, ObraMedicoes,
     Pastas, Media, FotosPerfil, Users, ContasServico, AuditLogs,
   ].map(comPolitica).map(comAuditoria),
-  globals: [ConfiguracoesPortal, Navegacao, LinksExternos, PaginaInicial],
+  globals: [ConfiguracoesPortal, Navegacao, LinksExternos, PaginaInicial, IndicadoresEconomicos, PrevisaoTempo],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
