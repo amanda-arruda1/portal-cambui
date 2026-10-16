@@ -64,8 +64,8 @@ const PAGINAS: Array<{ slug: string; titulo: string; html: string }> = [
 <li>revogar consentimento.</li>
 </ul>
 <p>Para exercer qualquer um deles, procure a Prefeitura pelos canais abaixo ou registre um pedido na <a href="${OUVIDORIA}">Ouvidoria / e-SIC</a>, que tem prazo legal de resposta.</p>
-<h2>Encarregado pelo tratamento de dados</h2>
-<p><strong>TODO(cliente):</strong> a LGPD exige a indicação pública de um encarregado (DPO), com nome e canal de contato. Assim que a Prefeitura designar, o dado entra aqui.</p>`,
+<h2>Pedidos sobre os seus dados</h2>
+<p>Os pedidos sobre dados pessoais são recebidos pela Ouvidoria / e-SIC e pelos canais de contato da Prefeitura indicados nesta página, e respondidos dentro do prazo legal.</p>`,
   },
   {
     slug: 'transparencia-esic',

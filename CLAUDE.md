@@ -106,7 +106,7 @@ ramos do Directus de `conteudo.ts`/`obras.ts`/`licitacoes.ts`/`avisos.ts`/`envia
 compose antigos; cópias dos `.env` de antes da limpeza; `LEIAME.txt`). **Fora da rotação do backup — não apagar sem decisão.** Os uploads (3 GB) eram cópias
 exatas de `novo-cms-payload/media`. As docs `docs/fase-*.md` e `DESIGN.md` descrevem a pilha antiga: são histórico. Scripts de migração únicos em
 `novo-cms-payload/scripts/` (`migrar-dados.ts`, `validar-migracao.ts`) dependem de dados que não existem mais.
-Contas que existiam só no Directus: Claudiney (TrustIT) e `informatica@` (administradores); se precisarem de acesso, criar no `/cms`.
+Contas que existiam só no Directus (Claudiney/TrustIT e `informatica@`): **decidido em 16/10/2026 NÃO criar** no `/cms`. Encarregado de dados (DPO): **não será divulgado por enquanto**; `/privacidade` (seção "Pedidos sobre os seus dados") remete à Ouvidoria/e-SIC, sem prometer divulgação.
 
 **Globals do Payload (2026-10-16).** Textos e links que estavam fixos no código: `configuracoes-portal` (título, CNPJ, endereço, telefones,
 e-mail, horário, autarquias), `navegacao` (menu principal e colunas do rodapé), `links-externos` (um grupo por sistema de terceiro; em branco =

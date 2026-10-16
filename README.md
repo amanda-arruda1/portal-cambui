@@ -236,9 +236,10 @@ Todos em `infra/scripts/`, executados como root.
 - **Virada do domínio oficial** (DNS) e **TLS até a origem** (certificado de origem ou restrição do
   `/cms/admin` à faixa da TrustIT).
 - **Faixa de IP da TrustIT** (a 9025 está aberta a qualquer origem e o fail2ban segue parado por isso).
-- **Pessoas e contas:** confirmar o papel do Gabriel Veit, criar as contas de revisor e autor,
-  decidir se Claudiney (TrustIT) e a informática precisam de conta no `/cms`.
-- **LGPD:** nome do encarregado de dados (DPO) em `/privacidade` e revisão jurídica do termo de uso.
+- **Pessoas e contas:** confirmar o papel do Gabriel Veit e criar as contas de revisor e autor.
+  (Decidido em 16/10/2026: **não** serão criadas contas para Claudiney/TrustIT nem para a informática.)
+- **LGPD:** revisão jurídica do termo de uso. O encarregado de dados (DPO) **não será divulgado por
+  enquanto** (decisão da Prefeitura, 16/10/2026); `/privacidade` orienta o cidadão à Ouvidoria / e-SIC.
 - **Backup externo criptografado** (TrustIT).
 - **Dados institucionais** que a Prefeitura ainda não enviou, hoje com reserva em
   `apps/web/src/dados/instituicional.ts` (ou nos Globals).
