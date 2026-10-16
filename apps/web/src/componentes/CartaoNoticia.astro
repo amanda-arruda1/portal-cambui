@@ -1,5 +1,5 @@
 ---
-import { arquivo } from '../lib/directus';
+import { arquivo } from '../lib/payload';
 import { data, iso, recorte } from '../lib/formato';
 import type { Noticia } from '../lib/tipos';
 
@@ -9,7 +9,7 @@ interface Props {
 }
 const { noticia, destaque = false } = Astro.props;
 
-// Redimensionamento no próprio Directus: evita mandar a foto original de 4 MB
+// Redimensionamento na rota /midia/: evita mandar a foto original de 4 MB
 // para o celular do cidadão numa listagem.
 const capa = arquivo(noticia.imagem, { width: destaque ? 800 : 480, quality: 75, fit: 'cover' });
 const resumo = noticia.resumo ?? recorte(noticia.conteudo, 160);

@@ -4,7 +4,7 @@
  * Junta o contato geral da Prefeitura (`dados/instituicional.ts`, estático)
  * com as secretarias do CMS. Cache de 60s em memória, mesmo padrão de
  * `lib/licitacoes.ts` — sem ele, o componente carregaria em TODA página do
- * site (é montado em `Base.astro`) e bateria no Directus a cada visita.
+ * site (é montado em `Base.astro`) e bateria no CMS a cada visita.
  * Fica só aqui: não mexe no `secretarias()` compartilhado por
  * `contato.astro`/`secretarias/index.astro`, para não mudar o que já
  * funciona nessas páginas.

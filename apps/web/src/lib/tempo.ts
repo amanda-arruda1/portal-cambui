@@ -5,10 +5,9 @@
  * IPAddressDeny=any e não alcança a internet, de propósito. Quem busca e
  * grava aqui é o portal-tempo.service, separado, a cada 30 minutos (ver
  * infra/scripts/atualizar-tempo.mjs). Esta função só LÊ o singleton
- * `previsao-tempo` (Global do Payload; Directus enquanto `CMS_DADOS_EXTERNOS` não for `payload`) — mesma regra de leitura pública de qualquer
- * outra coleção (lib/directus.ts): nunca lança, degrada em silêncio.
+ * `previsao-tempo` (Global do Payload) — mesma regra de leitura pública de qualquer
+ * outra coleção (lib/payload.ts): nunca lança, degrada em silêncio.
  */
-import { unico } from './directus';
 import { globalDadosExternos } from './payload';
 
 export interface PrevisaoTempo {
@@ -22,16 +21,11 @@ export interface PrevisaoTempo {
 
 export async function previsaoTempo(): Promise<PrevisaoTempo | null> {
   const g = await globalDadosExternos('previsao-tempo');
-  if (g !== undefined) {
-    if (!g || typeof g.temperatura !== 'number' || typeof g.codigoTempo !== 'number') return null;
-    return {
-      temperatura: g.temperatura, sensacao_termica: g.sensacaoTermica ?? null, codigo_tempo: g.codigoTempo,
-      umidade: g.umidade ?? null, vento_kmh: g.ventoKmh ?? null, atualizado_em: g.atualizadoEm ?? null,
-    };
-  }
-  const { dado, indisponivel } = await unico<PrevisaoTempo>('previsao_tempo');
-  if (indisponivel || !dado) return null;
-  return dado;
+  if (!g || typeof g.temperatura !== 'number' || typeof g.codigoTempo !== 'number') return null;
+  return {
+    temperatura: g.temperatura, sensacao_termica: g.sensacaoTermica ?? null, codigo_tempo: g.codigoTempo,
+    umidade: g.umidade ?? null, vento_kmh: g.ventoKmh ?? null, atualizado_em: g.atualizadoEm ?? null,
+  };
 }
 
 /** Categoria de ícone a partir do código WMO (open-meteo.com/en/docs —

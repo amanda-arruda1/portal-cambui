@@ -17,16 +17,15 @@ import LinhaTarefa from '../componentes/LinhaTarefa.astro';
 import Coleta from '../componentes/Coleta.astro';
 import { servicos } from '../lib/conteudo';
 import { NECESSIDADES } from '../dados/cidade';
-import { fonteCms } from '../lib/payload';
 import { ehExterno, linksExternos, resolverDestino } from '../lib/globais';
 
 const { dados: doCms, indisponivel } = await servicos();
 const foco = Astro.url.searchParams.get('necessidade');
 
-/* Atalhos por necessidade: com Serviços no Payload e a consulta respondendo, valem SÓ os cadastrados (grupo sem serviço some; o
-   administrador manda). Payload fora do ar ou ainda desligado: cai no catálogo que continua no código (dados/cidade.ts). */
+/* Atalhos por necessidade: com a consulta respondendo, valem SÓ os cadastrados (grupo sem serviço some; o
+   administrador manda). Payload fora do ar: cai no catálogo que continua no código (dados/cidade.ts). */
 const links = await linksExternos();
-const doPayload = fonteCms('servicos') === 'payload' && !indisponivel;
+const doPayload = !indisponivel;
 const grupos = NECESSIDADES.map((n) => {
   if (!doPayload) return n;
   const tarefas = doCms

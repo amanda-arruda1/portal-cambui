@@ -1,5 +1,5 @@
 /**
- * Formato dos dados vindos do Directus.
+ * Formato dos dados do portal (nomes herdados do Directus, mantidos; o Payload é convertido em lib/conteudo.ts).
  *
  * Estes tipos são o contrato entre o CMS e o portal. Quem alterar o esquema em
  * infra/directus/esquema.json precisa alterar aqui também — não há geração

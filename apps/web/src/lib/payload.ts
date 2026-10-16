@@ -1,24 +1,18 @@
 /**
- * Cliente do Payload CMS (leitura pública) — contraparte de `directus.ts`.
+ * Cliente do Payload CMS (leitura pública) — única fonte de conteúdo do portal (o Directus foi aposentado).
  *
- * Mesma regra central: Payload fora do ar, coleção ausente ou permissão negada
+ * Regra central: Payload fora do ar, coleção ausente ou permissão negada
  * NUNCA derrubam o portal. Devolve `{ dados, indisponivel }` e a página decide.
- * Usado coleção a coleção, atrás de chave por variável de ambiente (ver `fonteCms`),
- * durante a migração Directus → Payload.
  */
-import type { Resposta } from './directus';
 
 // O Payload responde sob /cms (basePath do Next, ver novo-cms-payload/next.config.ts): o prefixo faz parte da base.
 const BASE = (process.env.PAYLOAD_INTERNAL_URL || 'http://127.0.0.1:3000/cms').replace(/\/+$/, '');
 const TEMPO_LIMITE_MS = 5000;
 
-/** De onde cada coleção migrada é lida. Padrão `directus`: ligar é decisão explícita. */
-const CHAVES = { telefones_uteis: 'CMS_TELEFONES', coleta_lixo: 'CMS_COLETA_LIXO', conselhos_municipais: 'CMS_CONSELHOS', patrimonio_documentos: 'CMS_PATRIMONIO', secretarias: 'CMS_SECRETARIAS', noticias: 'CMS_NOTICIAS', paginas: 'CMS_PAGINAS', documentos: 'CMS_DOCUMENTOS', servicos: 'CMS_SERVICOS', selos: 'CMS_SELOS', perguntas_frequentes: 'CMS_FAQ' } as const;
-export type ColecaoMigravel = keyof typeof CHAVES;
-export const COLECOES_MIGRAVEIS = Object.keys(CHAVES) as ColecaoMigravel[];
-
-export function fonteCms(colecao: ColecaoMigravel): 'directus' | 'payload' {
-  return process.env[CHAVES[colecao]] === 'payload' ? 'payload' : 'directus';
+export interface Resposta<T> {
+  dados: T[];
+  /** true quando não foi possível falar com o CMS ou a coleção não existe. */
+  indisponivel: boolean;
 }
 
 const avisados = new Set<string>();
@@ -39,7 +33,7 @@ export const reescreverMidia = (html: string | null | undefined): string | null 
   html ? html.replaceAll('/api/media/file/', '/midia/') : null;
 
 /**
- * Marcador `midia:<nome>` (ver `arquivo()` em directus.ts) de um arquivo do Payload a partir do UUID que ele
+ * Marcador `midia:<nome>` (ver `arquivo()` abaixo) de um arquivo do Payload a partir do UUID que ele
  * tinha no Directus. Para o código do site que ainda carrega UUIDs fixos (ex.: imagem do organograma).
  */
 export async function marcadorPorIdLegado(idLegado: string): Promise<string | null> {
@@ -98,13 +92,11 @@ export async function listarPayload<T extends { id: unknown }>(
 }
 
 /**
- * Global do Payload alimentado por serviço externo (indicadores econômicos, previsão do tempo). Só liga com
- * `CMS_DADOS_EXTERNOS=payload`; senão devolve `undefined` e quem chama lê do Directus. `null` = Payload ligado mas
- * fora do ar/sem dado. Resposta guardada por 30 s (o serviço grava a cada 30 min).
+ * Global do Payload alimentado por serviço externo (indicadores econômicos, previsão do tempo). `null` = Payload fora do
+ * ar ou sem dado. Resposta guardada por 30 s (o serviço grava a cada 30 min).
  */
 const globaisCache = new Map<string, { em: number; valor: Record<string, any> | null }>();
-export async function globalDadosExternos(slug: string): Promise<Record<string, any> | null | undefined> {
-  if (process.env.CMS_DADOS_EXTERNOS !== 'payload') return undefined;
+export async function globalDadosExternos(slug: string): Promise<Record<string, any> | null> {
   const guardado = globaisCache.get(slug);
   if (guardado && Date.now() - guardado.em < 30_000) return guardado.valor;
   let valor: Record<string, any> | null = null;
@@ -117,4 +109,17 @@ export async function globalDadosExternos(slug: string): Promise<Record<string, 
   }
   globaisCache.set(slug, { em: Date.now(), valor });
   return valor;
+}
+
+/**
+ * URL pública de um arquivo. O dado traz o marcador `midia:<nome codificado>` (ver `urlMidia`/`marcadorPorIdLegado`); a rota
+ * `/midia/` do próprio portal serve o arquivo e faz a transformação de imagem (width, height, quality, fit, format).
+ * Imagens de conteúdo pedem `format: 'webp'` (Lighthouse 28/08/2026: PNG dava LCP de 2,6 s, acima do teto de 2,5 s).
+ */
+export function arquivo(id: string | null | undefined, parametros?: Record<string, string | number>): string | null {
+  if (!id || !id.startsWith('midia:')) return null;
+  const consulta = parametros
+    ? '?' + new URLSearchParams(Object.entries(parametros).map(([c, v]) => [c, String(v)])).toString()
+    : '';
+  return `/midia/${id.slice(6)}${consulta}`;
 }

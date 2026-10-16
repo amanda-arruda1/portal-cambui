@@ -6,15 +6,14 @@
  * internet, de propósito. Quem busca os quatro indicadores e grava aqui é o
  * portal-indicadores.service, separado, a cada 30 minutos (ver
  * infra/scripts/atualizar-indicadores.mjs). Esta função só LÊ o singleton
- * `indicadores-economicos` (Global do Payload; Directus enquanto `CMS_DADOS_EXTERNOS` não for `payload`) — mesma regra de leitura pública de
- * qualquer outra coleção (lib/directus.ts): nunca lança, degrada em silêncio.
+ * `indicadores-economicos` (Global do Payload) — mesma regra de leitura pública de
+ * qualquer outra coleção (lib/payload.ts): nunca lança, degrada em silêncio.
  *
  * A REVALIDAÇÃO, aqui, é a própria cadência do serviço externo: o portal
  * sempre mostra o valor mais recente que a última rodada do timer conseguiu
  * gravar — nunca mais velho que ~30 minutos, nunca uma chamada de rede a
  * mais por carregamento de página.
  */
-import { unico } from './directus';
 import { globalDadosExternos } from './payload';
 
 export type ChaveIndicador = 'ipca' | 'selic' | 'cdi' | 'dolar';
@@ -41,16 +40,15 @@ const ORDEM: ChaveIndicador[] = ['ipca', 'selic', 'cdi', 'dolar'];
 
 export async function indicadoresEconomicos(): Promise<Indicador[]> {
   const doPayload = await globalDadosExternos('indicadores-economicos');
-  const { dado, indisponivel } = doPayload === undefined
-    ? await unico<Registro>('indicadores_economicos')
-    : { dado: doPayload ? ({ itens: doPayload.itens ?? [], atualizado_em: doPayload.atualizadoEm ?? null } as Registro) : null, indisponivel: doPayload === null };
+  const dado: Registro | null = doPayload ? { itens: doPayload.itens ?? [], atualizado_em: doPayload.atualizadoEm ?? null } : null;
+  const indisponivel = doPayload === null;
   const porChave = new Map((dado?.itens ?? []).map((i) => [i.chave, i]));
 
   return ORDEM.map((chave) => {
     const encontrado = porChave.get(chave);
     if (encontrado) return encontrado;
 
-    // Sem registro ainda (serviço nunca rodou) ou Directus fora do ar: o
+    // Sem registro ainda (serviço nunca rodou) ou Payload fora do ar: o
     // cartão mostra "indisponível" para aquele indicador especificamente,
     // nunca esconde a coluna nem inventa valor.
     const ROTULOS: Record<ChaveIndicador, { rotulo: string; descricao: string; unidade: Indicador['unidade']; fonte: string }> = {

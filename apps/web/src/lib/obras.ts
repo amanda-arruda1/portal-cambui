@@ -6,11 +6,8 @@
  * milhares de registros.
  */
 
-import { listar } from './directus';
 import { listarPayload, reescreverMidia } from './payload';
 
-/* Migração Directus → Payload: `CMS_OBRAS=payload` liga a leitura pública (ver CLAUDE.md). */
-const noPayload = () => process.env.CMS_OBRAS === 'payload';
 import { moeda, numero, documentoPublico, tamanhoLegivel, formatoLegivel } from './licitacoes';
 
 export { moeda, numero, documentoPublico, tamanhoLegivel, formatoLegivel };
@@ -96,15 +93,6 @@ export interface Obra {
 
 /* ─────────────────────────  carga  ───────────────────────── */
 
-const CAMPOS = [
-  'id', 'numero_processo', 'numero_contrato', 'licitacao.id', 'licitacao.numero', 'licitacao.ano',
-  'slug', 'categoria', 'secretaria.nome', 'secretaria.slug', 'objeto_resumo', 'objeto', 'endereco',
-  'empresa_executora', 'empresa_cnpj', 'responsavel_tecnico', 'art_rrt', 'fonte_recurso', 'numero_convenio',
-  'valor_contratado', 'valor_aditivado', 'valor_pago', 'data_ordem_servico', 'data_prevista_termino',
-  'data_termino_real', 'situacao', 'motivo_situacao', 'percentual_execucao', 'observacoes',
-  'data_publicacao', 'demonstracao', 'date_updated',
-].join(',');
-
 /** Obra do Payload (camelCase, `objetoHtml`, relações populadas) no formato do portal. `id` público = UUID (`idLegado`). */
 function obraDoPayload(d: any): Obra {
   const rel = (v: any) => (v && typeof v === 'object' ? v : null);
@@ -132,16 +120,8 @@ const arquivoDoPayload = (m: any): ArquivoAnexo | null =>
 const filha = (id: string) => ({ 'obra.idLegado': id });
 
 export async function todas(): Promise<{ dados: Obra[]; indisponivel: boolean }> {
-  if (noPayload()) {
-    const r = await listarPayload<any>('obras', { depth: 1, sort: '-dataPublicacao,slug', limit: 0 });
-    return { dados: r.dados.map(obraDoPayload), indisponivel: r.indisponivel };
-  }
-  return listar<Obra>('obras', {
-    fields: CAMPOS,
-    filter: JSON.stringify({ status: { _eq: 'publicado' } }),
-    sort: '-data_publicacao',
-    limit: 2000,
-  });
+  const r = await listarPayload<any>('obras', { depth: 1, sort: '-dataPublicacao,slug', limit: 0 });
+  return { dados: r.dados.map(obraDoPayload), indisponivel: r.indisponivel };
 }
 
 export async function porSlug(slug: string): Promise<Obra | null> {
@@ -150,44 +130,22 @@ export async function porSlug(slug: string): Promise<Obra | null> {
 }
 
 export async function anexosDe(id: string): Promise<AnexoObra[]> {
-  if (noPayload()) {
-    const r = await listarPayload<any>('obra-anexos', {
-      depth: 1, sort: 'ordem,dataReferencia,id', onde: filha(id),
-      select: ['titulo', 'categoria', 'arquivo', 'dataReferencia', 'descricao', 'ordem'],
-    });
-    return r.dados.map((d) => ({ id: d.id, titulo: d.titulo, categoria: d.categoria, arquivo: arquivoDoPayload(d.arquivo), data_referencia: d.dataReferencia, descricao: d.descricao ?? null, ordem: d.ordem ?? null }));
-  }
-  const r = await listar<AnexoObra>('obra_anexos', {
-    // NUNCA pedir arquivo.filename_download: o papel público não tem
-    // permissão nesse campo de directus_files, e o Directus recusa a
-    // consulta INTEIRA (não só o campo) — via lib/licitacoes.ts, que tinha
-    // o mesmo pedido e sumia com a lista inteira de anexos da licitação.
-    fields: 'id,titulo,categoria,arquivo.id,arquivo.type,arquivo.filesize,data_referencia,descricao,ordem',
-    filter: JSON.stringify({ obra: { _eq: id } }),
-    sort: 'ordem,data_referencia',
-    limit: 200,
+  const r = await listarPayload<any>('obra-anexos', {
+    depth: 1, sort: 'ordem,dataReferencia,id', onde: filha(id),
+    select: ['titulo', 'categoria', 'arquivo', 'dataReferencia', 'descricao', 'ordem'],
   });
-  return r.dados;
+  return r.dados.map((d) => ({ id: d.id, titulo: d.titulo, categoria: d.categoria, arquivo: arquivoDoPayload(d.arquivo), data_referencia: d.dataReferencia, descricao: d.descricao ?? null, ordem: d.ordem ?? null }));
 }
 
 export async function medicoesDe(id: string): Promise<MedicaoObra[]> {
-  if (noPayload()) {
-    const r = await listarPayload<any>('obra-medicoes', {
-      depth: 1, sort: 'numero,id', onde: filha(id),
-      select: ['numero', 'dataReferencia', 'percentualAcumulado', 'valorMedido', 'valorAcumulado', 'boletim', 'observacoes'],
-    });
-    return r.dados.map((d) => ({
-      id: d.id, numero: d.numero, data_referencia: d.dataReferencia, percentual_acumulado: d.percentualAcumulado ?? null,
-      valor_medido: d.valorMedido ?? null, valor_acumulado: d.valorAcumulado ?? null, boletim: arquivoDoPayload(d.boletim), observacoes: d.observacoes ?? null,
-    }));
-  }
-  const r = await listar<MedicaoObra>('obra_medicoes', {
-    fields: 'id,numero,data_referencia,percentual_acumulado,valor_medido,valor_acumulado,boletim.id,boletim.filesize,observacoes',
-    filter: JSON.stringify({ obra: { _eq: id } }),
-    sort: 'numero',
-    limit: 200,
+  const r = await listarPayload<any>('obra-medicoes', {
+    depth: 1, sort: 'numero,id', onde: filha(id),
+    select: ['numero', 'dataReferencia', 'percentualAcumulado', 'valorMedido', 'valorAcumulado', 'boletim', 'observacoes'],
   });
-  return r.dados;
+  return r.dados.map((d) => ({
+    id: d.id, numero: d.numero, data_referencia: d.dataReferencia, percentual_acumulado: d.percentualAcumulado ?? null,
+    valor_medido: d.valorMedido ?? null, valor_acumulado: d.valorAcumulado ?? null, boletim: arquivoDoPayload(d.boletim), observacoes: d.observacoes ?? null,
+  }));
 }
 
 /* ─────────────────────────  busca e filtros  ───────────────────────── */

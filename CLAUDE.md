@@ -101,11 +101,13 @@ Ainda no Directus: só o que sobrou do `/painel` antigo. **O módulo Diário Ofi
 de demonstração, o serviço `portal-diario`, `infra/diario/`, `infra/directus/diario/`, os scripts 11/12, os docs do Diário e o trecho de avisos
 do Diário em `enviar-avisos.mjs`. `.env.diario`, `data/diario/` e o usuário `portal-diario` também foram apagados.
 `links_uteis` foi removida do Payload (migration `servicos_catalogo_sem_links_uteis`).
-**Aposentadoria do Directus (andamento, 2026-10-16):** etapa 1 feita (indicadores e tempo no Payload, Globals `indicadores-economicos` e
-`previsao-tempo`, flag `CMS_DADOS_EXTERNOS`, conta de serviço `dados_externos`; os serviços ainda gravam também no Directus); Instagram e
-antivírus não dependiam dele; `/painel` desligado. **Ainda não apagar o Directus**: faltam remover os ramos de reserva `CMS_*` do código do site,
-o helper `arquivo()` de `lib/directus.ts` (12 páginas), auditar Directus × Payload (contagens e arquivos), parar o contêiner por algumas
-semanas e só então apagar contêiner, banco e `data/directus`.
+**Aposentadoria do Directus (andamento, 2026-10-16):** feitos: indicadores e tempo no Payload (Globals `indicadores-economicos` e `previsao-tempo`,
+conta de serviço `dados_externos`; os dois serviços ainda gravam TAMBÉM no Directus); Instagram e antivírus não dependiam dele; `/painel` desligado;
+**o site não consulta mais o Directus** (`lib/directus.ts` removido; ramos de reserva e flags `CMS_*` de conteúdo removidos de `conteudo.ts`, `obras.ts`,
+`licitacoes.ts`, `avisos.ts`; `arquivo()` agora está em `lib/payload.ts` e só entende o marcador `midia:`). Conferido: 19 páginas com HTML idêntico antes/depois
+e zero requisições ao contêiner. As linhas `CMS_*=payload` do `.env.web` não fazem mais nada (exceto `CMS_GLOBAIS`, que continua ligando os Globals de
+textos/menu); podem ser apagadas. **Ainda não apagar o Directus**: faltam auditar Directus × Payload (contagens e arquivos), parar o contêiner por algumas
+semanas, tirar a gravação dupla de `atualizar-indicadores.mjs`/`atualizar-tempo.mjs` e o `location /assets/` do Nginx, e só então apagar contêiner, banco e `data/directus`.
 
 **Globals do Payload (2026-10-16).** Textos e links que estavam fixos no código: `configuracoes-portal` (título, CNPJ, endereço, telefones,
 e-mail, horário, autarquias), `navegacao` (menu principal e colunas do rodapé), `links-externos` (um grupo por sistema de terceiro; em branco =

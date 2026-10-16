@@ -3,7 +3,7 @@
  *
  * Mesmo algoritmo de `lib/licitacoes.ts` (sem acento, sinônimo, distância de
  * edição ≤1 para palavra de 5+ letras) — não reinventado, portado. A
- * diferença é que este arquivo NÃO importa nada de servidor (`directus.ts`,
+ * diferença é que este arquivo NÃO importa nada de servidor (`payload.ts`,
  * `process.env`): roda no navegador, filtrando a lista que o componente já
  * trouxe pronta do CMS na renderização da página.
  *
