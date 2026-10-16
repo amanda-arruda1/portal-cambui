@@ -83,9 +83,34 @@ export async function configuracoes() {
 
 /* ── navegação ──────────────────────────────────────────────────────────── */
 
+/** Só caminho interno (/…), endereço http(s) ou referência @chave: o menu vem de um campo livre do CMS e vira `href`. */
+const destinoSeguro = (v: unknown): string | undefined => {
+  const t = texto(v);
+  return t && /^(\/(?!\/)\S*|https?:\/\/\S+|@[A-Za-z][A-Za-z0-9]*)$/.test(t) ? t : undefined;
+};
+
+/** Menu do Global "Menu Principal" (`itens`: rotulo, destino?, filhos?) no formato do site (`subitens`). */
+function menuDoCms(itens: unknown): ItemMenu[] | undefined {
+  if (!Array.isArray(itens) || itens.length === 0) return undefined;
+  const menu = itens.flatMap((i): ItemMenu[] => {
+    const o = i as { rotulo?: unknown; destino?: unknown; filhos?: unknown };
+    const rotulo = texto(o?.rotulo);
+    if (!rotulo) return [];
+    const filhos = Array.isArray(o.filhos)
+      ? o.filhos.flatMap((f) => {
+          const fo = f as { rotulo?: unknown; destino?: unknown };
+          const fr = texto(fo?.rotulo), fd = destinoSeguro(fo?.destino);
+          return fr && fd ? [{ rotulo: fr, destino: fd }] : [];
+        })
+      : [];
+    return [{ rotulo, destino: destinoSeguro(o.destino), ...(filhos.length > 0 ? { subitens: filhos } : {}) }];
+  });
+  return menu.length > 0 ? menu : undefined;
+}
+
 export async function navegacao() {
-  const [g, links] = await Promise.all([ler('navegacao'), linksExternos()]);
-  const menu = (lista<ItemMenu>(g?.menuPrincipal) ?? MENU_PRINCIPAL)
+  const [m, g, links] = await Promise.all([ler('menu-principal'), ler('navegacao'), linksExternos()]);
+  const menu = (menuDoCms(m?.itens) ?? MENU_PRINCIPAL)
     .map((i) => {
       const subitens = (i.subitens ?? []).map((s) => ({ rotulo: s.rotulo, destino: resolverDestino(s.destino, links) })).filter((s): s is { rotulo: string; destino: string } => !!s.destino);
       return { rotulo: i.rotulo, destino: resolverDestino(i.destino, links) ?? undefined, subitens: subitens.length > 0 ? subitens : undefined };

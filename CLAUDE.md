@@ -118,6 +118,17 @@ citar um link externo. Carga inicial: `scripts/semear-globais.ts` (só preenche 
 títulos dos 6 grupos continuam em `NECESSIDADES`. Textos longos de acessibilidade, privacidade e transparência estão na coleção Páginas
 (`scripts/semear-paginas-institucionais.ts`); o markup original fica como reserva nos modelos. Menu do CMS agrupado em `politica.ts` (`GRUPOS`);
 anexos/lotes/eventos/medições ficam ocultos e são editados por `join` dentro de Licitação/Obra.
+**Menu Principal (Global `menu-principal`, 2026-10-16).** O menu do cabeçalho saiu de `navegacao` (que agora é só "Rodapé (colunas de links)") e virou árvore de DOIS
+níveis guardada como JSON (`itens: [{ rotulo, destino?, filhos?: [{ rotulo, destino }] }]`), editada no painel por um componente próprio
+(`src/components/MenuArvore.tsx`, `@dnd-kit`): arrastar um botão para dentro da área tracejada de outro cria o dropdown; soltar sobre um botão do nível
+principal tira do dropdown; cada item tem um seletor "Mover para…" (teclado/celular). A mudança é aplicada AO SOLTAR (mover o estado durante o arraste muda o
+layout e faz o item quicar). Validação no servidor em `globals/MenuPrincipal.ts` (máx. 20 botões, 12 itens por dropdown, só `/caminho`, `http(s)://` ou
+`@chave`; botão sem destino precisa ter filhos); o site repete a checagem em `lib/globais.ts` (`destinoSeguro`). No cabeçalho, pai COM destino = link + seta;
+SEM destino = botão; filho interno abre na mesma aba, externo em nova aba. A migration `menu_principal_arvore` copia o menu antigo (botões e subitens) e apaga
+as tabelas `navegacao_menu_principal*`. Testado em navegador (Playwright + `/usr/bin/chromium-browser`, contra cópia do banco): arrastar, aninhar, recusar 3º
+nível, tirar, salvar, recarregar, validar, teclado. Armadilhas: `useDroppable` só dentro do `DndContext`; ids com `Date.now()` dão erro de hidratação; aviso que
+aparece/some empurra a lista no meio do arraste; `next dev` gera `AGENTS.md`/`CLAUDE.md` em `novo-cms-payload/` (apagar); NUNCA `pkill -f next-server` (mata o
+Payload de produção).
 
 **Como o site escolhe a fonte.** Uma variável por coleção em `/opt/portal-cambui/.env.web`
 (`CMS_TELEFONES`, `CMS_COLETA_LIXO`, `CMS_CONSELHOS`, `CMS_PATRIMONIO`, `CMS_SECRETARIAS`,

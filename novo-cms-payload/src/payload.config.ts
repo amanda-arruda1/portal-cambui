@@ -36,6 +36,7 @@ import { ConfiguracoesPortal } from './globals/ConfiguracoesPortal'
 import { IndicadoresEconomicos } from './globals/IndicadoresEconomicos'
 import { PrevisaoTempo } from './globals/PrevisaoTempo'
 import { LinksExternos } from './globals/LinksExternos'
+import { MenuPrincipal } from './globals/MenuPrincipal'
 import { Navegacao } from './globals/Navegacao'
 import { PaginaInicial } from './globals/PaginaInicial'
 import { comAuditoria } from './hooks-auditoria'
@@ -77,7 +78,7 @@ export default buildConfig({
     Obras, ObraAnexos, ObraMedicoes,
     Pastas, Media, FotosPerfil, Users, ContasServico, AuditLogs,
   ].map(comPolitica).map(comAuditoria),
-  globals: [ConfiguracoesPortal, Navegacao, LinksExternos, PaginaInicial, IndicadoresEconomicos, PrevisaoTempo],
+  globals: [ConfiguracoesPortal, MenuPrincipal, Navegacao, LinksExternos, PaginaInicial, IndicadoresEconomicos, PrevisaoTempo],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },

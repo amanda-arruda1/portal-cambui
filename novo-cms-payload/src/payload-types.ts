@@ -152,6 +152,7 @@ export interface Config {
   fallbackLocale: null;
   globals: {
     'configuracoes-portal': ConfiguracoesPortal;
+    'menu-principal': MenuPrincipal;
     navegacao: Navegacao;
     'links-externos': LinksExterno;
     'pagina-inicial': PaginaInicial;
@@ -160,6 +161,7 @@ export interface Config {
   };
   globalsSelect: {
     'configuracoes-portal': ConfiguracoesPortalSelect<false> | ConfiguracoesPortalSelect<true>;
+    'menu-principal': MenuPrincipalSelect<false> | MenuPrincipalSelect<true>;
     navegacao: NavegacaoSelect<false> | NavegacaoSelect<true>;
     'links-externos': LinksExternosSelect<false> | LinksExternosSelect<true>;
     'pagina-inicial': PaginaInicialSelect<false> | PaginaInicialSelect<true>;
@@ -2244,28 +2246,31 @@ export interface ConfiguracoesPortal {
   createdAt?: string | null;
 }
 /**
+ * Botões do cabeçalho do site. Arraste um botão para dentro de outro para criar um dropdown.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "menu-principal".
+ */
+export interface MenuPrincipal {
+  id: number;
+  itens?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "navegacao".
  */
 export interface Navegacao {
   id: number;
-  menuPrincipal?:
-    | {
-        rotulo: string;
-        /**
-         * Caminho interno (/noticias) ou endereço completo. Sem destino = só agrupa os subitens.
-         */
-        destino?: string | null;
-        subitens?:
-          | {
-              rotulo: string;
-              destino: string;
-              id?: string | null;
-            }[]
-          | null;
-        id?: string | null;
-      }[]
-    | null;
   colunasRodape?:
     | {
         titulo: string;
@@ -2540,23 +2545,19 @@ export interface ConfiguracoesPortalSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "menu-principal_select".
+ */
+export interface MenuPrincipalSelect<T extends boolean = true> {
+  itens?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "navegacao_select".
  */
 export interface NavegacaoSelect<T extends boolean = true> {
-  menuPrincipal?:
-    | T
-    | {
-        rotulo?: T;
-        destino?: T;
-        subitens?:
-          | T
-          | {
-              rotulo?: T;
-              destino?: T;
-              id?: T;
-            };
-        id?: T;
-      };
   colunasRodape?:
     | T
     | {

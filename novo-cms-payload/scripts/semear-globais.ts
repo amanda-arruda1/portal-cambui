@@ -1,6 +1,6 @@
 /**
  * Carrega nos 4 Globals os valores que o site tinha FIXOS no código (apps/web/src/dados/), sem mudar nada do que aparece no ar.
- * Só preenche Global ainda VAZIO (sem `tituloSite`/`menuPrincipal`/…); com `--forcar` sobrescreve.
+ * Só preenche Global ainda VAZIO (sem `tituloSite`/`itens`/…); com `--forcar` sobrescreve.
  * Uso: npx payload run scripts/semear-globais.ts [--forcar]
  */
 import { getPayload } from 'payload'
@@ -11,7 +11,7 @@ import { A_CIDADE, TAREFAS } from '../../apps/web/src/dados/cidade'
 const forcar = process.argv.includes('--forcar')
 const payload = await getPayload({ config })
 
-const grava = async (slug: 'configuracoes-portal' | 'navegacao' | 'links-externos' | 'pagina-inicial', marca: string, data: Record<string, unknown>) => {
+const grava = async (slug: 'configuracoes-portal' | 'menu-principal' | 'navegacao' | 'links-externos' | 'pagina-inicial', marca: string, data: Record<string, unknown>) => {
   const atual = (await payload.findGlobal({ slug, overrideAccess: true, depth: 0 })) as unknown as Record<string, unknown>
   const marcaAtual = atual[marca]
   const vazio = !marcaAtual || (Array.isArray(marcaAtual) && marcaAtual.length === 0) || (typeof marcaAtual === 'object' && !Array.isArray(marcaAtual) && !Object.values(marcaAtual as object).some(Boolean))
@@ -38,7 +38,15 @@ await grava('configuracoes-portal', 'tituloSite', {
   redesSociais: REDES_SOCIAIS,
   autarquias: AUTARQUIAS,
 })
-await grava('navegacao', 'menuPrincipal', { menuPrincipal: MENU_PRINCIPAL, colunasRodape: COLUNAS_RODAPE })
+// Menu em árvore (JSON): `subitens` do código de reserva viram `filhos`.
+await grava('menu-principal', 'itens', {
+  itens: MENU_PRINCIPAL.map((i) => ({
+    rotulo: i.rotulo,
+    ...(i.destino ? { destino: i.destino } : {}),
+    ...(i.subitens?.length ? { filhos: i.subitens.map((s) => ({ rotulo: s.rotulo, destino: s.destino })) } : {}),
+  })),
+})
+await grava('navegacao', 'colunasRodape', { colunasRodape: COLUNAS_RODAPE })
 await grava('links-externos', 'ouvidoria', LINKS_EXTERNOS)
 await grava('pagina-inicial', 'tarefas', {
   heroi: { selo: 'Serra da Mantiqueira', titulo: 'Cambuí\nresolve o seu dia.', subtitulo: 'Trate com a Prefeitura sem fila e sem adivinhar em qual secretaria bater.' },
