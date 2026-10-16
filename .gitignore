@@ -24,7 +24,6 @@ backups/
 # ...mas SQL que é CÓDIGO precisa ser versionado. A regra `*.sql` existe para
 # dump e backup; gatilho, índice e migração são fonte.
 !infra/docker/postgres/initdb/*.sql
-!infra/directus/**/*.sql
 
 # Logs e temporários
 *.log

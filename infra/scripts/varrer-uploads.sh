@@ -10,7 +10,7 @@
 # (ou sem marco) faz a varredura completa — o que cobre assinatura nova de vírus aplicada a arquivo antigo.
 set -euo pipefail
 
-DIRS=("/opt/portal-cambui/data/directus/uploads" "/opt/portal-cambui/novo-cms-payload/media")
+DIRS=("/opt/portal-cambui/novo-cms-payload/media")
 QUARENTENA="/opt/portal-cambui/data/quarentena"
 MARCO="$QUARENTENA/.ultima-varredura"
 COMPLETA="$QUARENTENA/.ultima-completa"

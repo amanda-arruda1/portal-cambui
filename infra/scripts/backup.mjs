@@ -43,11 +43,9 @@ const REPO = '/opt/portal-cambui';
 const DESTINO = process.env.BACKUP_DESTINO || '/var/backups/portal-cambui';
 
 const BANCOS = [
-  { nome: 'directus', container: 'portal-postgres' },
   { nome: 'payload', container: 'payload-postgres' },
 ];
 const ARQUIVOS = [
-  { nome: 'directus-uploads', origem: `${REPO}/data/directus/uploads` },
   { nome: 'payload-media', origem: `${REPO}/novo-cms-payload/media` },
   { nome: 'avisos', origem: `${REPO}/data/avisos` },
 ];
@@ -87,7 +85,7 @@ function executar(cmd, args, opcoes = {}) {
 
 /* Arquivos que a própria aplicação reescreve a cada poucos minutos e que não são dado: o batimento do Directus.
  * Incluí-los só gera diferença entre origem e cópia sem significado. */
-const IGNORAR = new Set(['directus-health-file']);
+const IGNORAR = new Set([]);
 
 /** Percorre uma árvore e devolve os arquivos comuns [{rel, abs, tamanho, mtimeMs, modo}]. */
 function listar(raiz) {

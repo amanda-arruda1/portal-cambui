@@ -20,7 +20,7 @@ const IMAGEM = 'postgres:16.15';
 const NOME = `teste-restauracao-${process.pid}`;
 
 // Tabelas que mudam sozinhas (sessões, cache, histórico): diferença de contagem aqui não indica defeito.
-const RUIDOSAS = new Set(['directus_sessions', 'directus_activity', 'directus_revisions', 'directus_notifications', 'previsao_tempo', 'indicadores_economicos', 'payload_preferences', 'payload_locked_documents', 'payload_locked_documents_rels', 'payload_kv', 'users_sessions']);
+const RUIDOSAS = new Set(['previsao_tempo', 'indicadores_economicos', 'payload_preferences', 'payload_locked_documents', 'payload_locked_documents_rels', 'payload_kv', 'users_sessions']);
 
 const snapshots = fs.readdirSync(DESTINO).filter((n) => /^\d{4}-\d{2}-\d{2}T\d{6}$/.test(n) && fs.existsSync(path.join(DESTINO, n, 'manifest.json'))).sort();
 const snapshot = process.argv[2] || snapshots.at(-1);
@@ -52,7 +52,6 @@ try {
   for (let i = 0; i < 60; i++) { try { psql(NOME, 'postgres', 'select 1'); break; } catch { execFileSync('sleep', ['1']); } }
 
   const ALVOS = [
-    { chave: 'directus', banco: 'restaurado_directus', vivo: 'portal-postgres' },
     { chave: 'payload', banco: 'restaurado_payload', vivo: 'payload-postgres' },
   ];
   const restaurados = {};
@@ -80,11 +79,6 @@ try {
   }
 
   console.log('\n▶ arquivos referenciados pelos bancos restaurados × snapshot');
-  if (restaurados.directus) {
-    const nomes = psql(NOME, restaurados.directus, `select filename_disk from directus_files where filename_disk is not null`).split('\n').filter(Boolean);
-    const ausentes = nomes.filter((n) => !fs.existsSync(path.join(raiz, 'arquivos', 'directus-uploads', n)));
-    ok(ausentes.length === 0, `${nomes.length} arquivos do Directus referenciados, todos presentes no snapshot${ausentes.length ? ` — AUSENTES: ${ausentes.slice(0, 5).join(', ')}${ausentes.length > 5 ? '…' : ''} (${ausentes.length})` : ''}`);
-  }
   if (restaurados.payload) {
     const nomes = psql(NOME, restaurados.payload, `select filename from media where filename is not null`).split('\n').filter(Boolean);
     const ausentes = nomes.filter((n) => !fs.existsSync(path.join(raiz, 'arquivos', 'payload-media', n)));

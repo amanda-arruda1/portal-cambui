@@ -1,4 +1,4 @@
-# Portal Cambuí — Payload CMS (novo CMS, em migração a partir do Directus).
+# Portal Cambuí — Payload CMS.
 #
 # Roda no host, como o portal-web, e escuta SÓ em 127.0.0.1:3000: o portal-web
 # lê a API pública daqui (CMS_TELEFONES=payload) e a edição de conteúdo é feita
@@ -6,7 +6,7 @@
 # ser alcançável de fora é preciso uma rota no Nginx, que é decisão à parte.
 #
 # O banco é o container `payload-postgres` (novo-cms-payload/docker-compose.yml,
-# 127.0.0.1:5433, restart: unless-stopped), separado do Postgres do Directus.
+# 127.0.0.1:5433, restart: unless-stopped).
 #
 # Ao fim da migração, o projeto sai de novo-cms-payload/ para a raiz do
 # repositório: ajustar WorkingDirectory, ExecStart, EnvironmentFile e
@@ -27,7 +27,7 @@ Group=portal-payload
 WorkingDirectory=/opt/portal-cambui/novo-cms-payload
 
 # DATABASE_URL e PAYLOAD_SECRET. Arquivo próprio do Payload, 640 root:portal-payload:
-# o .env geral do portal (senha do Postgres do Directus, chaves) NÃO é lido aqui.
+# o .env geral do portal (senhas e chaves dos serviços) NÃO é lido aqui.
 EnvironmentFile=/opt/portal-cambui/novo-cms-payload/.env
 Environment=NODE_ENV=production
 Environment=NODE_OPTIONS=--no-deprecation

@@ -23,7 +23,6 @@ WorkingDirectory=/opt/portal-cambui
 # o lê antes de baixar privilégio, então o processo nunca precisa abri-lo.
 EnvironmentFile=/opt/portal-cambui/.env
 Environment=NODE_ENV=production
-Environment=DIRECTUS_INTERNAL_URL=http://127.0.0.1:8055
 Environment=PAYLOAD_INTERNAL_URL=http://127.0.0.1:3000/cms
 
 ExecStart=/usr/bin/node /opt/portal-cambui/infra/scripts/enviar-avisos.mjs

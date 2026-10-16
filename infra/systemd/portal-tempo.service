@@ -2,8 +2,8 @@
 #
 # Serviço SEPARADO do portal-web, mesmo raciocínio de portal-indicadores.service:
 # o processo web roda com IPAddressDeny=any e não alcança a internet. Este
-# serviço fala com a Open-Meteo e grava o resultado no Directus; o portal-web
-# só lê o Directus, como sempre.
+# serviço fala com a Open-Meteo e grava o resultado no Payload; o portal-web
+# só lê o Payload, como sempre.
 #
 # Disparado pelo timer portal-tempo.timer. Não fica residente.
 
@@ -19,10 +19,9 @@ User=portal-web
 Group=portal-web
 WorkingDirectory=/opt/portal-cambui
 
-# Só TEMPO_TOKEN e DIRECTUS_INTERNAL_URL vêm do .env geral.
+# Só PAYLOAD_TOKEN_DADOS vem do .env geral.
 EnvironmentFile=/opt/portal-cambui/.env
 Environment=NODE_ENV=production
-Environment=DIRECTUS_INTERNAL_URL=http://127.0.0.1:8055
 
 ExecStart=/usr/bin/node /opt/portal-cambui/infra/scripts/atualizar-tempo.mjs
 

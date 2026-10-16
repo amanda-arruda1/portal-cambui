@@ -20,7 +20,7 @@ const destino = process.argv.find((a) => a.includes('@'));
 const SO_PREVIA = process.argv.includes('--previa');
 if (!destino) { console.error('Uso: node testar-email.mjs <destinatario> [--previa]'); process.exit(1); }
 
-const BASE_CMS = (process.env.DIRECTUS_INTERNAL_URL || 'http://127.0.0.1:8055').replace(/\/+$/, '');
+const BASE_PAYLOAD = (process.env.PAYLOAD_INTERNAL_URL || 'http://127.0.0.1:3000/cms').replace(/\/+$/, '');
 const SITE = (process.env.PUBLIC_SITE_URL || 'https://portal.cambui.mg.gov.br').replace(/\/+$/, '');
 const agora = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
@@ -96,15 +96,15 @@ if (temCredencial) {
 
 /* Sem credencial: enfileira. A mensagem sai sozinha assim que SMTP_USER e
    SMTP_PASSWORD forem preenchidos — não se perde nada por tentar agora. */
-const token = process.env.AVISOS_TOKEN_ENTREGA;
-if (!token) { console.error('  Sem SMTP e sem AVISOS_TOKEN_ENTREGA — nada a fazer além da prévia.'); process.exit(1); }
+const token = process.env.PAYLOAD_TOKEN_ENTREGA;
+if (!token) { console.error('  Sem SMTP e sem PAYLOAD_TOKEN_ENTREGA — nada a fazer além da prévia.'); process.exit(1); }
 
-const r = await fetch(`${BASE_CMS}/items/licitacao_envios`, {
+const r = await fetch(`${BASE_PAYLOAD}/api/licitacao-envios`, {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+  headers: { 'Content-Type': 'application/json', Authorization: `contas-servico API-Key ${token}` },
   body: JSON.stringify({
-    destinatario: destino, assunto, corpo_texto: texto, corpo_html: html,
-    tipo: 'confirmacao', estado: 'pendente', tentativas: 0, criado_em: new Date().toISOString(),
+    destinatario: destino, assunto, corpoTexto: texto, corpoHtml: html,
+    tipo: 'confirmacao', estado: 'pendente', tentativas: 0, criadoEm: new Date().toISOString(),
   }),
 });
 if (!r.ok) { console.error('  falha ao enfileirar:', r.status, (await r.text()).slice(0, 200)); process.exit(1); }

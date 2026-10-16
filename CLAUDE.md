@@ -9,21 +9,17 @@ do zero.
 ## Stack e estrutura
 
 - **Astro 5** (SSR, adapter Node) + TypeScript + Tailwind v4 — `apps/web/`
-- **Directus 11** (headless CMS, pt-BR) — schema declarativo em
-  `infra/directus/esquema.json`, aplicado via `infra/directus/aplicar-esquema.mjs`;
-  permissões em `infra/directus/papeis.json`, aplicadas via
-  `infra/directus/aplicar-papeis.mjs`
-- **Payload CMS 3** (Next.js) — o CMS novo, em `novo-cms-payload/`, em migração
-  coleção a coleção a partir do Directus. **Os dois convivem**: veja a seção
-  "Migração Directus → Payload" abaixo antes de mexer em qualquer conteúdo
-- PostgreSQL 16, Redis 7, tudo em Docker Compose (o Payload tem Postgres próprio:
-  `novo-cms-payload/docker-compose.yml`)
+- **Payload CMS 3** (Next.js, sob `/cms`) — o CMS, em `novo-cms-payload/`. O Directus foi aposentado e apagado em 2026-10-16 (ver
+  "Migração Directus → Payload" abaixo, que agora é histórico)
+- PostgreSQL 16 do Payload em contêiner (`novo-cms-payload/docker-compose.yml`, `127.0.0.1:5433`); não há mais Redis nem outro Postgres
 - Produção: `/opt/portal-cambui`, rodando como root no servidor Rocky Linux,
   branch de trabalho atual `melhoria/dobra-no-celular`
 - O `/painel` antigo foi DESLIGADO em 2026-10-16 (código removido; `middleware.ts` só redireciona `/painel*` para `/cms/admin`).
   `verificar-campos.mjs` e `testar-upload.mjs` saíram junto. Toda edição é no painel do Payload.
 
 ## Armadilhas conhecidas (aprendidas em produção)
+
+> As armadilhas que citam `aplicar-esquema.mjs`, `DIRECTUS_*` ou permissões do Directus são HISTÓRICO: o Directus não existe mais.
 
 - **`aplicar-esquema.mjs` só cria coleções novas** — não adiciona campo a
   coleção já existente. Para isso: `POST /fields/<colecao>` direto na API do
@@ -94,19 +90,23 @@ Detalhes e histórico em `/root/.claude/projects/-root/memory/portal-cambui-migr
 
 **Estado.** Lêem do Payload no ar: telefones úteis, coleta de lixo, conselhos municipais, patrimônio cultural, secretarias,
 notícias, páginas, documentos, serviços, selos, perguntas frequentes, licitações, obras e os quatro Globals (ver abaixo).
-Ainda no Directus: só o que sobrou do `/painel` antigo. **O módulo Diário Oficial foi RETIRADO do site em 2026-10-16** (telas públicas,
-`/painel/diario`, `lib/diario`): o Diário Oficial é o link externo da AMM-MG (`diariomunicipal.com.br/amm-mg/`), controlado no Global
-"Links externos" (`diarioAmm`) e usado pelo menu, rodapé e `/servicos`. O código antigo está no histórico do git (commits `1e59e34` e
-`6e0aa4a`). Em 2026-10-16 (após backup) foram apagados: tabelas `diario_*` e seus metadados no Directus, os 4 papéis/políticas "Diário —" e as 4 contas
-de demonstração, o serviço `portal-diario`, `infra/diario/`, `infra/directus/diario/`, os scripts 11/12, os docs do Diário e o trecho de avisos
-do Diário em `enviar-avisos.mjs`. `.env.diario`, `data/diario/` e o usuário `portal-diario` também foram apagados.
-`links_uteis` foi removida do Payload (migration `servicos_catalogo_sem_links_uteis`).
-**Aposentadoria do Directus (andamento, 2026-10-16):** feitos: indicadores e tempo no Payload (Globals `indicadores-economicos` e `previsao-tempo`,
-conta de serviço `dados_externos`; os dois serviços ainda gravam TAMBÉM no Directus); Instagram e antivírus não dependiam dele; `/painel` desligado;
-**o site não consulta mais o Directus** (`lib/directus.ts` removido; ramos de reserva e flags `CMS_*` de conteúdo removidos de `conteudo.ts`, `obras.ts`,
-`licitacoes.ts`, `avisos.ts`; `arquivo()` agora está em `lib/payload.ts` e só entende o marcador `midia:`). Conferido: 19 páginas com HTML idêntico antes/depois
-e zero requisições ao contêiner. As linhas `CMS_*=payload` do `.env.web` não fazem mais nada (exceto `CMS_GLOBAIS`, que continua ligando os Globals de
-textos/menu); podem ser apagadas. **Auditoria Directus × Payload feita (2026-10-16): nada a mais no Directus** (ids, campos, texto longo e 2.574 arquivos idênticos byte a byte; só 5 PDFs órfãos do Diário). **Contêiner `portal-directus` PARADO em 2026-10-16 para uma semana de teste** (política `unless-stopped`: não volta sozinho; desfazer = `docker start portal-directus`); revisar a partir de 2026-10-23. Antes de apagar: criar no `/cms` as contas de Claudiney (TrustIT) e `informatica@`, se precisarem; tirar a gravação dupla de `atualizar-indicadores.mjs`/`atualizar-tempo.mjs` e o `location /assets/` do Nginx, e só então apagar contêiner, banco e `data/directus`.
+**O DIRECTUS FOI APOSENTADO E APAGADO em 2026-10-16.** Não há mais Directus, Redis nem o Postgres antigo: tudo vive no Payload (`payload-postgres`).
+Resumo do que foi feito, em ordem: módulo Diário Oficial retirado (o Diário Oficial é o link externo da AMM-MG, Global "Links externos", campo
+`diarioAmm`, usado pelo menu, rodapé e `/servicos`; código antigo no git, commits `1e59e34` e `6e0aa4a`); `links_uteis` removida (migration
+`servicos_catalogo_sem_links_uteis`); indicadores e previsão do tempo no Payload (Globals `indicadores-economicos` e `previsao-tempo`, gravados por
+`portal-indicadores`/`portal-tempo` com a conta de serviço `dados_externos`, chave `PAYLOAD_TOKEN_DADOS`); `/painel` desligado (`middleware.ts` só
+redireciona `/painel*` para `/cms/admin`); site sem consultar o Directus (`lib/directus.ts` removido; `arquivo()` está em `lib/payload.ts` e só entende
+o marcador `midia:`); auditoria Directus × Payload (ids, campos, texto longo e 2.574 arquivos idênticos byte a byte; só 5 PDFs órfãos do Diário);
+contêiner parado e, no mesmo dia, removido a pedido.
+**Removido do servidor:** contêineres `portal-directus`/`portal-postgres`/`portal-redis`, rede `portal-cambui-interna`, imagens, `data/directus`, `data/postgres`,
+`data/redis`; `location /assets/` e o server `admin.` do Nginx; variáveis `DIRECTUS_*`/`POSTGRES_*`/`REDIS_*`/tokens antigos e flags `CMS_*` de conteúdo dos
+`.env` (só `CMS_GLOBAIS` sobrou). **Removido do repositório:** `infra/directus/`, `infra/docker/`, scripts 03/06/10 e `criar-conta-esquema.sh`, todos os
+ramos do Directus de `conteudo.ts`/`obras.ts`/`licitacoes.ts`/`avisos.ts`/`enviar-avisos.mjs`/indicadores/tempo/backup.
+**Arquivo final (única cópia do Directus):** `data/backups/directus-final-20261016/` (`directus.dump` = `pg_dump -Fc`, 7,8 MB; 5 PDFs órfãos do Diário; extensões e
+compose antigos; cópias dos `.env` de antes da limpeza; `LEIAME.txt`). **Fora da rotação do backup — não apagar sem decisão.** Os uploads (3 GB) eram cópias
+exatas de `novo-cms-payload/media`. As docs `docs/fase-*.md` e `DESIGN.md` descrevem a pilha antiga: são histórico. Scripts de migração únicos em
+`novo-cms-payload/scripts/` (`migrar-dados.ts`, `validar-migracao.ts`) dependem de dados que não existem mais.
+Contas que existiam só no Directus: Claudiney (TrustIT) e `informatica@` (administradores); se precisarem de acesso, criar no `/cms`.
 
 **Globals do Payload (2026-10-16).** Textos e links que estavam fixos no código: `configuracoes-portal` (título, CNPJ, endereço, telefones,
 e-mail, horário, autarquias), `navegacao` (menu principal e colunas do rodapé), `links-externos` (um grupo por sistema de terceiro; em branco =

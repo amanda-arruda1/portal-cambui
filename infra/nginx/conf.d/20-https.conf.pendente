@@ -58,17 +58,3 @@ server {
 
     include /etc/nginx/snippets/site-publico.conf;
 }
-
-# --- Painel administrativo (Directus) ---
-server {
-    listen      443 ssl;
-    listen      [::]:443 ssl;
-    http2       on;
-    server_name admin.prefeituradecambui.mg.gov.br;
-
-    ssl_certificate     /etc/nginx/ssl/origem/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/origem/privkey.pem;
-    include /etc/nginx/snippets/tls.conf;
-
-    include /etc/nginx/snippets/site-admin.conf;
-}

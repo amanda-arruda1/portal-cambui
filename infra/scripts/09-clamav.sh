@@ -7,11 +7,11 @@
 #   1. clamd rodando como serviço, com socket local — varredura sob demanda
 #      custa milissegundos, sem recarregar a base de assinaturas a cada arquivo;
 #   2. freshclam atualizando as assinaturas sozinho;
-#   3. uma varredura periódica de /opt/portal-cambui/data/directus/uploads que
+#   3. uma varredura periódica de /opt/portal-cambui/novo-cms-payload/media que
 #      põe em quarentena o que estiver infectado.
 #
 # POR QUE VARREDURA PERIÓDICA E NÃO SÓ NO UPLOAD: o bloqueio no momento do
-# envio entra no módulo de contribuição (extensão do Directus, Fase 3), que é
+# envio entra no módulo de contribuição (Payload), que é
 # quem tem o controle do fluxo. A varredura do disco é a rede de segurança:
 # pega o que entrou por outro caminho e o que só virou assinatura conhecida
 # depois de já estar hospedado.
@@ -23,7 +23,7 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 echo "==> instalando ClamAV"
 dnf install -y clamav clamd clamav-update
 
-echo "==> SELinux: permitir que o clamd leia os arquivos do Directus"
+echo "==> SELinux: permitir que o clamd leia os arquivos do CMS"
 # Os uploads têm rótulo container_file_t (volume do container). Sem este
 # boolean o clamd, que roda em antivirus_t, não consegue abri-los.
 setsebool -P antivirus_can_scan_system 1
@@ -44,7 +44,7 @@ systemctl enable --now clamav-freshclam
 
 echo "==> clamd"
 sed -i 's/^Example$/#Example/' /etc/clamd.d/scan.conf
-# Socket local: o scanner e, mais adiante, a extensão do Directus falam por
+# Socket local: o scanner e, mais adiante, o Payload falam por
 # aqui. Sem TCP — não há motivo para expor o antivírus na rede.
 grep -q '^LocalSocket ' /etc/clamd.d/scan.conf || \
   echo 'LocalSocket /run/clamd.scan/clamd.sock' >> /etc/clamd.d/scan.conf

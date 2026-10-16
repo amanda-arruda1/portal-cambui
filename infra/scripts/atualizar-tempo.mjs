@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Atualiza a previsão do tempo de Cambuí/MG no Payload (Global `previsao-tempo`) e, enquanto existir, no Directus.
+ * Atualiza a previsão do tempo de Cambuí/MG no Payload (Global `previsao-tempo`).
  *
  *   node atualizar-tempo.mjs            busca e grava
  *   node atualizar-tempo.mjs --simular  só imprime o que gravaria
@@ -14,32 +14,21 @@
  * geocodificadas (OSM/Nominatim, não estimadas) usadas no mapa da página
  * "A cidade" (apps/web/src/pages/a-cidade.astro, constante MAPA).
  *
- * Variável (em /opt/portal-cambui/.env): TEMPO_TOKEN — gerado por
- * infra/directus/tempo/aplicar.mjs.
+ * Variável (em /opt/portal-cambui/.env): PAYLOAD_TOKEN_DADOS — gerada por
+ * novo-cms-payload/scripts/criar-conta-dados-externos.ts.
  */
 
-const BASE_CMS = (process.env.DIRECTUS_INTERNAL_URL || 'http://127.0.0.1:8055').replace(/\/+$/, '');
-const TOKEN = process.env.TEMPO_TOKEN;
-// Destino novo: Global `previsao-tempo` do Payload (conta de serviço `dados_externos`). Enquanto o Directus existir, grava nos dois.
+// Destino: Global `previsao-tempo` do Payload (conta de serviço `dados_externos`, chave em PAYLOAD_TOKEN_DADOS).
 const BASE_PAYLOAD = (process.env.PAYLOAD_INTERNAL_URL || 'http://127.0.0.1:3000/cms').replace(/\/+$/, '');
 const TOKEN_PAYLOAD = process.env.PAYLOAD_TOKEN_DADOS;
 const SIMULAR = process.argv.includes('--simular');
 const TEMPO_LIMITE_MS = 8000;
 
-if (!TOKEN && !TOKEN_PAYLOAD) { console.error('ERRO: defina PAYLOAD_TOKEN_DADOS (ou TEMPO_TOKEN) em /opt/portal-cambui/.env.'); process.exit(1); }
+if (!TOKEN_PAYLOAD) { console.error('ERRO: defina PAYLOAD_TOKEN_DADOS em /opt/portal-cambui/.env.'); process.exit(1); }
 
 // Cambuí/MG — mesmas coordenadas de apps/web/src/pages/a-cidade.astro (MAPA).
 const LATITUDE = -22.6122501;
 const LONGITUDE = -46.0572137;
-
-async function api(caminho, opcoes = {}) {
-  const r = await fetch(`${BASE_CMS}${caminho}`, {
-    ...opcoes,
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN}`, ...(opcoes.headers ?? {}) },
-  });
-  if (!r.ok) throw new Error(`${opcoes.method ?? 'GET'} ${caminho} → ${r.status} ${(await r.text()).slice(0, 300)}`);
-  return r.status === 204 ? null : (await r.json()).data;
-}
 
 async function buscarTempo() {
   const parametros = new URLSearchParams({
@@ -76,7 +65,7 @@ if (SIMULAR) {
 }
 
 const agora = new Date().toISOString();
-if (TOKEN_PAYLOAD) {
+{
   const r = await fetch(`${BASE_PAYLOAD}/api/globals/previsao-tempo`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `contas-servico API-Key ${TOKEN_PAYLOAD}` },
@@ -88,20 +77,4 @@ if (TOKEN_PAYLOAD) {
   });
   if (!r.ok) throw new Error(`Payload: POST previsao-tempo → ${r.status} ${(await r.text()).slice(0, 300)}`);
 }
-if (TOKEN) {
-  const corpo = JSON.stringify({ ...dados, atualizado_em: agora });
-  try {
-    try {
-      await api('/items/previsao_tempo', { method: 'PATCH', body: corpo });
-    } catch {
-      // Singleton sem linha ainda (primeira execução deste serviço): cria.
-      await api('/items/previsao_tempo', { method: 'POST', body: corpo });
-    }
-  } catch (erro) {
-    // Com o Payload gravado, o Directus (em aposentadoria) não pode derrubar a rodada.
-    if (!TOKEN_PAYLOAD) throw erro;
-    console.warn(`! Directus: ${erro.message}`);
-  }
-}
-
-console.log('previsao_tempo atualizada.');
+console.log('previsao-tempo atualizada.');

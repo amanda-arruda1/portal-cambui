@@ -10,6 +10,7 @@
  * na fila; quem fala com a internet é este script.
  *
  * Variáveis (em /opt/portal-cambui/.env):
+ *   PAYLOAD_TOKEN_ENTREGA  chave da conta de serviço do Payload
  *   SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASSWORD
  *   AVISOS_REMETENTE       endereço que aparece no "De:"
  *   AVISOS_RESPONDER_PARA  opcional, para onde vai a resposta de quem responder
@@ -19,15 +20,8 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { enviar } from './smtp.mjs';
 
-const BASE_CMS = (process.env.DIRECTUS_INTERNAL_URL || 'http://127.0.0.1:8055').replace(/\/+$/, '');
-/* Token do ENTREGADOR, não o do portal. São credenciais diferentes: o token do
- * processo web só escreve na fila; este lê e atualiza. Ver
- * infra/directus/licitacoes/aplicar-avisos.mjs. */
-const TOKEN = process.env.AVISOS_TOKEN_ENTREGA;
-/* Migração Directus → Payload: CMS_AVISOS=payload leva assinantes e fila de LICITAÇÕES para o Payload (conta de serviço
- * `servico_avisos_entrega`, chave em PAYLOAD_TOKEN_ENTREGA). O Diário Oficial segue no Directus. */
-const USA_PAYLOAD = process.env.CMS_AVISOS === 'payload';
 const BASE_PAYLOAD = (process.env.PAYLOAD_INTERNAL_URL || 'http://127.0.0.1:3000/cms').replace(/\/+$/, '');
+/* Conta de serviço `avisos_entrega` do Payload (coleção `contas-servico`): lê e atualiza a fila; o processo web só escreve nela. */
 const TOKEN_PAYLOAD = process.env.PAYLOAD_TOKEN_ENTREGA;
 const SITE = (process.env.PUBLIC_SITE_URL || 'https://www.prefeituradecambui.mg.gov.br').replace(/\/+$/, '');
 /* Diretório próprio, do usuário do serviço. O restante de data/ pertence ao
@@ -45,8 +39,7 @@ const MAX_TENTATIVAS = 5;
 const PAUSA_ENTRE_ENVIOS_MS = 1200;
 const MAX_POR_EXECUCAO = 200;
 
-if (!TOKEN) { console.error('ERRO: defina AVISOS_TOKEN_ENTREGA (está em /opt/portal-cambui/.env).'); process.exit(1); }
-if (USA_PAYLOAD && !TOKEN_PAYLOAD) { console.error('ERRO: CMS_AVISOS=payload exige PAYLOAD_TOKEN_ENTREGA em /opt/portal-cambui/.env.'); process.exit(1); }
+if (!TOKEN_PAYLOAD) { console.error('ERRO: defina PAYLOAD_TOKEN_ENTREGA em /opt/portal-cambui/.env.'); process.exit(1); }
 
 const cfgSmtp = {
   host: process.env.SMTP_HOST,
@@ -56,15 +49,6 @@ const cfgSmtp = {
   nome: 'portal.cambui.mg.gov.br',
 };
 const REMETENTE = process.env.AVISOS_REMETENTE || cfgSmtp.usuario;
-
-async function api(caminho, opcoes = {}) {
-  const r = await fetch(`${BASE_CMS}${caminho}`, {
-    ...opcoes,
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN}`, ...(opcoes.headers ?? {}) },
-  });
-  if (!r.ok) throw new Error(`${opcoes.method ?? 'GET'} ${caminho} → ${r.status} ${(await r.text()).slice(0, 200)}`);
-  return r.status === 204 ? null : (await r.json()).data;
-}
 
 /** Payload: devolve o JSON cru (`docs`, `doc`...). */
 async function apiPayload(caminho, opcoes = {}) {
@@ -156,14 +140,8 @@ async function enfileirarNovidades() {
     return 0;
   }
 
-  const p = new URLSearchParams({
-    limit: '100', sort: 'data_publicacao',
-    fields: 'id,numero,ano,slug,modalidade,objeto_resumo,numero_processo,data_sessao,data_publicacao',
-    'filter[status][_eq]': 'publicado',
-    'filter[data_publicacao][_gt]': desde,
-  });
   let novas;
-  if (USA_PAYLOAD) {
+  {
     // O gatilho é o EVENTO `publicacao` (criado pelo hook no instante em que a licitação vai ao ar), não `dataPublicacao`:
     // essa é a data do edital e quase sempre é anterior ao dia em que o setor publica no portal — filtrar por ela perderia o aviso.
     const q = new URLSearchParams({ limit: '100', depth: '1', sort: 'createdAt', 'where[tipo][equals]': 'publicacao', 'where[createdAt][greater_than]': desde });
@@ -175,17 +153,13 @@ async function enfileirarNovidades() {
         id: d.id, numero: d.numero, ano: d.ano, slug: d.slug, modalidade: d.modalidade, objeto_resumo: d.objetoResumo,
         numero_processo: d.numeroProcesso, data_sessao: d.dataSessao, data_publicacao: d.dataPublicacao,
       }));
-  } else {
-    novas = await api(`/items/licitacoes?${p}`);
   }
   if (!novas.length) { await writeFile(MARCA_ULTIMA, JSON.stringify({ em: agora }, null, 2) + '\n'); return 0; }
 
-  const assinantes = USA_PAYLOAD
-    ? (await apiPayload('/api/licitacao-assinantes?limit=0&pagination=false&depth=0&where[confirmado][equals]=true')).docs.map((a) => ({
-        id: a.id, email: a.email, token: a.token, confirmado: a.confirmado, modalidades: a.modalidades, palavras_chave: a.palavrasChave,
-      }))
-    : await api('/items/licitacao_assinantes?limit=-1&fields=id,email,token,confirmado,modalidades,palavras_chave&filter[confirmado][_eq]=true');
-  const { MODALIDADES } = await import('../directus/licitacoes/enums.mjs');
+  const assinantes = (await apiPayload('/api/licitacao-assinantes?limit=0&pagination=false&depth=0&where[confirmado][equals]=true')).docs.map((a) => ({
+    id: a.id, email: a.email, token: a.token, confirmado: a.confirmado, modalidades: a.modalidades, palavras_chave: a.palavrasChave,
+  }));
+  const { MODALIDADES } = await import('./enums-licitacoes.mjs');
   const rotulo = (v) => MODALIDADES.find((m) => m.valor === v)?.rotulo ?? v;
 
   let enfileirados = 0;
@@ -195,18 +169,10 @@ async function enfileirarNovidades() {
       if (!interessa(a, l)) continue;
       const c = corpoAviso(l, a);
       if (SIMULAR) { console.log(`  [simulação] aviso de ${l.numero}/${l.ano} → ${a.email}`); enfileirados++; continue; }
-      if (USA_PAYLOAD) {
-        await apiPayload('/api/licitacao-envios', { method: 'POST', body: JSON.stringify({
-          destinatario: a.email, assunto: c.assunto, corpoTexto: c.texto, corpoHtml: c.html,
-          tipo: 'aviso', estado: 'pendente', tentativas: 0, criadoEm: new Date().toISOString(), assinante: a.id, licitacao: l.id,
-        }) });
-      } else {
-        await api('/items/licitacao_envios', { method: 'POST', body: JSON.stringify({
-          destinatario: a.email, assunto: c.assunto, corpo_texto: c.texto, corpo_html: c.html,
-          tipo: 'aviso', estado: 'pendente', tentativas: 0,
-          criado_em: new Date().toISOString(), assinante: a.id, licitacao: l.id,
-        }) });
-      }
+      await apiPayload('/api/licitacao-envios', { method: 'POST', body: JSON.stringify({
+        destinatario: a.email, assunto: c.assunto, corpoTexto: c.texto, corpoHtml: c.html,
+        tipo: 'aviso', estado: 'pendente', tentativas: 0, criadoEm: new Date().toISOString(), assinante: a.id, licitacao: l.id,
+      }) });
       enfileirados++;
     }
   }
@@ -218,41 +184,25 @@ async function enfileirarNovidades() {
 
 /* ───────────────────────  2. entregar a fila  ─────────────────── */
 
-/* Acesso às filas. `licitacao_envios` vai ao Payload quando CMS_AVISOS=payload.
- * Todas devolvem/aceitam o formato do Directus (snake_case) para o resto do script não saber de onde veio. */
-const noPayload = (colecao) => USA_PAYLOAD && colecao === 'licitacao_envios';
+/* Acesso à fila (`licitacao-envios` no Payload). Devolvem/aceitam o formato snake_case que o resto do script usa. */
 
-async function listarPendentes(colecao) {
-  if (noPayload(colecao)) {
-    const q = new URLSearchParams({ limit: String(MAX_POR_EXECUCAO), depth: '1', sort: 'criadoEm', 'where[estado][equals]': 'pendente' });
-    return (await apiPayload(`/api/licitacao-envios?${q}`)).docs.map((d) => ({
-      id: d.id, destinatario: d.destinatario, assunto: d.assunto, corpo_texto: d.corpoTexto, corpo_html: d.corpoHtml,
-      tipo: d.tipo, tentativas: d.tentativas, assinante: d.assinante && typeof d.assinante === 'object' ? { token: d.assinante.token } : null,
-    }));
-  }
-  const p = new URLSearchParams({
-    limit: String(MAX_POR_EXECUCAO), sort: 'criado_em',
-    fields: 'id,destinatario,assunto,corpo_texto,corpo_html,tipo,tentativas,assinante.token',
-    'filter[estado][_eq]': 'pendente',
-  });
-  return api(`/items/${colecao}?${p}`);
+async function listarPendentes() {
+  const q = new URLSearchParams({ limit: String(MAX_POR_EXECUCAO), depth: '1', sort: 'criadoEm', 'where[estado][equals]': 'pendente' });
+  return (await apiPayload(`/api/licitacao-envios?${q}`)).docs.map((d) => ({
+    id: d.id, destinatario: d.destinatario, assunto: d.assunto, corpo_texto: d.corpoTexto, corpo_html: d.corpoHtml,
+    tipo: d.tipo, tentativas: d.tentativas, assinante: d.assinante && typeof d.assinante === 'object' ? { token: d.assinante.token } : null,
+  }));
 }
 
-async function listarFalhas(colecao) {
-  if (noPayload(colecao)) {
-    const q = new URLSearchParams({ limit: '100', depth: '0', 'where[estado][equals]': 'falhou' });
-    return (await apiPayload(`/api/licitacao-envios?${q}`)).docs.map((d) => ({ id: d.id, tentativas: d.tentativas, date_created: d.createdAt }));
-  }
-  return api(`/items/${colecao}?limit=100&fields=id,tentativas,date_created&filter[estado][_eq]=falhou`);
+async function listarFalhas() {
+  const q = new URLSearchParams({ limit: '100', depth: '0', 'where[estado][equals]': 'falhou' });
+  return (await apiPayload(`/api/licitacao-envios?${q}`)).docs.map((d) => ({ id: d.id, tentativas: d.tentativas, date_created: d.createdAt }));
 }
 
-async function atualizarEnvio(colecao, id, campos) {
-  if (noPayload(colecao)) {
-    const mapa = { enviado_em: 'enviadoEm', ultimo_erro: 'ultimoErro' };
-    const corpo = Object.fromEntries(Object.entries(campos).map(([k, v]) => [mapa[k] ?? k, v]));
-    return apiPayload(`/api/licitacao-envios/${id}`, { method: 'PATCH', body: JSON.stringify(corpo) });
-  }
-  return api(`/items/${colecao}/${id}`, { method: 'PATCH', body: JSON.stringify(campos) });
+async function atualizarEnvio(_colecao, id, campos) {
+  const mapa = { enviado_em: 'enviadoEm', ultimo_erro: 'ultimoErro' };
+  const corpo = Object.fromEntries(Object.entries(campos).map(([k, v]) => [mapa[k] ?? k, v]));
+  return apiPayload(`/api/licitacao-envios/${id}`, { method: 'PATCH', body: JSON.stringify(corpo) });
 }
 
 /**
