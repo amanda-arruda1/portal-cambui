@@ -187,10 +187,13 @@ function Linha({ no, ehFilho, acoes, destinos, atual }: { no: No; ehFilho: boole
       <div style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr) minmax(0,1.3fr) auto auto', gap: 8, alignItems: 'center' }}>
         <Alca atributos={attributes as unknown as Record<string, unknown>} ouvintes={listeners as Record<string, unknown> | undefined} rotulo={no.rotulo} />
         <input type="text" aria-label="Nome do botão" placeholder="Nome" value={no.rotulo} maxLength={60} style={estiloInput} onChange={(e) => acoes.editar(no.id, 'rotulo', e.target.value)} />
+        {/* Botão com dropdown só ABRE a lista no site: o destino não é usado (fica guardado, e volta a valer se o dropdown for esvaziado). */}
         <input
-          type="text" aria-label={`Destino de ${no.rotulo || 'item'}`} list="menu-destinos" style={estiloInput}
-          placeholder={!ehFilho && no.filhos.length > 0 ? 'Sem destino: só abre o dropdown' : '/pagina, https://… ou @link'}
-          value={no.destino} onChange={(e) => acoes.editar(no.id, 'destino', e.target.value)}
+          type="text" aria-label={`Destino de ${no.rotulo || 'item'}`} list="menu-destinos"
+          disabled={!ehFilho && no.filhos.length > 0}
+          style={{ ...estiloInput, ...(!ehFilho && no.filhos.length > 0 ? { opacity: 0.6, cursor: 'not-allowed' } : {}) }}
+          placeholder={!ehFilho && no.filhos.length > 0 ? 'Só abre o dropdown (não usa destino)' : '/pagina, https://… ou @link'}
+          value={!ehFilho && no.filhos.length > 0 ? '' : no.destino} onChange={(e) => acoes.editar(no.id, 'destino', e.target.value)}
         />
         <select
           aria-label={`Mover ${no.rotulo || 'item'} para…`} title="Mover para…" value={atual} style={{ ...estiloInput, width: 'auto', minWidth: 150, maxWidth: 240 }}
@@ -401,7 +404,7 @@ export const MenuArvore = ({ path, field }: { path: string; field?: { label?: un
       <label className="field-label" style={{ display: 'block', marginBottom: 6 }}>{rotuloCampo}</label>
       <p style={{ margin: '0 0 12px', color: 'var(--theme-elevation-600)', fontSize: 13 }}>
         Arraste pelo ícone <strong>⠿</strong>. Solte um botão <strong>dentro da área tracejada</strong> de outro para ele virar item do dropdown (por exemplo,
-        “Patrimônio Cultural” dentro de “A cidade”). Para tirar um item do dropdown, solte-o <strong>sobre um botão do nível principal</strong>. O menu tem dois níveis.
+        “Patrimônio Cultural” dentro de “A cidade”). Para tirar um item do dropdown, solte-o <strong>sobre um botão do nível principal</strong>. O menu tem dois níveis, e um botão com itens dentro só abre o dropdown (não usa destino próprio).
       </p>
 
       <datalist id="menu-destinos">

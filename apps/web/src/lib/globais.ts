@@ -113,7 +113,8 @@ export async function navegacao() {
   const menu = (menuDoCms(m?.itens) ?? MENU_PRINCIPAL)
     .map((i) => {
       const subitens = (i.subitens ?? []).map((s) => ({ rotulo: s.rotulo, destino: resolverDestino(s.destino, links) })).filter((s): s is { rotulo: string; destino: string } => !!s.destino);
-      return { rotulo: i.rotulo, destino: resolverDestino(i.destino, links) ?? undefined, subitens: subitens.length > 0 ? subitens : undefined };
+      // Botão com dropdown só abre a lista: o destino próprio (se o cadastro ainda tiver um) é ignorado.
+      return { rotulo: i.rotulo, destino: subitens.length > 0 ? undefined : resolverDestino(i.destino, links) ?? undefined, subitens: subitens.length > 0 ? subitens : undefined };
     })
     // Item que dependia de um link retirado e ficou sem nada para mostrar some do menu.
     .filter((i) => i.destino || i.subitens);

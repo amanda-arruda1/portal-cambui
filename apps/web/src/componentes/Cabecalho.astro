@@ -118,30 +118,17 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
             <ul>
               {/* Submenu de "Serviços" segue DESLIGADO — ver comentário em
                   SECOES, acima. O menu vem do Global "Menu Principal" (dois
-                  níveis). Item com subitens e SEM destino ("Área do Servidor")
-                  é só um botão que abre/fecha a lista; COM destino ("A cidade")
-                  o rótulo é um link e só a seta abre a lista — via o script no
-                  fim do arquivo. Subitens internos abrem na mesma aba; só os
-                  externos abrem em nova aba. */}
+                  níveis). Item com subitens é SÓ um botão que abre/fecha a
+                  lista (o rótulo e a seta fazem o mesmo, via o script no fim do
+                  arquivo); o destino próprio, se houver, não é usado. Subitens
+                  internos abrem na mesma aba; só os externos abrem em nova aba. */}
               {SECOES.map((s) => (
                 <li class:list={[s.subitens && 'com-subitens']}>
                   {s.subitens ? (
                     <div class="item-menu">
-                      {s.destino ? (
-                        <a
-                          href={s.destino}
-                          aria-current={ehAtual(s.destino) ? 'page' : undefined}
-                          target={ehExterno(s.destino) ? '_blank' : undefined}
-                          rel={ehExterno(s.destino) ? 'noopener noreferrer' : undefined}
-                        >
-                          <span class="fio-foco">{s.rotulo}</span>
-                          {ehExterno(s.destino) && <span class="sr-only"> — abre em uma nova aba</span>}
-                        </a>
-                      ) : (
-                        <button type="button" class="rotulo-menu">
-                          <span class="fio-foco">{s.rotulo}</span>
-                        </button>
-                      )}
+                      <button type="button" class="rotulo-menu">
+                        <span class="fio-foco">{s.rotulo}</span>
+                      </button>
                       <button type="button" class="alterna-submenu" aria-expanded="false" aria-label={`Abrir submenu de ${s.rotulo}`}>
                         <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                           <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
