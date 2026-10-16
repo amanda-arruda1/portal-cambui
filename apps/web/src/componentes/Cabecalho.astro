@@ -527,14 +527,16 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
   sincronizar();
   consulta.addEventListener('change', sincronizar);
 
-  /* Submenu do menu principal: abre só no clique da seta, nunca sozinho no
-     hover — era o hover que fazia parecer "estático"/grudado. O botão fica
+  /* Submenu do menu principal: abre no clique da seta ou, no desktop com
+     mouse, ao passar o mouse (pedido da Amanda, 2026-10-16). O botão fica
      escondido no celular (a sanfona já mostra os subitens abertos), então
      este bloco só tem efeito visível no desktop. */
+  const temMouse = window.matchMedia('(hover: hover) and (pointer: fine)');
   const itensComSubmenu = document.querySelectorAll<HTMLLIElement>('.com-subitens');
   function fecharSubmenus(exceto?: HTMLLIElement) {
     itensComSubmenu.forEach((li) => {
       if (li === exceto) return;
+      li.dispatchEvent(new Event('submenu-fechado'));
       li.classList.remove('aberto');
       li.querySelector('.alterna-submenu')?.setAttribute('aria-expanded', 'false');
     });
@@ -542,14 +544,35 @@ const ehAtual = (destino: string) => atual === destino || (destino !== '/' && at
   itensComSubmenu.forEach((li) => {
     const botaoAlterna = li.querySelector<HTMLButtonElement>('.alterna-submenu');
     const botaoRotulo = li.querySelector<HTMLButtonElement>('.rotulo-menu');
-    const alternar = () => {
-      const abrindo = !li.classList.contains('aberto');
-      fecharSubmenus();
+    const definir = (abrindo: boolean) => {
       li.classList.toggle('aberto', abrindo);
       botaoAlterna?.setAttribute('aria-expanded', String(abrindo));
     };
+    let fixo = false; // aberto por clique/teclado: o mouse sair não fecha
+    let temporizador: number | undefined;
+    const alternar = () => {
+      window.clearTimeout(temporizador);
+      const abrindo = !li.classList.contains('aberto') || !fixo;
+      fecharSubmenus();
+      fixo = abrindo;
+      definir(abrindo);
+    };
     botaoAlterna?.addEventListener('click', alternar);
     botaoRotulo?.addEventListener('click', alternar);
+    /* Hover (só com mouse e no desktop): abre ao entrar, fecha ao sair com
+       uma folga curta para o ponteiro atravessar o vão até a lista. Clique
+       "fixa" o aberto; clicar de novo fecha. */
+    li.addEventListener('mouseenter', () => {
+      if (!consulta.matches || !temMouse.matches) return;
+      window.clearTimeout(temporizador);
+      if (!li.classList.contains('aberto')) { fecharSubmenus(); fixo = false; definir(true); }
+    });
+    li.addEventListener('mouseleave', () => {
+      if (!consulta.matches || !temMouse.matches || fixo) return;
+      temporizador = window.setTimeout(() => definir(false), 200);
+    });
+    li.addEventListener('submenu-fechado', () => { fixo = false; });
+    li.addEventListener('focusout', () => { if (!li.classList.contains('aberto')) fixo = false; });
   });
   document.addEventListener('click', (e) => {
     if (!(e.target instanceof Node)) return;
