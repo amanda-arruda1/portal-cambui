@@ -69,7 +69,7 @@ do zero.
 
 Snapshots diários em `/var/backups/portal-cambui/AAAA-MM-DDTHHMMSS/` (modo 700, só root), às 02:30
 (`portal-backup.timer`). Cada snapshot tem `bancos/` (pg_dump -Fc do Directus e do Payload),
-`arquivos/` (uploads do Directus, media do Payload, acervo do Diário, marco dos avisos) e `segredos/`
+`arquivos/` (uploads do Directus, media do Payload, marco dos avisos) e `segredos/`
 (os `.env`). Arquivo igual ao do dia anterior vira hardlink, então só o que mudou ocupa espaço; por isso
 os arquivos do snapshot são 0400 e **nunca se faz `chmod`/edição dentro dele** (alteraria todos os
 snapshots que compartilham o inode). Retenção: 14 diários + 8 semanais + 6 mensais.
@@ -98,8 +98,9 @@ notícias, páginas, documentos, serviços, selos, perguntas frequentes, licita�
 Ainda no Directus: só o que sobrou do `/painel` antigo. **O módulo Diário Oficial foi RETIRADO do site em 2026-10-16** (telas públicas,
 `/painel/diario`, `lib/diario`): o Diário Oficial é o link externo da AMM-MG (`diariomunicipal.com.br/amm-mg/`), controlado no Global
 "Links externos" (`diarioAmm`) e usado pelo menu, rodapé e `/servicos`. O código antigo está no histórico do git (commits `1e59e34` e
-`6e0aa4a`). Tabelas `diario_*` (todas de demonstração), serviço `portal-diario` e o trecho de avisos do Diário em
-`infra/scripts/enviar-avisos.mjs` continuam no servidor SEM uso; apagar exige o procedimento de imutabilidade (`infra/directus/diario/`).
+`6e0aa4a`). Em 2026-10-16 (após backup) foram apagados: tabelas `diario_*` e seus metadados no Directus, os 4 papéis/políticas "Diário —" e as 4 contas
+de demonstração, o serviço `portal-diario`, `infra/diario/`, `infra/directus/diario/`, os scripts 11/12, os docs do Diário e o trecho de avisos
+do Diário em `enviar-avisos.mjs`. Sobram no servidor (sem uso): `.env.diario`, `data/diario/`, usuário `portal-diario`.
 `links_uteis` foi removida do Payload (migration `servicos_catalogo_sem_links_uteis`); o painel antigo ainda a lista por causa do
 `verificar-campos`. **Não apagar o Directus**: o `/painel` de contribuição e as permissões dos redatores ainda dependem dele.
 

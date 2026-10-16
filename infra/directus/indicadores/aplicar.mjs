@@ -16,7 +16,7 @@
  * POR QUE FICA FORA DO FLUXO EDITORIAL (comStatus: false): não é conteúdo que
  * uma secretaria escreve — é o resultado de uma consulta automática, sem
  * "rascunho" nem "revisão" fazendo sentido aqui. Mesmo modelo de
- * `diario_veiculo` (ver infra/directus/diario/aplicar-esquema.mjs).
+ * `diario_veiculo` (tabela retirada em 2026-10-16; ver histórico do git).
  *
  * POR QUE UMA CONTA DE SERVIÇO SEPARADA: o token que ESCREVE aqui roda no
  * portal-indicadores.service (fora do portal-web, que não alcança a

@@ -49,10 +49,9 @@ const BANCOS = [
 const ARQUIVOS = [
   { nome: 'directus-uploads', origem: `${REPO}/data/directus/uploads` },
   { nome: 'payload-media', origem: `${REPO}/novo-cms-payload/media` },
-  { nome: 'diario', origem: `${REPO}/data/diario` },
   { nome: 'avisos', origem: `${REPO}/data/avisos` },
 ];
-const SEGREDOS = [`${REPO}/.env`, `${REPO}/.env.web`, `${REPO}/.env.diario`, `${REPO}/novo-cms-payload/.env`];
+const SEGREDOS = [`${REPO}/.env`, `${REPO}/.env.web`, `${REPO}/novo-cms-payload/.env`];
 
 const RETER = { diarios: 14, semanas: 8, meses: 6 };
 const AMOSTRA_ARQUIVOS = 40;

@@ -1,7 +1,7 @@
 # Portal Cambuí — backup diário (bancos + arquivos + segredos), com verificação.
 #
 # Roda como root: precisa do socket do Docker (pg_dump dentro dos containers) e de ler arquivos de vários
-# donos (.env.web é root:portal-web, .env.diario é root:portal-diario…). Em compensação, o confinamento deixa
+# donos (.env.web é root:portal-web). Em compensação, o confinamento deixa
 # o processo escrever SOMENTE em /var/backups/portal-cambui.
 #
 # Detalhes de funcionamento e de retenção: cabeçalho de infra/scripts/backup.mjs.

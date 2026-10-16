@@ -248,124 +248,13 @@ de composição.*
   serviço, que substitui o cartão), `Coleta` (o módulo local),
   `BarraAcessibilidade`, `AvisoCookies`.
 
-## Módulo do Órgão Oficial (Diário Oficial)
+## Diário Oficial
 
-Área pública em `/diario-oficial`, painel em `/painel/diario`.
-Arquitetura, modelo de dados e decisões em
-**[docs/arquitetura-diario.md](docs/arquitetura-diario.md)**; roteiro de
-conferência em **[docs/validacao-diario.md](docs/validacao-diario.md)**.
-
-> Este módulo é um **instrumento de fé pública**. Um edital publicado errado ou
-> uma data de prazo calculada errado não é defeito de interface: é ato
-> administrativo com vício. As decisões priorizam correção e rastreabilidade —
-> e cada uma está justificada no documento de arquitetura.
-
-### Em um comando
-
-```bash
-cd /opt/portal-cambui
-npm install
-npm run esquema      # coleções + permissões (idempotentes; aceitam --simular)
-npm run seed         # 148 edições, ~1.800 matérias, PDFs assinados de verdade
-npm run build && sudo systemctl restart portal-web
-```
-
-`npm run seed -- --reset` refaz do zero. `npm run seed -- --ate=5` gera só as
-cinco primeiras, para iterar rápido.
-
-### Comandos do módulo
-
-```bash
-npm run testar          # 25 testes: domínio (prazos, citação, LGPD) e assinatura
-npm run verificar       # recalcula o SHA-256 de cada PDF e revalida a assinatura
-npm run export          # acervo completo: PDFs + JSON + manifesto com hashes
-```
-
-### Endereços
-
-| Rota | O que é |
-|---|---|
-| `/diario-oficial` | Busca no **texto integral das matérias**, com filtros e contadores |
-| `/diario-oficial/materia/<ano>/<slug>` | A matéria, com **referência de citação copiável** |
-| `/diario-oficial/edicao/<numero>` | A edição, com sumário e dados da assinatura |
-| `/diario-oficial/materia/<ano>/<slug>/certidao` | **Certidão de publicação** em PDF assinado |
-| `/diario-oficial/autenticidade` | Conferência por código **ou por upload do PDF** |
-| `/diario-oficial/orgao-oficial` | Qual é o veículo, sob qual lei, e **como se contam os prazos** |
-| `/diario-oficial/arquivo` · `/arquivo/<ano>` | Calendário marcando os dias de circulação |
-| `/diario-oficial/feed.xml` | RSS de novas edições (aceita `?caderno=`) |
-| `/api/diario-oficial` | JSON público, mesmos filtros da tela |
-| `/diario-oficial/exportar.csv` | Exportação da busca |
-| `/diario-oficial/sitemap.xml` | Sitemap próprio (rotas SSR) |
-| `/diario-oficial/avisos` | Aviso por e-mail, duplo opt-in |
-| `/painel/diario` | Envio → revisão → pauta → fechamento → assinatura → publicação |
-
-### Papéis
-
-Quem escreve não publica; quem publica não assina.
-
-| Papel | Faz | Não faz |
-|---|---|---|
-| **Redator setorial** | escreve e envia matéria da sua secretaria | publicar |
-| **Editor do Diário** | revisa, devolve, monta a pauta, fecha a edição | assinar |
-| **Autoridade signatária** | assina e publica | redigir ou alterar texto |
-| **Administrador** | configura o veículo e audita | assinar; **apagar nada** |
-
-Criados por `npm run esquema`. Atribuir em `/painel/usuarios`.
-
-### Contas de demonstração
-
-```bash
-sudo bash infra/scripts/12-usuarios-demo.sh            # cria as quatro
-sudo bash infra/scripts/12-usuarios-demo.sh --remover  # ANTES DA VIRADA
-```
-
-Senha das quatro: **`DemoDiario2026!`**
-
-| Entrar como | Para ver |
-|---|---|
-| `redator@demonstracao.prefeituradecambui.mg.gov.br` | escrever e enviar; **não há** botão de publicar |
-| `editor@demonstracao.prefeituradecambui.mg.gov.br` | revisar, devolver, montar pauta, fechar; **não** publica |
-| `signataria@demonstracao.prefeituradecambui.mg.gov.br` | publicar; **não** redige |
-| `adminDiario@demonstracao.prefeituradecambui.mg.gov.br` | configurar e auditar |
-
-> **Antes da virada**, remova as contas e reative `enforce_tfa` nas políticas do
-> Diário. Conta com senha publicada em repositório é porta aberta, e o script de
-> criação a desliga a exigência de 2FA para a demonstração funcionar sem
-> aplicativo autenticador.
-
-Conteúdo criado pelo painel enquanto o marcador de demonstração existir nasce
-marcado como demonstração — senão viraria registro **imutável** que o
-`--reset` não alcança.
-
-### O serviço de assinatura
-
-A chave privada que assina como o Município **não fica no processo web** — ele
-atende a internet e é a maior superfície de ataque do sistema. Ela vive num
-serviço separado, com usuário próprio:
-
-```bash
-sudo bash infra/scripts/11-diario-assinatura.sh   # instala portal-diario
-systemctl status portal-diario
-curl -s http://127.0.0.1:4322/saude
-```
-
-Enquanto `DIARIO_CERT` não for preenchido em `.env.diario`, o serviço usa um
-certificado de **demonstração** gerado por ele mesmo — e o painel e a página de
-autenticidade **dizem isso em voz alta**, em vez de exibir um selo que não vale.
-
-### Imutabilidade
-
-Edição publicada nunca é alterada, substituída ou removida. A regra está no
-**banco**, em gatilhos, não na aplicação — porque a aplicação é uma das portas,
-e um `psql` às 23h é outra. Correção se faz por **errata** ou **republicação**.
-
-```bash
-# prova, em transação, que a regra vale (não deixa resíduo)
-set -a; . ./.env; set +a
-docker exec -e PGPASSWORD="$POSTGRES_PASSWORD" -i portal-postgres \
-  psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
-  -f - < infra/directus/diario/testar-imutabilidade.sql
-```
+O portal **não tem módulo próprio** de Diário Oficial. O Município publica na
+plataforma da AMM-MG; o portal só aponta para ela, por um link controlado no CMS
+(Global "Links externos", campo `diarioAmm`), usado no menu, no rodapé e em
+`/servicos`. O módulo interno (edições, assinatura, certidões) existiu como
+protótipo e foi retirado em 2026-10-16; o código está no histórico do git.
 
 ## Módulo de licitações
 
