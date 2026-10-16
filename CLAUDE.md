@@ -106,8 +106,7 @@ conta de serviço `dados_externos`; os dois serviços ainda gravam TAMBÉM no Di
 **o site não consulta mais o Directus** (`lib/directus.ts` removido; ramos de reserva e flags `CMS_*` de conteúdo removidos de `conteudo.ts`, `obras.ts`,
 `licitacoes.ts`, `avisos.ts`; `arquivo()` agora está em `lib/payload.ts` e só entende o marcador `midia:`). Conferido: 19 páginas com HTML idêntico antes/depois
 e zero requisições ao contêiner. As linhas `CMS_*=payload` do `.env.web` não fazem mais nada (exceto `CMS_GLOBAIS`, que continua ligando os Globals de
-textos/menu); podem ser apagadas. **Ainda não apagar o Directus**: faltam auditar Directus × Payload (contagens e arquivos), parar o contêiner por algumas
-semanas, tirar a gravação dupla de `atualizar-indicadores.mjs`/`atualizar-tempo.mjs` e o `location /assets/` do Nginx, e só então apagar contêiner, banco e `data/directus`.
+textos/menu); podem ser apagadas. **Auditoria Directus × Payload feita (2026-10-16): nada a mais no Directus** (ids, campos, texto longo e 2.574 arquivos idênticos byte a byte; só 5 PDFs órfãos do Diário). **Contêiner `portal-directus` PARADO em 2026-10-16 para uma semana de teste** (política `unless-stopped`: não volta sozinho; desfazer = `docker start portal-directus`); revisar a partir de 2026-10-23. Antes de apagar: criar no `/cms` as contas de Claudiney (TrustIT) e `informatica@`, se precisarem; tirar a gravação dupla de `atualizar-indicadores.mjs`/`atualizar-tempo.mjs` e o `location /assets/` do Nginx, e só então apagar contêiner, banco e `data/directus`.
 
 **Globals do Payload (2026-10-16).** Textos e links que estavam fixos no código: `configuracoes-portal` (título, CNPJ, endereço, telefones,
 e-mail, horário, autarquias), `navegacao` (menu principal e colunas do rodapé), `links-externos` (um grupo por sistema de terceiro; em branco =
