@@ -10,7 +10,7 @@
 import Painel from '../../layouts/Painel.astro';
 import { COLECOES_EDITAVEIS, ROTULO, contarPorSituacao, type ColecaoEditavel } from '../../lib/painel/cms.ts';
 import { APARENCIA, ORDEM_DA_FILA, filaDoPapel } from '../../lib/painel/fluxo.ts';
-import { PAPEIS_DIARIO, PAPEIS_LICITACOES, PAPEIS_OBRAS } from '../../lib/painel/sessao.ts';
+import { PAPEIS_LICITACOES, PAPEIS_OBRAS } from '../../lib/painel/sessao.ts';
 
 const sessao = Astro.locals.sessao!;
 const fila = filaDoPapel(sessao.usuario.papel);
@@ -21,7 +21,6 @@ const fila = filaDoPapel(sessao.usuario.papel);
    primeiro. Foi assim que 697 licitações já cadastradas passaram
    despercebidas por quem cuida do portal. */
 const subsistemas = [
-  { rotulo: 'Diário Oficial', destino: '/painel/diario', papeis: PAPEIS_DIARIO },
   // Licitações migraram para o painel do Payload (2026-10-15): o atalho leva para lá.
   { rotulo: 'Licitações', destino: '/cms/admin/collections/licitacoes', papeis: PAPEIS_LICITACOES, novo: { rotulo: 'Publicar nova licitação', destino: '/cms/admin/collections/licitacoes/create' }, externo: true },
   { rotulo: 'Obras públicas', destino: '/cms/admin/collections/obras', papeis: PAPEIS_OBRAS, novo: { rotulo: 'Cadastrar nova obra', destino: '/cms/admin/collections/obras/create' }, externo: true },

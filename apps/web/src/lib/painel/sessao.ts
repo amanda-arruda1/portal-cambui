@@ -222,10 +222,9 @@ export async function sair(armazem: Armazem, cookies: AstroCookies): Promise<voi
 
 /* ---------- quem enxerga cada subsistema à parte da fila genérica ---------- */
 
-/** Diário Oficial, Licitações e Obras públicas não são coleções da fila — são
+/** Licitações e Obras públicas não são coleções da fila — são
  *  telas e fluxo próprios. Estas listas alimentam tanto o menu do topo quanto
  *  os atalhos da tela inicial: um lugar só, pra não desalinhar as duas. */
-export const PAPEIS_DIARIO = ['Administrator', 'Diário — Redator setorial', 'Diário — Editor', 'Diário — Autoridade signatária', 'Diário — Administrador'];
 export const PAPEIS_LICITACOES = ['Administrator', 'Setor de licitações', 'Leitor de licitações', 'Publicador', 'Revisor'];
 export const PAPEIS_OBRAS = ['Administrator', 'Setor de obras', 'Leitor de obras', 'Publicador', 'Revisor'];
 
