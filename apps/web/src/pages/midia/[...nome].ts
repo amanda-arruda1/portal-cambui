@@ -1,12 +1,10 @@
 /**
  * Arquivos do Payload no domínio público: /midia/<nome> repassa /api/media/file/<nome>.
  *
- * Equivale ao `location /assets/` do Nginx para o Directus. Existe aqui, e não no
- * Nginx, para a migração Directus → Payload não exigir mudança no proxy de produção;
- * quando o Directus sair, um `location /midia/` direto no Nginx resolve os arquivos
- * comuns (a transformação de imagem continuaria precisando desta rota).
+ * Existe aqui, e não no Nginx, porque as imagens precisam de transformação sob demanda
+ * (um `location /midia/` direto serviria só arquivos comuns).
  *
- * IMAGENS: o Directus redimensionava e convertia sob demanda (?width=&quality=&fit=&format=)
+ * IMAGENS: o antigo CMS (Directus) redimensionava e convertia sob demanda (?width=&quality=&fit=&format=)
  * e as páginas dependem disso — a capa de uma notícia tem até 1,7 MB de original e a home
  * pede 900 px em WebP. Esta rota aceita os mesmos parâmetros, transforma com sharp e guarda
  * o resultado em disco; a segunda requisição da mesma variação não toca no Payload.
@@ -38,6 +36,23 @@ const inteiro = (v: string | null, max: number): number | undefined => {
   return Number.isFinite(n) && n > 0 ? Math.min(n, max) : undefined;
 };
 
+/**
+ * O endpoint de arquivo do Payload responde 500 (e não 404) quando o nome não existe. Como um 500 também pode ser falha real,
+ * a rota confere se o arquivo está cadastrado: ausente = 404 de verdade; cadastrado (ou sem como saber) = 502.
+ */
+async function statusDeFalha(nome: string, statusOrigem: number): Promise<number> {
+  if (statusOrigem === 404) return 404;
+  try {
+    const consulta = new URL(`${PAYLOAD_URL}/api/media`);
+    consulta.searchParams.set('where[filename][equals]', nome);
+    consulta.searchParams.set('limit', '1');
+    consulta.searchParams.set('depth', '0');
+    const r = await fetch(consulta, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(5000) });
+    if (r.ok && ((await r.json()) as { totalDocs?: number }).totalDocs === 0) return 404;
+  } catch { /* sem resposta do cadastro: não dá para afirmar que não existe */ }
+  return 502;
+}
+
 export const GET: APIRoute = async ({ params, request, url }) => {
   const nome = params.nome ?? '';
   // Um único segmento, sem subir de diretório: o nome vem da URL e vai para outra URL.
@@ -63,7 +78,7 @@ export const GET: APIRoute = async ({ params, request, url }) => {
 
     try {
       const origem = await fetch(`${PAYLOAD_URL}/api/media/file/${encodeURIComponent(nome)}`, { signal: AbortSignal.timeout(30_000) });
-      if (!origem.ok) return new Response('Não encontrado', { status: origem.status === 404 ? 404 : 502 });
+      if (!origem.ok) { const st = await statusDeFalha(nome, origem.status); return new Response(st === 404 ? 'Não encontrado' : 'Imagem indisponível', { status: st }); }
       const { default: sharp } = await import('sharp');
       let img = sharp(Buffer.from(await origem.arrayBuffer()), { failOn: 'none' }).rotate(); // .rotate(): respeita a orientação EXIF
       if (largura || altura) img = img.resize({ width: largura, height: altura, fit: encaixe as keyof import('sharp').FitEnum, withoutEnlargement: true });
@@ -87,7 +102,7 @@ export const GET: APIRoute = async ({ params, request, url }) => {
       headers: { ...(request.headers.get('range') ? { Range: request.headers.get('range')! } : {}) },
       signal: AbortSignal.timeout(30_000),
     });
-    if (!origem.ok && origem.status !== 206) return new Response('Não encontrado', { status: origem.status === 404 ? 404 : 502 });
+    if (!origem.ok && origem.status !== 206) { const st = await statusDeFalha(nome, origem.status); return new Response(st === 404 ? 'Não encontrado' : 'Arquivo indisponível', { status: st }); }
 
     const cabecalhos = new Headers();
     for (const c of REPASSAR) { const v = origem.headers.get(c); if (v) cabecalhos.set(c, v); }
